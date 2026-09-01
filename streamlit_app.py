@@ -64,6 +64,100 @@ st.markdown("""<style>
 .priority-kpi{background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:.9rem 1rem;min-height:105px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
 .priority-kpi>div{font-size:.76rem;font-weight:700;color:#667085}.priority-kpi strong{display:block;font-size:1.65rem;line-height:1.15;color:#1d2939;margin:.3rem 0}.priority-kpi span{font-size:.7rem;color:#98a2b3}.priority-p1{border-top:4px solid #f04438}.priority-p2{border-top:4px solid #f79009}.priority-p3{border-top:4px solid #f5a524}.priority-p4{border-top:4px solid #12b76a}.priority-focus{border-top:4px solid #175cd3}
 .priority-matrix-card{background:linear-gradient(180deg,#fff,#f8fafc);border:1px solid #e4e7ec;border-radius:16px;padding:1rem;min-height:155px;position:relative;box-shadow:0 2px 5px rgba(16,24,40,.05);transition:transform .15s ease,box-shadow .15s ease}.priority-matrix-card:hover{transform:translateY(-2px);box-shadow:0 7px 18px rgba(16,24,40,.09)}.matrix-icon{font-size:1.15rem}.matrix-code{font-size:.72rem;font-weight:800;color:#667085;margin-top:.25rem}.matrix-title{font-size:.88rem;font-weight:700;color:#344054}.matrix-count{font-size:2rem;font-weight:850;color:#1d2939;margin-top:.25rem}.matrix-note{font-size:.7rem;color:#98a2b3;margin-top:.2rem}
+
+/* Dashboard v4: true panel alignment and readable contrast */
+.dashboard-grid-gap{height:.65rem}
+.dashboard-panel-wrap{
+    background:#f8fafc;
+    border:1px solid #dfe5ee;
+    border-radius:8px;
+    overflow:hidden;
+    box-sizing:border-box;
+}
+.dashboard-panel-header{
+    height:38px;
+    display:flex;
+    align-items:center;
+    padding:0 .78rem;
+    background:#edf1f6;
+    border-bottom:1px solid #dfe5ee;
+    color:#25364d;
+    font-size:.82rem;
+    font-weight:800;
+    line-height:1;
+}
+.dashboard-panel-body{padding:.72rem .78rem .78rem}
+.dashboard-panel-body .dashboard-panel-sub{margin:0 0 .65rem}
+.dashboard-row-wrap{
+    display:grid;
+    grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);
+    gap:.65rem;
+    align-items:stretch;
+}
+.dashboard-row-wrap > .dash-cell{
+    min-width:0;
+}
+.dashboard-kpi{
+    min-height:108px!important;
+    border-radius:5px!important;
+}
+.dashboard-kpi .opp-card-title{font-size:.74rem!important}
+.dashboard-kpi .opp-card-value{font-size:1.7rem!important}
+.dashboard-kpi .opp-card-small{font-size:.67rem!important}
+.dashboard-kpi.kpi-blue,.dashboard-kpi.kpi-cyan,.dashboard-kpi.kpi-orange,
+.dashboard-kpi.kpi-red,.dashboard-kpi.kpi-purple,
+.dashboard-action-kpi,.dashboard-action-kpi *{
+    color:#fff!important;
+}
+.dashboard-action-kpi{
+    background:linear-gradient(135deg,#5037b5,#704bd7)!important;
+}
+.condition-card{
+    min-height:116px;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-start;
+}
+.condition-card .count{margin-top:.32rem}
+.condition-card .pct{margin-top:.25rem;min-height:1.8rem}
+.dashboard-panel-wrap .stButton>button{
+    border:1px solid #d9e0e8!important;
+    background:#fff!important;
+    color:#344054!important;
+    font-weight:650!important;
+    min-height:36px!important;
+    border-radius:7px!important;
+}
+.dashboard-panel-wrap .stButton>button:hover{
+    border-color:#8db7ef!important;
+    background:#f5f9ff!important;
+}
+.dashboard-panel-wrap .stMetric{
+    padding:.05rem 0!important;
+}
+.dashboard-panel-wrap .stMetric label{font-size:.72rem!important}
+.dashboard-panel-wrap .stMetric [data-testid="stMetricValue"]{font-size:1.45rem!important}
+.dq-card{
+    background:#fff;border:1px solid #e3e8ef;border-radius:8px;
+    padding:.72rem .7rem;min-height:105px;box-sizing:border-box;
+}
+.dq-label{font-size:.7rem;color:#667085;font-weight:700}
+.dq-value{font-size:1.55rem;color:#1d2939;font-weight:850;margin-top:.28rem}
+.dq-high{color:#079455!important}.dq-medium{color:#dc6803!important}.dq-low{color:#d92d20!important}
+.area-card{
+    min-height:112px!important;
+    padding:.7rem .72rem!important;
+}
+.area-card .signal-bar{margin-top:.45rem}
+.priority-line{margin:.55rem 0!important}
+.priority-line .signal-bar{height:7px}
+.priority-line.p1 .signal-fill{background:#f04438}
+.priority-line.p2 .signal-fill{background:#f79009}
+.priority-line.p3 .signal-fill{background:#f5b82e}
+.priority-line.p4 .signal-fill{background:#12b76a}
+@media(max-width:900px){
+    .dashboard-row-wrap{grid-template-columns:1fr}
+}
 </style>""",unsafe_allow_html=True)
 
 @st.cache_data
@@ -641,19 +735,11 @@ high = int((master["Confidence"] == "High").sum())
 medium = int((master["Confidence"] == "Medium").sum())
 low = int((master["Confidence"] == "Low").sum())
 
-a, b, c, d, e = st.columns(5)
-a.metric("Historical Records", f"{len(df):,}")
-b.metric("PLC Tags", f"{len(master):,}")
-c.metric("High Confidence", f"{high:,}")
-d.metric("Medium Confidence", f"{medium:,}")
-e.metric("Low Confidence", f"{low:,}")
-st.divider()
-
 if page == "Dashboard":
     # Executive dashboard: visual overview only. Detailed screening lives in
     # Equipment Health / Maintenance Priority / Action Center.
-    st.markdown('<div class="opp-page-title">🏭 OPP Fixed Asset Management Dashboard</div>', unsafe_allow_html=True)
-    st.markdown('<div class="opp-page-sub">A concise plant overview — identify the signal, understand the priority, then drill down when needed.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="opp-page-title">OPP Engineering Monitoring</div>', unsafe_allow_html=True)
+    st.markdown('<div class="opp-page-sub">Plant condition overview and engineering decision support — identify the signal, then drill down only when needed.</div>', unsafe_allow_html=True)
 
     screening = build_equipment_screening(master, df)
     findings = build_action_findings(master, df)
@@ -673,22 +759,21 @@ if page == "Dashboard":
         attention = int((screening["Condition"] == "ATTENTION").sum())
         critical = int((screening["Condition"] == "CRITICAL").sum())
         nonhealthy = total_eq - healthy
+
         p1n = int((screening["Screening Priority"] == "P1").sum())
         p2n = int((screening["Screening Priority"] == "P2").sum())
         p3n = int((screening["Screening Priority"] == "P3").sum())
         p4n = int((screening["Screening Priority"] == "P4").sum())
 
-        last_data = "—"
-        if "ArchiveTime" in df.columns and not df.empty:
-            try:
-                last_data = pd.to_datetime(df["ArchiveTime"], errors="coerce").max().strftime("%d %b %Y")
-            except Exception:
-                pass
-        st.caption(f"Last data: {last_data}  ·  {len(df):,} historical records  ·  {len(master):,} PLC tags")
+        last_data = ""
+        try:
+            last_data = pd.to_datetime(df["ArchiveTime"], errors="coerce").max().strftime("%d %b %Y")
+        except Exception:
+            pass
 
-        # ------------------------------------------------------------------
-        # 1. Executive KPI strip — five equal tiles.
-        # ------------------------------------------------------------------
+        # ==============================================================
+        # 1. Executive KPI strip — one clean visual row.
+        # ==============================================================
         k1, k2, k3, k4, k5 = st.columns(5, gap="small")
         kpis = [
             (k1, "kpi-blue", "🩺 Screened Equipment", total_eq, "equipment covered by screening"),
@@ -698,104 +783,193 @@ if page == "Dashboard":
             (k5, "kpi-purple", "🛠 Open Findings", open_count, "engineering follow-up open"),
         ]
         for col, cls, title, value, small in kpis:
-            col.markdown(f'<div class="opp-card dashboard-kpi {cls}"><div class="opp-card-title">{title}</div><div class="opp-card-value">{value:,}</div><div class="opp-card-small">{small}</div></div>', unsafe_allow_html=True)
+            col.markdown(
+                f'<div class="opp-card dashboard-kpi {cls}">'
+                f'<div class="opp-card-title">{title}</div>'
+                f'<div class="opp-card-value">{value:,}</div>'
+                f'<div class="opp-card-small">{small}</div></div>',
+                unsafe_allow_html=True,
+            )
 
-        st.markdown('<div style="height:.75rem"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="dashboard-grid-gap"></div>', unsafe_allow_html=True)
 
-        # ------------------------------------------------------------------
-        # 2. Condition + Action — equal-height control-room row.
-        # ------------------------------------------------------------------
+        # ==============================================================
+        # 2. Plant Condition + Action Center
+        #    Real bordered containers keep both panels aligned.
+        # ==============================================================
         left, right = st.columns([1.6, 1], gap="small")
+
         with left:
-            st.markdown('<div class="dashboard-panel medium">', unsafe_allow_html=True)
-            st.markdown('<div class="dashboard-panel-head">🩺 Plant Condition</div>', unsafe_allow_html=True)
-            st.markdown('<div class="dashboard-panel-sub">Historical screening distribution — use the buttons to drill into abnormal equipment.</div>', unsafe_allow_html=True)
-            c1, c2, c3, c4 = st.columns(4, gap="small")
-            cards = [
-                (c1, "HEALTHY", healthy, "condition-healthy", "Routine condition", None),
-                (c2, "DETERIORATING", deteriorating, "condition-deteriorating", "Showing deterioration", "DETERIORATING"),
-                (c3, "ATTENTION", attention, "condition-attention", "Engineering review", "ATTENTION"),
-                (c4, "CRITICAL", critical, "condition-critical", "Highest concern", "CRITICAL"),
-            ]
-            for col, label, n, cls, desc, filter_value in cards:
-                status_cls = {"HEALTHY":"status-healthy","DETERIORATING":"status-deteriorating","ATTENTION":"status-attention","CRITICAL":"status-critical"}.get(label,"")
-                col.markdown(f'<div class="condition-card {cls}"><div class="label {status_cls}">{label}</div><div class="count">{n:,}</div><div class="pct">{n/max(total_eq,1)*100:.1f}% · {desc}</div></div>', unsafe_allow_html=True)
-                if filter_value:
-                    col.button(f"🔎 View {label.title()}", key=f"dash_condition_{filter_value.lower()}", use_container_width=True, on_click=_navigate_dashboard, args=("⚠  Maintenance Priority", filter_value))
-            st.markdown('</div>', unsafe_allow_html=True)
+            with st.container(border=True, key="dash_plant_condition"):
+                st.markdown('<div class="dashboard-panel-header">🩺 Plant Condition</div>', unsafe_allow_html=True)
+                st.markdown('<div class="dashboard-panel-body">', unsafe_allow_html=True)
+                st.markdown('<div class="dashboard-panel-sub">Historical screening distribution — click a condition to open the worklist.</div>', unsafe_allow_html=True)
+
+                c1, c2, c3, c4 = st.columns(4, gap="small")
+                cards = [
+                    (c1, "HEALTHY", healthy, "condition-healthy", "Routine condition", None),
+                    (c2, "DETERIORATING", deteriorating, "condition-deteriorating", "Showing deterioration", "DETERIORATING"),
+                    (c3, "ATTENTION", attention, "condition-attention", "Engineering review", "ATTENTION"),
+                    (c4, "CRITICAL", critical, "condition-critical", "Highest concern", "CRITICAL"),
+                ]
+                for col, label, n, cls, desc, filter_value in cards:
+                    status_cls = {
+                        "HEALTHY":"status-healthy",
+                        "DETERIORATING":"status-deteriorating",
+                        "ATTENTION":"status-attention",
+                        "CRITICAL":"status-critical"
+                    }.get(label, "")
+                    col.markdown(
+                        f'<div class="condition-card {cls}">'
+                        f'<div class="label {status_cls}">{label}</div>'
+                        f'<div class="count">{n:,}</div>'
+                        f'<div class="pct">{n/max(total_eq,1)*100:.1f}% · {desc}</div></div>',
+                        unsafe_allow_html=True,
+                    )
+                    if filter_value:
+                        col.button(
+                            f"🔎 View {label.title()}",
+                            key=f"dash_condition_{filter_value.lower()}",
+                            use_container_width=True,
+                            on_click=_navigate_dashboard,
+                            args=("⚠  Maintenance Priority", filter_value),
+                        )
+                st.markdown('</div>', unsafe_allow_html=True)
 
         with right:
-            st.markdown('<div class="dashboard-panel medium">', unsafe_allow_html=True)
-            st.markdown('<div class="dashboard-panel-head">🛠 Action Center</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="opp-card dashboard-kpi kpi-purple dashboard-action-kpi" style="min-height:108px"><div class="opp-card-title">🛠 OPEN ENGINEERING FINDINGS</div><div class="opp-card-value">{open_count:,}</div><div class="opp-card-small">findings awaiting engineering follow-up</div></div>', unsafe_allow_html=True)
-            st.button("🛠 Open Action Center", key="dash_open_action", use_container_width=True, on_click=_navigate_dashboard, args=("✓  Action Center", None))
-            st.markdown('</div>', unsafe_allow_html=True)
+            with st.container(border=True, key="dash_action_center"):
+                st.markdown('<div class="dashboard-panel-header">🛠 Action Center</div>', unsafe_allow_html=True)
+                st.markdown('<div class="dashboard-panel-body">', unsafe_allow_html=True)
+                st.markdown(
+                    f'<div class="opp-card dashboard-kpi kpi-purple dashboard-action-kpi">'
+                    f'<div class="opp-card-title">🛠 OPEN ENGINEERING FINDINGS</div>'
+                    f'<div class="opp-card-value">{open_count:,}</div>'
+                    f'<div class="opp-card-small">findings awaiting engineering follow-up</div></div>',
+                    unsafe_allow_html=True,
+                )
+                st.markdown('<div style="height:.55rem"></div>', unsafe_allow_html=True)
+                st.button("🛠 Open Action Center", key="dash_open_action", use_container_width=True,
+                          on_click=_navigate_dashboard, args=("✓  Action Center", None))
+                st.markdown('</div>', unsafe_allow_html=True)
 
-        st.markdown('<div style="height:.75rem"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="dashboard-grid-gap"></div>', unsafe_allow_html=True)
 
-        # ------------------------------------------------------------------
-        # 3. Engineering Focus + Data Quality — same visual row.
-        # ------------------------------------------------------------------
+        # ==============================================================
+        # 3. Engineering Focus + Data Quality
+        # ==============================================================
         left, right = st.columns([1.6, 1], gap="small")
+
         with left:
-            st.markdown('<div class="dashboard-panel medium">', unsafe_allow_html=True)
-            st.markdown('<div class="dashboard-panel-head">🎯 Engineering Focus</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="focus-box"><b>{nonhealthy:,} equipment</b> are outside the healthy screening state. Priority screening identifies <b>{p1n} P1</b> immediate-review, <b>{p2n} P2</b> planned-inspection, <b>{p3n} P3</b> monitoring and <b>{p4n} P4</b> routine items.</div>', unsafe_allow_html=True)
-            q1,q2,q3,q4=st.columns(4, gap="small")
-            for col,label,n,icon in [(q1,"P1",p1n,"🔴"),(q2,"P2",p2n,"🟠"),(q3,"P3",p3n,"🟡"),(q4,"P4",p4n,"🟢")]:
-                col.metric(f"{icon} {label}", f"{n:,}")
-            st.button("🎯 Open Maintenance Priority", key="dash_open_priority", use_container_width=True, on_click=_navigate_dashboard, args=("⚠  Maintenance Priority", None))
-            st.markdown('</div>', unsafe_allow_html=True)
+            with st.container(border=True, key="dash_engineering_focus"):
+                st.markdown('<div class="dashboard-panel-header">🎯 Engineering Focus</div>', unsafe_allow_html=True)
+                st.markdown('<div class="dashboard-panel-body">', unsafe_allow_html=True)
+                st.markdown(
+                    f'<div class="focus-box"><b>{nonhealthy:,} equipment</b> are outside the healthy screening state. '
+                    f'Priority screening identifies <b>{p1n} P1</b> immediate-review, <b>{p2n} P2</b> planned-inspection, '
+                    f'<b>{p3n} P3</b> monitoring and <b>{p4n} P4</b> routine items.</div>',
+                    unsafe_allow_html=True,
+                )
+                q1,q2,q3,q4=st.columns(4, gap="small")
+                for col,label,n,icon in [
+                    (q1,"P1",p1n,"🔴"),(q2,"P2",p2n,"🟠"),
+                    (q3,"P3",p3n,"🟡"),(q4,"P4",p4n,"🟢")
+                ]:
+                    col.metric(f"{icon} {label}", f"{n:,}")
+                st.button("🎯 Open Maintenance Priority", key="dash_open_priority", use_container_width=True,
+                          on_click=_navigate_dashboard, args=("⚠  Maintenance Priority", None))
+                st.markdown('</div>', unsafe_allow_html=True)
 
         with right:
-            st.markdown('<div class="dashboard-panel medium">', unsafe_allow_html=True)
-            st.markdown('<div class="dashboard-panel-head">📊 Data Quality & Coverage</div>', unsafe_allow_html=True)
-            dq1,dq2,dq3=st.columns(3, gap="small")
-            dq1.metric("PLC Tags", f"{len(master):,}")
-            dq2.metric("High", f"{high:,}")
-            dq3.metric("Medium", f"{medium:,}")
-            st.metric("Low confidence", f"{low:,}")
-            st.caption("Confidence describes mapping evidence, not equipment condition.")
-            st.markdown('</div>', unsafe_allow_html=True)
+            with st.container(border=True, key="dash_data_quality"):
+                st.markdown('<div class="dashboard-panel-header">📊 Data Quality & Coverage</div>', unsafe_allow_html=True)
+                st.markdown('<div class="dashboard-panel-body">', unsafe_allow_html=True)
+                dq1,dq2,dq3,dq4=st.columns(4, gap="small")
+                dq1.markdown(f'<div class="dq-card"><div class="dq-label">PLC Tags</div><div class="dq-value">{len(master):,}</div></div>', unsafe_allow_html=True)
+                dq2.markdown(f'<div class="dq-card"><div class="dq-label">High</div><div class="dq-value dq-high">{high:,}</div></div>', unsafe_allow_html=True)
+                dq3.markdown(f'<div class="dq-card"><div class="dq-label">Medium</div><div class="dq-value dq-medium">{medium:,}</div></div>', unsafe_allow_html=True)
+                dq4.markdown(f'<div class="dq-card"><div class="dq-label">Low</div><div class="dq-value dq-low">{low:,}</div></div>', unsafe_allow_html=True)
+                st.caption("Confidence describes mapping evidence, not equipment condition.")
+                st.markdown('</div>', unsafe_allow_html=True)
 
-        st.markdown('<div style="height:.75rem"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="dashboard-grid-gap"></div>', unsafe_allow_html=True)
 
-        # ------------------------------------------------------------------
-        # 4. Area Signal + Priority Mix — aligned start; detail below only.
-        # ------------------------------------------------------------------
+        # ==============================================================
+        # 4. Area Signal + Priority Mix
+        # ==============================================================
         left, right = st.columns([1.6, 1], gap="small")
+
         with left:
-            st.markdown('<div class="dashboard-panel tall">', unsafe_allow_html=True)
-            st.markdown('<div class="dashboard-panel-head">📍 Area Signal</div>', unsafe_allow_html=True)
-            st.markdown('<div class="dashboard-panel-sub">Areas with the highest concentration of non-healthy equipment.</div>', unsafe_allow_html=True)
-            area_df = screening.copy()
-            area_map = master[["Equipment Code", "Area"]].drop_duplicates("Equipment Code")
-            area_df = area_df.merge(area_map, on="Equipment Code", how="left")
-            area_df["Area"] = area_df["Area"].fillna("").astype(str).str.strip()
-            area_df = area_df[area_df["Area"] != ""]
-            if not area_df.empty:
-                area_summary=(area_df.assign(Abnormal=area_df["Condition"]!="HEALTHY").groupby("Area",as_index=False).agg(Equipment=("Equipment Code","count"),Abnormal=("Abnormal","sum")))
-                area_summary["Abnormal %"]=area_summary["Abnormal"]/area_summary["Equipment"].clip(lower=1)*100
-                area_summary=area_summary.sort_values(["Abnormal","Abnormal %"],ascending=[False,False]).head(6).reset_index(drop=True)
-                cols=st.columns(3, gap="small")
-                for i,rr in area_summary.iterrows():
-                    col=cols[i%3]; area=rr["Area"]; abnormal_n=int(rr["Abnormal"]); equip_n=int(rr["Equipment"]); pct=float(rr["Abnormal %"])
-                    safe_key=re.sub(r"[^A-Za-z0-9]+","_",str(area))
-                    col.markdown(f'<div class="area-card"><div class="area-title">📍 {area}</div><div class="area-number">{abnormal_n} <span style="font-size:.72rem;font-weight:600">of {equip_n} abnormal</span></div><div class="area-pct">{pct:.1f}% of equipment</div><div class="signal-bar"><div class="signal-fill" style="width:{min(100,pct):.0f}%"></div></div></div>',unsafe_allow_html=True)
-                    col.button(f"🔎 View {area}",key=f"dash_area_{safe_key}",use_container_width=True,on_click=_navigate_dashboard,args=("〽  Equipment Health",area))
-            st.markdown('</div>', unsafe_allow_html=True)
+            with st.container(border=True, key="dash_area_signal"):
+                st.markdown('<div class="dashboard-panel-header">📍 Area Signal</div>', unsafe_allow_html=True)
+                st.markdown('<div class="dashboard-panel-body">', unsafe_allow_html=True)
+                st.markdown('<div class="dashboard-panel-sub">Areas with the highest concentration of non-healthy equipment.</div>', unsafe_allow_html=True)
+
+                area_df = screening.copy()
+                area_map = master[["Equipment Code", "Area"]].drop_duplicates("Equipment Code")
+                area_df = area_df.merge(area_map, on="Equipment Code", how="left")
+                area_df["Area"] = area_df["Area"].fillna("").astype(str).str.strip()
+                area_df = area_df[area_df["Area"] != ""]
+                if not area_df.empty:
+                    area_summary = (
+                        area_df.assign(Abnormal=area_df["Condition"]!="HEALTHY")
+                        .groupby("Area",as_index=False)
+                        .agg(Equipment=("Equipment Code","count"),Abnormal=("Abnormal","sum"))
+                    )
+                    area_summary["Abnormal %"] = area_summary["Abnormal"]/area_summary["Equipment"].clip(lower=1)*100
+                    area_summary = area_summary.sort_values(["Abnormal","Abnormal %"],ascending=[False,False]).head(6).reset_index(drop=True)
+                    cols=st.columns(3, gap="small")
+                    for i,rr in area_summary.iterrows():
+                        col=cols[i%3]
+                        area=rr["Area"]; abnormal_n=int(rr["Abnormal"]); equip_n=int(rr["Equipment"]); pct=float(rr["Abnormal %"])
+                        safe_key=re.sub(r"[^A-Za-z0-9]+","_",str(area))
+                        # Severity colour is based on concentration.
+                        bar_color = "#f04438" if pct >= 50 else "#f79009" if pct >= 25 else "#12b76a"
+                        col.markdown(
+                            f'<div class="area-card">'
+                            f'<div class="area-title">📍 {area}</div>'
+                            f'<div class="area-number">{abnormal_n} <span style="font-size:.72rem;font-weight:600">of {equip_n} abnormal</span></div>'
+                            f'<div class="area-pct">{pct:.1f}% of equipment</div>'
+                            f'<div class="signal-bar"><div class="signal-fill" style="width:{min(100,pct):.0f}%;background:{bar_color}"></div></div>'
+                            f'</div>',
+                            unsafe_allow_html=True
+                        )
+                        col.button(
+                            f"🔎 View {area}", key=f"dash_area_{safe_key}",
+                            use_container_width=True, on_click=_navigate_dashboard,
+                            args=("〽  Equipment Health",area)
+                        )
+                st.markdown('<div style="height:.2rem"></div>', unsafe_allow_html=True)
+                st.markdown('</div>', unsafe_allow_html=True)
 
         with right:
-            st.markdown('<div class="dashboard-panel tall">', unsafe_allow_html=True)
-            st.markdown('<div class="dashboard-panel-head">🚦 Priority Mix</div>', unsafe_allow_html=True)
-            st.markdown('<div class="dashboard-panel-sub">Current screening distribution by maintenance priority.</div>', unsafe_allow_html=True)
-            priority_total=max(p1n+p2n+p3n+p4n,1)
-            for label,n,icon in [("P1 Immediate",p1n,"🔴"),("P2 Inspection",p2n,"🟠"),("P3 Monitor",p3n,"🟡"),("P4 Routine",p4n,"🟢")]:
-                pct=n/priority_total*100
-                st.markdown(f'<div class="priority-line"><div class="priority-line-top"><span>{icon} {label}</span><b>{n:,}</b></div><div class="signal-bar"><div class="signal-fill" style="width:{pct:.0f}%"></div></div></div>',unsafe_allow_html=True)
-            st.markdown('<div style="height:.65rem"></div>',unsafe_allow_html=True)
-            st.markdown('<div class="focus-box" style="margin-top:.35rem;font-size:.72rem"><b>🔴 P1</b> immediate review &nbsp;•&nbsp; <b>🟠 P2</b> planned inspection &nbsp;•&nbsp; <b>🟡 P3</b> monitor &nbsp;•&nbsp; <b>🟢 P4</b> routine</div>', unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
+            with st.container(border=True, key="dash_priority_mix"):
+                st.markdown('<div class="dashboard-panel-header">🚦 Priority Mix</div>', unsafe_allow_html=True)
+                st.markdown('<div class="dashboard-panel-body">', unsafe_allow_html=True)
+                st.markdown('<div class="dashboard-panel-sub">Current screening distribution by maintenance priority.</div>', unsafe_allow_html=True)
+                priority_total=max(p1n+p2n+p3n+p4n,1)
+                for label,n,icon,cls in [
+                    ("P1 Immediate",p1n,"🔴","p1"),
+                    ("P2 Inspection",p2n,"🟠","p2"),
+                    ("P3 Monitor",p3n,"🟡","p3"),
+                    ("P4 Routine",p4n,"🟢","p4")
+                ]:
+                    pct=n/priority_total*100
+                    st.markdown(
+                        f'<div class="priority-line {cls}">'
+                        f'<div class="priority-line-top"><span>{icon} {label}</span><b>{n:,} <span style="font-weight:500;color:#667085">({pct:.1f}%)</span></b></div>'
+                        f'<div class="signal-bar"><div class="signal-fill" style="width:{pct:.0f}%"></div></div></div>',
+                        unsafe_allow_html=True
+                    )
+                st.markdown('<div style="height:.55rem"></div>', unsafe_allow_html=True)
+                st.markdown(
+                    '<div class="focus-box" style="font-size:.72rem">'
+                    '<b>🔴 P1</b> immediate review &nbsp;•&nbsp; '
+                    '<b>🟠 P2</b> planned inspection &nbsp;•&nbsp; '
+                    '<b>🟡 P3</b> monitor &nbsp;•&nbsp; '
+                    '<b>🟢 P4</b> routine</div>',
+                    unsafe_allow_html=True
+                )
+                st.markdown('</div>', unsafe_allow_html=True)
 
         st.caption("Historical screening is decision support only — not an alarm/trip limit or failure prediction. Validate abnormal signals against OEM limits, process condition, field inspection and engineering judgement.")
 
