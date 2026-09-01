@@ -197,6 +197,106 @@ st.markdown("""<style>
 .health-findings{background:#f8fafc;border:1px solid #dfe5ee;border-radius:9px;padding:.8rem}.health-finding-title{font-weight:800;color:#25364d;font-size:.82rem}.health-finding-meta{font-size:.72rem;color:#667085;margin-top:.25rem}.health-recommendation{background:#eef6ff;border:1px solid #bfdbfe;border-radius:8px;padding:.72rem .8rem;color:#1e40af;font-size:.76rem;line-height:1.4;margin-top:.65rem}
 @media(max-width:900px){.health-selector-grid{grid-template-columns:1fr}}
 
+
+/* ===== Equipment Health v8 — visual layout matching approved concept ===== */
+.health-v8-banner{
+    background:linear-gradient(135deg,#102b55 0%,#244f82 100%);
+    color:#fff;border-radius:10px;padding:.85rem 1rem;
+    display:flex;align-items:center;justify-content:space-between;gap:1rem;
+    box-shadow:0 4px 12px rgba(16,24,40,.12);margin:.55rem 0 .65rem;
+}
+.health-v8-banner-left{display:flex;align-items:center;gap:.85rem;min-width:0}
+.health-v8-eq-icon{font-size:2.35rem;line-height:1}
+.health-v8-code{font-size:1.28rem;font-weight:850;line-height:1.05}
+.health-v8-name{font-size:.75rem;color:#d7e5f5;margin-top:.22rem}
+.health-v8-area{display:inline-block;margin-top:.28rem;padding:.18rem .48rem;border-radius:999px;background:rgba(255,255,255,.13);font-size:.64rem;color:#e7f0fb}
+.health-v8-banner-right{text-align:right;white-space:nowrap}
+.health-v8-badge{display:inline-block;padding:.42rem .7rem;border-radius:999px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);font-size:.72rem;font-weight:850;color:#fff}
+.health-v8-last{font-size:.64rem;color:#d7e5f5;margin-top:.3rem}
+.health-v8-kpi{
+    border:1px solid #dce3ec;border-radius:9px;background:#f8fafc;
+    min-height:96px;padding:.72rem .78rem;box-sizing:border-box;
+    box-shadow:0 2px 6px rgba(16,24,40,.045)
+}
+.health-v8-kpi .label{font-size:.66rem;color:#667085;font-weight:800;text-transform:uppercase;letter-spacing:.02em}
+.health-v8-kpi .value{font-size:1.32rem;font-weight:850;color:#172b4d;line-height:1.12;margin-top:.28rem}
+.health-v8-kpi .small{font-size:.64rem;color:#98a2b3;margin-top:.32rem;line-height:1.25}
+.health-v8-kpi.condition-attention{background:#fff7ed;border-color:#fed7aa}
+.health-v8-kpi.condition-deteriorating{background:#fffbeb;border-color:#fde68a}
+.health-v8-kpi.condition-critical{background:#fff1f2;border-color:#fecdd3}
+.health-v8-kpi.condition-healthy{background:#f0fdf4;border-color:#bbf7d0}
+.health-v8-kpi.priority-p1{background:#fff1f2;border-color:#fecdd3}
+.health-v8-kpi.priority-p2{background:#fff7ed;border-color:#fed7aa}
+.health-v8-kpi.priority-p3{background:#fffbeb;border-color:#fde68a}
+.health-v8-kpi.priority-p4{background:#f0fdf4;border-color:#bbf7d0}
+.health-v8-why{
+    background:#fffbeb;border:1px solid #fed7aa;border-radius:9px;
+    padding:.7rem .82rem;color:#7a4b00;font-size:.73rem;line-height:1.4;margin:.48rem 0 .65rem
+}
+.health-v8-why-title{font-weight:850;color:#9a5b00;margin-bottom:.16rem}
+.health-v8-panel{
+    background:#fff;border:1px solid #dfe5ee;border-radius:9px;
+    padding:.72rem .76rem;box-sizing:border-box;height:100%
+}
+.health-v8-panel-head{
+    font-size:.76rem;font-weight:850;color:#25364d;
+    padding-bottom:.5rem;border-bottom:1px solid #edf0f4;margin-bottom:.55rem
+}
+.health-v8-dist-grid{display:grid;grid-template-columns:1fr 1fr;gap:.42rem}
+.health-v8-dist{
+    border-radius:8px;padding:.55rem .62rem;min-height:82px;box-sizing:border-box;
+    border:1px solid #e3e8ef
+}
+.health-v8-dist .dlabel{font-size:.62rem;font-weight:850}
+.health-v8-dist .dvalue{font-size:1.18rem;font-weight:850;color:#172b4d;margin-top:.22rem}
+.health-v8-dist .dpct{font-size:.59rem;color:#98a2b3;margin-top:.1rem}
+.health-v8-dist.normal{background:#f0fdf4;border-color:#bbf7d0}.health-v8-dist.normal .dlabel{color:#07895a}
+.health-v8-dist.deteriorating{background:#fffbeb;border-color:#fde68a}.health-v8-dist.deteriorating .dlabel{color:#a16207}
+.health-v8-dist.attention{background:#fff7ed;border-color:#fed7aa}.health-v8-dist.attention .dlabel{color:#c2410c}
+.health-v8-dist.critical{background:#fff1f2;border-color:#fecdd3}.health-v8-dist.critical .dlabel{color:#c81e1e}
+.health-v8-table-wrap{overflow-x:auto;border:1px solid #e5e9ef;border-radius:7px}
+.health-v8-table{width:100%;border-collapse:collapse;font-size:.61rem;color:#344054}
+.health-v8-table th{background:#f4f7fa;color:#667085;font-weight:800;text-align:left;padding:.42rem .38rem;white-space:nowrap;border-bottom:1px solid #dfe5ee}
+.health-v8-table td{padding:.45rem .38rem;border-bottom:1px solid #edf0f4;white-space:nowrap}
+.health-v8-table tr:last-child td{border-bottom:0}
+.health-v8-status{font-weight:850}
+.health-v8-status.deteriorating{color:#a16207}.health-v8-status.attention{color:#c2410c}.health-v8-status.critical{color:#c81e1e}
+.health-v8-finding{
+    background:#f8fafc;border:1px solid #dfe5ee;border-radius:8px;padding:.65rem .7rem
+}
+.health-v8-finding-title{font-size:.74rem;font-weight:850;color:#25364d}
+.health-v8-pills{display:flex;gap:.32rem;flex-wrap:wrap;margin-top:.45rem}
+.health-v8-pill{font-size:.59rem;font-weight:750;color:#475467;background:#fff;border:1px solid #dfe5ee;border-radius:999px;padding:.22rem .42rem}
+.health-v8-reco{
+    background:#eef6ff;border:1px solid #bfdbfe;border-radius:7px;
+    padding:.58rem .65rem;color:#1e40af;font-size:.65rem;line-height:1.35;margin-top:.52rem
+}
+.health-v8-trend-panel{
+    background:#fff;border:1px solid #dfe5ee;border-radius:9px;padding:.72rem .76rem;margin-top:.65rem
+}
+.health-v8-trend-head{font-size:.76rem;font-weight:850;color:#25364d;margin-bottom:.2rem}
+.health-v8-trend-sub{font-size:.62rem;color:#98a2b3;margin-bottom:.35rem}
+.health-v8-trend-metric{
+    padding:.5rem .55rem;background:#f8fafc;border:1px solid #e5e9ef;border-radius:7px
+}
+.health-v8-trend-metric .tm-label{font-size:.58rem;color:#667085;font-weight:750}
+.health-v8-trend-metric .tm-value{font-size:1.02rem;color:#172b4d;font-weight:850;margin-top:.18rem}
+.health-v8-trend-metric .tm-note{font-size:.57rem;color:#98a2b3;margin-top:.12rem}
+.health-v8-actions{margin-top:.55rem}
+.health-v8-note{
+    background:#eff8ff;border:1px solid #b2ddff;border-radius:8px;
+    padding:.58rem .7rem;color:#175cd3;font-size:.63rem;line-height:1.35;margin-top:.6rem
+}
+@media(max-width:1000px){
+    .health-v8-banner{align-items:flex-start}
+    .health-v8-banner-right{text-align:left}
+    .health-v8-dist-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:700px){
+    .health-v8-banner{flex-direction:column}
+    .health-v8-banner-right{text-align:left}
+}
+
 </style>""",unsafe_allow_html=True)
 
 @st.cache_data
@@ -1021,122 +1121,322 @@ if page == "Dashboard":
         st.caption("Historical screening is decision support only — not an alarm/trip limit or failure prediction. Validate abnormal signals against OEM limits, process condition, field inspection and engineering judgement.")
 
 elif page == "Equipment Health":
-    st.markdown('<div class="opp-page-title">🩺 Equipment Health</div>',unsafe_allow_html=True)
-    st.markdown('<div class="opp-page-sub">Identify abnormal equipment and understand which parameter is driving the screening result.</div>',unsafe_allow_html=True)
-    st.markdown('<div class="opp-note"><b>Historical screening only:</b> this view detects behaviour outside the historical P05–P95 range. Always validate the signal against OEM limits, operating philosophy, field condition and engineering judgement.</div>',unsafe_allow_html=True)
+    # -------------------------------------------------------------------------
+    # Equipment Health v8
+    # Visual concept: dark equipment header -> KPI strip -> why flagged ->
+    # condition / abnormal parameters / engineering finding -> trend -> actions.
+    # The screening/baseline engine above is intentionally preserved.
+    # -------------------------------------------------------------------------
+    st.markdown('<div class="opp-page-title">🩺 Equipment Health</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="opp-page-sub">Identify abnormal equipment and understand which parameter is driving the screening result.</div>',
+        unsafe_allow_html=True
+    )
+    st.markdown(
+        '<div class="opp-note"><b>Historical screening only:</b> this view detects behaviour outside the historical P05–P95 range. Always validate the signal against OEM limits, operating philosophy, field condition and engineering judgement.</div>',
+        unsafe_allow_html=True
+    )
 
-    area_options=["All Areas"]+sorted([x for x in master["Area"].unique() if str(x).strip()])
-    selected_area=st.selectbox("Area",area_options,key="health_area")
-    area_view=master if selected_area=="All Areas" else master[master["Area"]==selected_area]
-    eq_codes=sorted([str(x) for x in area_view["Equipment Code"].unique() if str(x)])
+    area_options = ["All Areas"] + sorted([x for x in master["Area"].unique() if str(x).strip()])
+    selected_area = st.selectbox("Area", area_options, key="health_area")
+    area_view = master if selected_area == "All Areas" else master[master["Area"] == selected_area]
+
+    eq_codes = sorted([str(x) for x in area_view["Equipment Code"].unique() if str(x)])
     if not eq_codes:
         st.warning("No canonical equipment code is available for this area.")
     else:
-        eq_labels={}
+        eq_labels = {}
         for code in eq_codes:
-            rr=area_view[area_view["Equipment Code"]==code]["Equipment"].replace("",np.nan).dropna()
-            eq_labels[code]=f"{code} — {rr.iloc[0] if len(rr) else 'Equipment description not yet mapped'}"
-        default_eq=st.session_state.get("health_selected_eq",eq_codes[0])
-        if default_eq not in eq_codes: default_eq=eq_codes[0]
-        selected_eq=st.selectbox("Equipment",eq_codes,index=eq_codes.index(default_eq),format_func=lambda x:eq_labels.get(x,x),key="health_selected_eq")
-        ev=area_view[area_view["Equipment Code"]==selected_eq].copy()
-        names=ev["Equipment"].replace("",np.nan).dropna()
-        eq_name=names.iloc[0] if len(names) else "Equipment description not yet mapped"
+            rr = area_view[area_view["Equipment Code"] == code]["Equipment"].replace("", np.nan).dropna()
+            eq_labels[code] = f"{code} — {rr.iloc[0] if len(rr) else 'Equipment description not yet mapped'}"
 
-        rows=[];seen=set()
-        for _,meta in ev.iterrows():
-            tag=str(meta.get("PLC Tag","")).strip()
-            if not tag or tag in seen: continue
-            seen.add(tag); stats=baseline_condition(_numeric_series(df,tag))
-            if stats is None: continue
-            parameter,unit,source=infer_parameter(tag,meta.get("Suggested Parameter",""),meta.get("Suggested Unit",""),meta.get("Instrument Type",""))
-            rows.append({"PLC Tag":tag,"Parameter":parameter,"Unit":unit,"Parameter Source":source,**stats,"Confidence":str(meta.get("Confidence","") or "Low"),"Action":parameter_action(parameter,tag)})
+        default_eq = st.session_state.get("health_selected_eq", eq_codes[0])
+        if default_eq not in eq_codes:
+            default_eq = eq_codes[0]
+
+        selected_eq = st.selectbox(
+            "Equipment", eq_codes, index=eq_codes.index(default_eq),
+            format_func=lambda x: eq_labels.get(x, x), key="health_selected_eq"
+        )
+
+        ev = area_view[area_view["Equipment Code"] == selected_eq].copy()
+        names = ev["Equipment"].replace("", np.nan).dropna()
+        eq_name = names.iloc[0] if len(names) else "Equipment description not yet mapped"
+        eq_area = str(ev["Area"].iloc[0]) if len(ev) and str(ev["Area"].iloc[0]).strip() else selected_area
+
+        rows = []
+        seen = set()
+        for _, meta in ev.iterrows():
+            tag = str(meta.get("PLC Tag", "")).strip()
+            if not tag or tag in seen:
+                continue
+            seen.add(tag)
+            stats = baseline_condition(_numeric_series(df, tag))
+            if stats is None:
+                continue
+            parameter, unit, source = infer_parameter(
+                tag, meta.get("Suggested Parameter", ""),
+                meta.get("Suggested Unit", ""), meta.get("Instrument Type", "")
+            )
+            rows.append({
+                "PLC Tag": tag, "Parameter": parameter, "Unit": unit,
+                "Parameter Source": source, **stats,
+                "Confidence": str(meta.get("Confidence", "") or "Low"),
+                "Action": parameter_action(parameter, tag)
+            })
 
         if not rows:
             st.warning("No sufficient historical numeric data is available for this equipment.")
         else:
-            health=pd.DataFrame(rows)
-            critical=int((health.Condition=="Critical").sum());attention=int((health.Condition=="Attention").sum());deteriorating=int((health.Condition=="Deteriorating").sum());normal=int((health.Condition=="Normal").sum())
-            severity={"Normal":0,"Deteriorating":12,"Attention":25,"Critical":50};conf_weight={"High":1.0,"Medium":.85,"Low":.65}
-            health["Penalty"]=[min(60,(severity.get(r.Condition,0)+min(r["Outside Fraction"]*12,8))*conf_weight.get(r.Confidence,.65)) for _,r in health.iterrows()]
-            raw_score=100-float(health["Penalty"].mean())
-            if critical: overall,risk,priority,icon,cap="CRITICAL","HIGH","P1","🔴",69
-            elif attention: overall,risk,priority,icon,cap="ATTENTION","MEDIUM","P2","🟠",89
-            elif deteriorating: overall,risk,priority,icon,cap="DETERIORATING","MEDIUM-LOW","P3","🟡",94
-            else: overall,risk,priority,icon,cap="HEALTHY","LOW","P4","🟢",100
-            score=int(round(max(0,min(cap,raw_score))))
+            health = pd.DataFrame(rows)
+            critical = int((health.Condition == "Critical").sum())
+            attention = int((health.Condition == "Attention").sum())
+            deteriorating = int((health.Condition == "Deteriorating").sum())
+            normal = int((health.Condition == "Normal").sum())
+            abnormal = critical + attention + deteriorating
 
-            st.markdown(f'<div class="health-equipment-banner"><div><div class="heb-code">{selected_eq}</div><div class="heb-name">{eq_name}</div></div><div class="heb-badge">{icon} {priority} · {overall}</div></div>',unsafe_allow_html=True)
-
-            c1,c2,c3,c4,c5=st.columns(5,gap="small")
-            kpi_data=[
-                (c1,"Health Score",f"{score}/100",f"{len(health)} monitored parameter(s)",f"overall {overall.lower()}",overall.lower()),
-                (c2,"Condition",f"{icon} {overall}",f"{critical+attention+deteriorating} non-normal parameter(s)","historical screening result",overall.lower()),
-                (c3,"Parameters",f"{len(health):,}",f"{normal:,} normal", "monitored PLC parameters","healthy"),
-                (c4,"Risk Level",risk,"engineering review level","not a failure prediction","attention" if risk!="LOW" else "healthy"),
-                (c5,"Maintenance Priority",priority,f"{priority} screening level",f"based on {overall.lower()} condition","critical" if priority=="P1" else "attention" if priority=="P2" else "deteriorating" if priority=="P3" else "healthy"),
+            severity = {"Normal": 0, "Deteriorating": 12, "Attention": 25, "Critical": 50}
+            conf_weight = {"High": 1.0, "Medium": .85, "Low": .65}
+            health["Penalty"] = [
+                min(60, (severity.get(r.Condition, 0) + min(r["Outside Fraction"] * 12, 8))
+                    * conf_weight.get(r.Confidence, .65))
+                for _, r in health.iterrows()
             ]
-            for col,label,value,small,foot,variant in kpi_data:
-                col.markdown(f'<div class="health-kpi {"overall" if label in ["Health Score","Condition"] else ""} {variant}"><div class="hk-label">{label}</div><div class="hk-value">{value}</div><div class="hk-small">{small}<br>{foot}</div></div>',unsafe_allow_html=True)
+            raw_score = 100 - float(health["Penalty"].mean())
 
-            st.markdown('<div class="opp-section">📊 Condition Distribution</div>',unsafe_allow_html=True)
-            d1,d2,d3,d4=st.columns(4,gap="small")
-            dist=[(d1,"NORMAL",normal,"hd-normal"),(d2,"DETERIORATING",deteriorating,"hd-deteriorating"),(d3,"ATTENTION",attention,"hd-attention"),(d4,"CRITICAL",critical,"hd-critical")]
-            total=max(len(health),1)
-            for col,label,n,cls in dist:
-                col.markdown(f'<div class="health-dist-card {cls}"><div class="hd-label">{label}</div><div class="hd-value">{n:,}</div><div class="hd-pct">{n/total*100:.0f}% of monitored parameters</div></div>',unsafe_allow_html=True)
-
-            st.markdown('<div class="opp-section">📋 Parameter Condition</div>',unsafe_allow_html=True)
-            display_cols=["PLC Tag","Parameter","Unit","Current","Baseline Low","Baseline High","Direction","Shift %","Outside Fraction","Condition","Confidence"]
-            table=health[display_cols].copy()
-            table["Shift %"]=table["Shift %"].round(2)
-            table["Outside Fraction"]=table["Outside Fraction"].round(3)
-            table["Current"]=table["Current"].round(3)
-            table["Baseline Low"]=table["Baseline Low"].round(3)
-            table["Baseline High"]=table["Baseline High"].round(3)
-            table_height=min(520,max(90,42+len(table)*35))
-            st.dataframe(table,use_container_width=True,height=table_height,hide_index=True)
-
-            flagged=health[health["Condition"]!="Normal"].copy()
-            st.markdown('<div class="opp-section">🔎 Engineering Findings</div>',unsafe_allow_html=True)
-            if flagged.empty:
-                st.success("No parameter currently shows a significant historical-behaviour deviation.")
+            if critical:
+                overall, risk, priority, icon, cap = "CRITICAL", "HIGH", "P1", "🔴", 69
+            elif attention:
+                overall, risk, priority, icon, cap = "ATTENTION", "MEDIUM", "P2", "🟠", 89
+            elif deteriorating:
+                overall, risk, priority, icon, cap = "DETERIORATING", "MEDIUM-LOW", "P3", "🟡", 94
             else:
-                # Robust ordering: do not assume every health frame has the deviation column.
-                order={"Critical":0,"Attention":1,"Deteriorating":2,"Normal":3}
-                flagged["_order"]=flagged["Condition"].map(order).fillna(9)
-                sort_cols=[c for c in ["_order","Deviation Sigma"] if c in flagged.columns]
-                flagged=flagged.sort_values(sort_cols,ascending=[True,False][:len(sort_cols)])
-                options=flagged["PLC Tag"].tolist()
-                selected_tag=st.selectbox("Problem parameter",options,format_func=lambda x:f"{x} — {flagged.loc[flagged['PLC Tag']==x,'Parameter'].iloc[0]}",key=f"problem_tag_{selected_eq}")
-                r=flagged[flagged["PLC Tag"]==selected_tag].iloc[0]
-                cond=str(r["Condition"])
-                tone="critical" if cond=="Critical" else "attention" if cond=="Attention" else "deteriorating"
-                st.markdown(f'<div class="health-findings"><div class="health-finding-title">{icon if cond==overall else ("🔴" if cond=="Critical" else "🟠" if cond=="Attention" else "🟡")} {selected_tag} — {r["Parameter"]}</div><div class="health-finding-meta"><b>Condition:</b> {cond} &nbsp; · &nbsp; <b>Current:</b> {r["Current"]:.3f} {r["Unit"]} &nbsp; · &nbsp; <b>Trend:</b> {r["Direction"]} ({r["Shift %"]:+.1f}%) &nbsp; · &nbsp; <b>Confidence:</b> {r["Confidence"]}</div><div class="health-recommendation"><b>🛠 Engineering recommendation</b><br>{r["Action"]}</div></div>',unsafe_allow_html=True)
+                overall, risk, priority, icon, cap = "HEALTHY", "LOW", "P4", "🟢", 100
 
-                trend=df[["ArchiveTime",selected_tag]].copy() if selected_tag in df.columns else pd.DataFrame()
+            score = int(round(max(0, min(cap, raw_score))))
+
+            try:
+                last_dt = pd.to_datetime(df["ArchiveTime"], errors="coerce").max()
+                last_label = last_dt.strftime("%d %b %Y %H:%M") if pd.notna(last_dt) else "—"
+            except Exception:
+                last_label = "—"
+
+            condition_class = overall.lower()
+            priority_class = priority.lower()
+
+            # Equipment identity banner
+            st.markdown(
+                f'<div class="health-v8-banner">'
+                f'<div class="health-v8-banner-left">'
+                f'<div class="health-v8-eq-icon">⚙️</div>'
+                f'<div><div class="health-v8-code">{selected_eq}</div>'
+                f'<div class="health-v8-name">{eq_name}</div>'
+                f'<span class="health-v8-area">{eq_area}</span></div></div>'
+                f'<div class="health-v8-banner-right">'
+                f'<div class="health-v8-badge">{icon} {priority} · {overall}</div>'
+                f'<div class="health-v8-last">🗓 Last data: {last_label}</div>'
+                f'</div></div>',
+                unsafe_allow_html=True
+            )
+
+            # KPI strip
+            k1, k2, k3, k4, k5 = st.columns(5, gap="small")
+            kpi_items = [
+                (k1, "Condition", f"{icon} {overall}", f"{abnormal} parameter(s) require attention", f"condition-{condition_class}"),
+                (k2, "Screening Score", f"{score} / 100", "Historical screening indicator", ""),
+                (k3, "Abnormal Parameters", f"{abnormal} / {len(health)}", f"{abnormal/max(len(health),1)*100:.1f}% of monitored parameters", ""),
+                (k4, "Maintenance Priority", priority, f"{risk} engineering review level", f"priority-{priority_class}"),
+                (k5, "Risk Level", risk, "Engineering review level", f"priority-{priority_class}" if risk != "LOW" else "condition-healthy"),
+            ]
+            for col, label, value, small, cls in kpi_items:
+                col.markdown(
+                    f'<div class="health-v8-kpi {cls}">'
+                    f'<div class="label">{label}</div><div class="value">{value}</div>'
+                    f'<div class="small">{small}</div></div>',
+                    unsafe_allow_html=True
+                )
+
+            # Why flagged
+            flagged = health[health["Condition"] != "Normal"].copy()
+            if not flagged.empty:
+                order = {"Critical": 0, "Attention": 1, "Deteriorating": 2, "Normal": 3}
+                flagged["_order"] = flagged["Condition"].map(order).fillna(9)
+                sort_cols = [c for c in ["_order", "Deviation Sigma"] if c in flagged.columns]
+                flagged = flagged.sort_values(sort_cols, ascending=[True, False][:len(sort_cols)])
+                primary = flagged.iloc[0]
+                st.markdown(
+                    f'<div class="health-v8-why">'
+                    f'<div class="health-v8-why-title">⚠ WHY IS THIS EQUIPMENT FLAGGED?</div>'
+                    f'{abnormal} parameter(s) require attention. The primary signal is '
+                    f'<b>{primary["Parameter"]}</b> ({primary["PLC Tag"]}) showing '
+                    f'<b>{primary["Direction"].lower()}</b> behaviour with a recent shift of '
+                    f'<b>{primary["Shift %"]:+.1f}%</b>. Historical behaviour is assessed against '
+                    f'the P05–P95 range; field verification is recommended before maintenance action.'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
+
+            # Three-panel diagnostic area
+            p_left, p_mid, p_right = st.columns([.9, 1.65, 1.0], gap="small")
+
+            with p_left:
+                st.markdown(
+                    '<div class="health-v8-panel">'
+                    '<div class="health-v8-panel-head">📊 CONDITION DISTRIBUTION</div>'
+                    '<div class="health-v8-dist-grid">',
+                    unsafe_allow_html=True
+                )
+                total = max(len(health), 1)
+                dist_items = [
+                    ("normal", "NORMAL", normal),
+                    ("deteriorating", "DETERIORATING", deteriorating),
+                    ("attention", "ATTENTION", attention),
+                    ("critical", "CRITICAL", critical),
+                ]
+                for cls, label, n in dist_items:
+                    st.markdown(
+                        f'<div class="health-v8-dist {cls}"><div class="dlabel">{label}</div>'
+                        f'<div class="dvalue">{n:,}</div><div class="dpct">{n/total*100:.0f}% of parameters</div></div>',
+                        unsafe_allow_html=True
+                    )
+                st.markdown('</div></div>', unsafe_allow_html=True)
+
+            with p_mid:
+                st.markdown(
+                    '<div class="health-v8-panel">'
+                    '<div class="health-v8-panel-head">📈 PARAMETER CONDITION <span style="font-weight:600;color:#98a2b3">(Top Abnormal Parameters)</span></div>',
+                    unsafe_allow_html=True
+                )
+                if flagged.empty:
+                    st.success("No parameter currently shows a significant historical-behaviour deviation.")
+                else:
+                    table_rows = []
+                    for _, rr in flagged.head(6).iterrows():
+                        scls = str(rr["Condition"]).lower()
+                        table_rows.append(
+                            f'<tr><td><span class="health-v8-status {scls}">{rr["Condition"]}</span></td>'
+                            f'<td>{rr["PLC Tag"]}</td><td>{rr["Parameter"]}</td>'
+                            f'<td>{rr["Current"]:.3f} {rr["Unit"]}</td>'
+                            f'<td>{rr["Baseline Low"]:.3f} – {rr["Baseline High"]:.3f}</td>'
+                            f'<td>{rr["Shift %"]:+.1f}%</td><td>{rr["Confidence"]}</td></tr>'
+                        )
+                    table_html = (
+                        '<div class="health-v8-table-wrap"><table class="health-v8-table">'
+                        '<thead><tr><th>Status</th><th>PLC Tag</th><th>Parameter</th><th>Current</th>'
+                        '<th>Baseline (P05–P95)</th><th>Trend Shift</th><th>Confidence</th></tr></thead>'
+                        '<tbody>' + ''.join(table_rows) + '</tbody></table></div>'
+                    )
+                    st.markdown(table_html, unsafe_allow_html=True)
+                    if normal:
+                        st.markdown(
+                            f'<div style="text-align:center;font-size:.62rem;color:#175cd3;font-weight:750;margin-top:.45rem">'
+                            f'⌄ {normal} normal parameter(s) are available in the detailed table below.</div>',
+                            unsafe_allow_html=True
+                        )
+                st.markdown('</div>', unsafe_allow_html=True)
+
+            with p_right:
+                st.markdown(
+                    '<div class="health-v8-panel">'
+                    '<div class="health-v8-panel-head">🔎 ENGINEERING FINDING <span style="font-weight:600;color:#98a2b3">(Primary Signal)</span></div>',
+                    unsafe_allow_html=True
+                )
+                if flagged.empty:
+                    st.success("No abnormal finding.")
+                    selected_tag = None
+                else:
+                    options = flagged["PLC Tag"].tolist()
+                    selected_tag = st.selectbox(
+                        "Problem parameter", options,
+                        format_func=lambda x: f"{x} — {flagged.loc[flagged['PLC Tag']==x,'Parameter'].iloc[0]}",
+                        key=f"problem_tag_{selected_eq}"
+                    )
+                    r = flagged[flagged["PLC Tag"] == selected_tag].iloc[0]
+                    cond = str(r["Condition"])
+                    status_icon = "🔴" if cond == "Critical" else "🟠" if cond == "Attention" else "🟡"
+                    st.markdown(
+                        f'<div class="health-v8-finding">'
+                        f'<div class="health-v8-finding-title">{status_icon} {selected_tag} — {r["Parameter"]}</div>'
+                        f'<div class="health-v8-pills">'
+                        f'<span class="health-v8-pill">Condition: {cond}</span>'
+                        f'<span class="health-v8-pill">Trend: {r["Direction"]} ({r["Shift %"]:+.1f}%)</span>'
+                        f'<span class="health-v8-pill">Confidence: {r["Confidence"]}</span>'
+                        f'</div>'
+                        f'<div class="health-v8-reco"><b>🛠 ENGINEERING RECOMMENDATION</b><br>{r["Action"]}</div>'
+                        f'</div>',
+                        unsafe_allow_html=True
+                    )
+                st.markdown('</div>', unsafe_allow_html=True)
+
+            # Detailed normal parameters, kept collapsible so the abnormal signal remains primary.
+            if not flagged.empty and normal:
+                with st.expander(f"📋 Show {normal} normal parameter(s)", expanded=False):
+                    normal_table = health[health["Condition"] == "Normal"][
+                        ["PLC Tag", "Parameter", "Unit", "Current", "Baseline Low", "Baseline High", "Direction", "Confidence"]
+                    ].copy()
+                    for c in ["Current", "Baseline Low", "Baseline High"]:
+                        normal_table[c] = normal_table[c].round(3)
+                    st.dataframe(normal_table, use_container_width=True, hide_index=True)
+
+            # Problem trend
+            if selected_tag is not None:
+                r = flagged[flagged["PLC Tag"] == selected_tag].iloc[0]
+                trend = df[["ArchiveTime", selected_tag]].copy() if selected_tag in df.columns else pd.DataFrame()
                 if not trend.empty:
-                    trend[selected_tag]=pd.to_numeric(trend[selected_tag],errors="coerce");trend=trend.dropna().set_index("ArchiveTime")[selected_tag]
+                    trend[selected_tag] = pd.to_numeric(trend[selected_tag], errors="coerce")
+                    trend = trend.dropna().sort_values("ArchiveTime").set_index("ArchiveTime")
                     if len(trend):
-                        st.markdown('<div class="opp-section">📈 Problem Trend</div>',unsafe_allow_html=True)
-                        st.line_chart(trend,height=300)
-                        t1,t2,t3=st.columns(3)
-                        t1.metric("Current",f"{r['Current']:.3f} {r['Unit']}")
-                        t2.metric("Historical P05–P95",f"{r['Baseline Low']:.3f}–{r['Baseline High']:.3f}")
-                        t3.metric("Recent Shift",f"{r['Shift %']:+.1f}%")
+                        plot_df = pd.DataFrame({
+                            "Current Value": trend[selected_tag],
+                            "Historical P05": float(r["Baseline Low"]),
+                            "Historical P95": float(r["Baseline High"]),
+                        }, index=trend.index)
 
-                b1,b2,b3=st.columns(3,gap="small")
-                if b1.button("📈 Open Engineering Trend",key=f"health_trend_{selected_eq}_{selected_tag}",use_container_width=True):
-                    st.session_state["trend_equipment_from_priority"]=selected_eq
-                    st.session_state["trend_tag_from_priority"]=selected_tag
-                    st.info("Equipment and PLC tag are prepared for Engineering Trend. Use the navigation panel to open the trend view.")
-                if b2.button("🎯 Open Maintenance Priority",key=f"health_priority_{selected_eq}",use_container_width=True):
-                    st.session_state["priority_equipment_from_health"]=selected_eq
-                    st.info("Equipment is prepared for Maintenance Priority. Use the navigation panel to review its screening priority.")
-                if b3.button("🔄 Recheck Parameter",key=f"health_recheck_{selected_eq}_{selected_tag}",use_container_width=True):
-                    st.rerun()
+                        st.markdown(
+                            '<div class="health-v8-trend-panel">'
+                            f'<div class="health-v8-trend-head">📈 PROBLEM TREND <span style="font-weight:600;color:#98a2b3">({r["Parameter"]})</span></div>'
+                            '<div class="health-v8-trend-sub">Current signal versus historical P05–P95 screening range.</div>',
+                            unsafe_allow_html=True
+                        )
+                        st.line_chart(plot_df, height=245, use_container_width=True)
 
-            st.markdown('<div class="opp-note"><b>Engineering note:</b> Deteriorating, Attention and Critical findings are screening signals. Confirm instrument validity, process condition and field condition before corrective maintenance is decided.</div>',unsafe_allow_html=True)
+                        t1, t2, t3 = st.columns(3, gap="small")
+                        t1.markdown(
+                            f'<div class="health-v8-trend-metric"><div class="tm-label">CURRENT</div>'
+                            f'<div class="tm-value">{r["Current"]:.3f} {r["Unit"]}</div><div class="tm-note">Latest value</div></div>',
+                            unsafe_allow_html=True
+                        )
+                        t2.markdown(
+                            f'<div class="health-v8-trend-metric"><div class="tm-label">HISTORICAL P05–P95</div>'
+                            f'<div class="tm-value">{r["Baseline Low"]:.3f} – {r["Baseline High"]:.3f}</div>'
+                            f'<div class="tm-note">Typical historical range</div></div>',
+                            unsafe_allow_html=True
+                        )
+                        shift_color = "#d92d20" if abs(float(r["Shift %"])) >= 10 else "#344054"
+                        t3.markdown(
+                            f'<div class="health-v8-trend-metric"><div class="tm-label">RECENT SHIFT</div>'
+                            f'<div class="tm-value" style="color:{shift_color}">{r["Shift %"]:+.1f}%</div>'
+                            f'<div class="tm-note">vs previous shift window</div></div>',
+                            unsafe_allow_html=True
+                        )
+                        st.markdown('</div>', unsafe_allow_html=True)
+
+                        b1, b2, b3 = st.columns(3, gap="small")
+                        if b1.button("📈 Open Engineering Trend", key=f"health_trend_{selected_eq}_{selected_tag}", use_container_width=True):
+                            st.session_state["trend_equipment_from_priority"] = selected_eq
+                            st.session_state["trend_tag_from_priority"] = selected_tag
+                            st.info("Equipment and PLC tag are prepared for Engineering Trend. Use the navigation panel to open the trend view.")
+                        if b2.button("🎯 Open Maintenance Priority", key=f"health_priority_{selected_eq}", use_container_width=True):
+                            st.session_state["priority_equipment_from_health"] = selected_eq
+                            st.info("Equipment is prepared for Maintenance Priority. Use the navigation panel to review its screening priority.")
+                        if b3.button("🔄 Recheck Parameter", key=f"health_recheck_{selected_eq}_{selected_tag}", use_container_width=True):
+                            st.rerun()
+
+            st.markdown(
+                '<div class="health-v8-note"><b>Note:</b> Screening is not a failure prediction. '
+                'Always confirm with field inspection, OEM/design limits, process condition and engineering judgement before maintenance action.</div>',
+                unsafe_allow_html=True
+            )
 
 elif page == "Maintenance Priority":
     # -------------------------------------------------------------------------
