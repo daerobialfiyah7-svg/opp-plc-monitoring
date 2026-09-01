@@ -607,7 +607,7 @@ low = int((master["Confidence"] == "Low").sum())
 
 # Global KPI strip belongs to Dashboard and the other global pages.
 # Maintenance Priority has its own action-oriented summary below.
-if page != "Maintenance Priority":
+if page not in ("Maintenance Priority", "Dashboard"):
     a, b, c, d, e = st.columns(5)
     a.metric("Historical Records", f"{len(df):,}")
     b.metric("PLC Tags", f"{len(master):,}")
@@ -617,47 +617,155 @@ if page != "Maintenance Priority":
     st.divider()
 
 if page == "Dashboard":
-    st.subheader("OPP Engineering Overview")
-    st.write("Dashboard diarahkan sebagai decision-support untuk monitoring proses, kesehatan equipment, identifikasi penyimpangan dan prioritas pemeriksaan.")
-    x, y, z = st.columns(3)
-    x.metric("High", f"{high:,}", "Exact / strong evidence")
-    y.metric("Medium", f"{medium:,}", "Equipment / family evidence")
-    z.metric("Low", f"{low:,}", "Pattern / limited evidence")
-    screening = build_equipment_screening(master, df)
-    findings = build_action_findings(master, df)
-    if not findings.empty:
-        store = ensure_action_store(findings)
-        action_df = actions_dataframe(store)
-        open_count = int((action_df["Status"] != "CLOSED").sum()) if not action_df.empty else 0
-        st.caption(f"Engineering Action Center: {open_count} open finding(s) from current historical screening.")
-    if not screening.empty:
-        st.subheader("Maintenance Screening")
-        p1, p2, p3, p4 = st.columns(4)
-        p1.metric("P1 — Critical", int((screening["Screening Priority"] == "P1").sum()))
-        p2.metric("P2 — Attention", int((screening["Screening Priority"] == "P2").sum()))
-        p3.metric("P3 — Deteriorating", int((screening["Screening Priority"] == "P3").sum()))
-        p4.metric("P4 — Healthy", int((screening["Screening Priority"] == "P4").sum()))
-        st.caption("P1–P4 are condition-based screening priorities. Equipment criticality is not inferred and remains Engineering Review Required until validated.")
-        top = screening[screening["Screening Priority"] != "P4"].sort_values(["Screening Priority", "Health"], ascending=[True, True]).head(8)
-        if not top.empty:
-            st.dataframe(top[["Equipment Code", "Equipment", "Health", "Condition", "Screening Priority", "Risk", "Top Parameter", "Top Finding", "Top Trend", "Top Shift %"]], use_container_width=True, hide_index=True)
-    st.subheader("Area Coverage")
-    # Normalize Area before sorting to prevent mixed-type pandas errors
-    area_series = (
-        master["Area"]
-        .fillna("")
-        .astype(str)
-        .str.strip()
+    # -------------------------------------------------------------------------
+    # Dashboard — PLANT OVERVIEW
+    # Purpose: answer "WHAT IS HAPPENING?" without repeating the detailed
+    # worklists already available in Equipment Health / Maintenance Priority.
+    # -------------------------------------------------------------------------
+    st.markdown('<div class="opp-page-title">🏠 OPP Engineering Monitoring</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="opp-page-sub">Plant condition overview and engineering decision support — start here, then drill down only when needed.</div>',
+        unsafe_allow_html=True,
     )
 
-    ac = (
-        area_series[area_series != ""]
-        .value_counts()
-        .sort_index()
-    )
-    cols = st.columns(4)
-    for i, (area, n) in enumerate(ac.items()):
-        cols[i % 4].metric(str(area), f"{n} tags")
+    screening = build_equipment_screening(master, df)
+    findings = build_action_findings(master, df)
+    store = ensure_action_store(findings) if not findings.empty else []
+    action_df = actions_dataframe(store) if findings is not None and not findings.empty else pd.DataFrame()
+
+    # --- Compact data context -------------------------------------------------
+    last_data = ""
+    if "ArchiveTime" in df.columns and not df.empty:
+        try:
+            last_data = pd.to_datetime(df["ArchiveTime"], errors="coerce").max().strftime("%d %b %Y")
+        except Exception:
+            last_data = ""
+    context_bits = [f"{len(df):,} historical records", f"{len(master):,} PLC tags"]
+    if last_data:
+        context_bits.insert(0, f"Last data: {last_data}")
+    st.caption("  ·  ".join(context_bits))
+
+    if screening.empty:
+        st.warning("No equipment has sufficient historical numeric data for screening.")
+    else:
+        total_eq = len(screening)
+        healthy_n = int((screening["Condition"] == "HEALTHY").sum())
+        deteriorating_n = int((screening["Condition"] == "DETERIORATING").sum())
+        attention_n = int((screening["Condition"] == "ATTENTION").sum())
+        critical_n = int((screening["Condition"] == "CRITICAL").sum())
+        abnormal_n = deteriorating_n + attention_n + critical_n
+        p1n = int((screening["Screening Priority"] == "P1").sum())
+        p2n = int((screening["Screening Priority"] == "P2").sum())
+        p3n = int((screening["Screening Priority"] == "P3").sum())
+        p4n = int((screening["Screening Priority"] == "P4").sum())
+        open_count = int((action_df["Status"] != "CLOSED").sum()) if not action_df.empty else 0
+
+        # --- Hero: plant condition --------------------------------------------
+        st.markdown("### 🩺 Plant Condition")
+        st.caption(f"{abnormal_n:,} of {total_eq:,} screened equipment currently require engineering attention.")
+
+        c1, c2, c3, c4 = st.columns(4)
+        c1.markdown(
+            f'<div class="opp-card status-healthy"><div class="opp-card-title">🟢 HEALTHY</div><div class="opp-card-value">{healthy_n:,}</div><div class="opp-card-small">{healthy_n/total_eq*100:.1f}% of screened equipment</div></div>',
+            unsafe_allow_html=True,
+        )
+        c2.markdown(
+            f'<div class="opp-card status-deteriorating"><div class="opp-card-title">🟡 DETERIORATING</div><div class="opp-card-value">{deteriorating_n:,}</div><div class="opp-card-small">{deteriorating_n/total_eq*100:.1f}% of screened equipment</div></div>',
+            unsafe_allow_html=True,
+        )
+        c3.markdown(
+            f'<div class="opp-card status-attention"><div class="opp-card-title">🟠 ATTENTION</div><div class="opp-card-value">{attention_n:,}</div><div class="opp-card-small">{attention_n/total_eq*100:.1f}% of screened equipment</div></div>',
+            unsafe_allow_html=True,
+        )
+        c4.markdown(
+            f'<div class="opp-card status-critical"><div class="opp-card-title">🔴 CRITICAL</div><div class="opp-card-value">{critical_n:,}</div><div class="opp-card-small">{critical_n/total_eq*100:.1f}% of screened equipment</div></div>',
+            unsafe_allow_html=True,
+        )
+
+        # --- Engineering focus + workflow ------------------------------------
+        st.markdown("")
+        left, right = st.columns([1.25, 1])
+
+        with left:
+            st.markdown("### 🎯 Engineering Focus")
+            st.markdown(
+                f'<div class="opp-note"><b>{abnormal_n:,} equipment</b> are outside the healthy screening state. '
+                f'The priority view contains <b>{p1n:,} P1</b> immediate-review and <b>{p2n:,} P2</b> planned-inspection items.</div>',
+                unsafe_allow_html=True,
+            )
+            q1, q2, q3 = st.columns(3)
+            q1.metric("🔴 P1", f"{p1n:,}", "Immediate review")
+            q2.metric("🟠 P2", f"{p2n:,}", "Plan inspection")
+            q3.metric("🟡 P3", f"{p3n:,}", "Monitor")
+            if st.button("🎯  Open Maintenance Priority", key="dash_open_priority", use_container_width=True):
+                st.session_state["_pending_page"] = "Maintenance Priority"
+                st.rerun()
+
+        with right:
+            st.markdown("### 🛠️ Action Center")
+            st.markdown(
+                f'<div class="opp-card"><div class="opp-card-title">OPEN ENGINEERING FINDINGS</div>'
+                f'<div class="opp-card-value">{open_count:,}</div>'
+                f'<div class="opp-card-small">Findings awaiting engineering follow-up</div></div>',
+                unsafe_allow_html=True,
+            )
+            if st.button("🛠️  Open Action Center", key="dash_open_action", use_container_width=True):
+                st.session_state["_pending_page"] = "Action Center"
+                st.rerun()
+
+        # --- Area signal: compact, not a second worklist ----------------------
+        st.markdown("### 📍 Area Signal")
+        st.caption("Where the current screening shows the highest concentration of non-healthy equipment.")
+
+        area_counts = master[["Equipment Code", "Area"]].drop_duplicates("Equipment Code").copy()
+        area_counts["Area"] = area_counts["Area"].apply(normalize_area_label)
+        area_counts = area_counts[area_counts["Area"] != ""]
+        abnormal_codes = set(screening.loc[screening["Condition"] != "HEALTHY", "Equipment Code"].astype(str))
+        area_counts["Abnormal"] = area_counts["Equipment Code"].astype(str).isin(abnormal_codes)
+        area_summary = (
+            area_counts.groupby("Area")
+            .agg(Equipment=("Equipment Code", "nunique"), Attention=("Abnormal", "sum"))
+            .reset_index()
+        )
+        if not area_summary.empty:
+            area_summary["Rate"] = np.where(
+                area_summary["Equipment"] > 0,
+                area_summary["Attention"] / area_summary["Equipment"] * 100,
+                0,
+            )
+            area_summary = area_summary.sort_values(["Attention", "Rate", "Equipment"], ascending=[False, False, False])
+            top_areas = area_summary.head(6)
+            area_cols = st.columns(3)
+            for i, (_, ar) in enumerate(top_areas.iterrows()):
+                area_cols[i % 3].markdown(
+                    f'<div class="opp-card"><div class="opp-card-title">📍 {ar["Area"]}</div>'
+                    f'<div class="opp-card-value">{int(ar["Attention"]):,} <span style="font-size:.75rem;color:#667085;font-weight:600">of {int(ar["Equipment"]):,} abnormal</span></div>'
+                    f'<div class="opp-card-small">{ar["Rate"]:.1f}% of equipment in this area</div></div>',
+                    unsafe_allow_html=True,
+                )
+        else:
+            st.info("Area information is not available in the current master data.")
+
+        # --- Data confidence: context, not headline ---------------------------
+        st.markdown("### 📊 Data Quality & Coverage")
+        d1, d2, d3, d4 = st.columns(4)
+        d1.metric("PLC Tags", f"{len(master):,}")
+        d2.metric("🟢 High Confidence", f"{high:,}")
+        d3.metric("🟡 Medium Confidence", f"{medium:,}")
+        d4.metric("⚪ Low Confidence", f"{low:,}")
+
+        # --- Clean drill-down footer ------------------------------------------
+        st.markdown("### 🔎 Explore the Detail")
+        e1, e2, e3 = st.columns(3)
+        if e1.button("🩺  Equipment Health", key="dash_open_health", use_container_width=True):
+            st.session_state["_pending_page"] = "Equipment Health"
+            st.rerun()
+        if e2.button("📈  Engineering Trend", key="dash_open_trend", use_container_width=True):
+            st.session_state["_pending_page"] = "Engineering Trend"
+            st.rerun()
+        if e3.button("🏷️  Tag Master", key="dash_open_tags", use_container_width=True):
+            st.session_state["_pending_page"] = "Tag Master"
+            st.rerun()
 
 elif page == "Equipment Health":
     st.markdown('<div class="opp-page-title">Equipment Health</div>',unsafe_allow_html=True)
