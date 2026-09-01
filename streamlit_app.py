@@ -198,64 +198,183 @@ def parameter_action(parameter, tag):
 
 
 
-# --- Phase 5: risk / maintenance screening ---------------------------------------
-def build_equipment_screening(master, df):
-    """Aggregate parameter-condition evidence to one canonical equipment.
+# --- Phase 6: maintenance decision engine -----------------------------------------
+def _criticality_rank(value):
+    """Return an engineering-approved criticality rank only when explicitly supplied."""
+    v = str(value or "").strip().upper()
+    mapping = {
+        "CRITICAL": 4, "VERY HIGH": 4,
+        "HIGH": 3,
+        "MEDIUM": 2, "MODERATE": 2,
+        "LOW": 1,
+    }
+    return mapping.get(v, 0)
 
-    Criticality is deliberately NOT inferred. Until an engineering criticality
-    master is supplied, risk remains "Review Required" and the P1-P4 value is a
-    condition-based maintenance screening priority only.
+
+def _maintenance_decision(condition, criticality, health):
+    """Combine observed PLC condition with validated criticality.
+
+    Criticality is never inferred from equipment type. If it is not supplied,
+    the result remains a condition-based screening priority.
     """
+    c = str(condition or "").upper()
+    cr = _criticality_rank(criticality)
+
+    # Condition severity from historical PLC behaviour.
+    cond_rank = {"CRITICAL": 4, "ATTENTION": 3, "DETERIORATING": 2, "HEALTHY": 1}.get(c, 1)
+
+    # If validated criticality exists, use a conservative risk matrix.
+    if cr:
+        risk_index = max(cond_rank, cr) + min(cond_rank, cr) - 1
+        if c == "CRITICAL" or (cr >= 4 and c in {"ATTENTION", "DETERIORATING"}):
+            return "P1", "HIGH", "Immediate engineering review / condition verification"
+        if risk_index >= 5:
+            return "P2", "MEDIUM-HIGH", "Plan inspection and verify trend / field condition"
+        if risk_index >= 4:
+            return "P3", "MEDIUM", "Increase monitoring and include in maintenance planning"
+        return "P4", "LOW", "Routine monitoring"
+
+    # No criticality: do not manufacture a formal risk rating.
+    if c == "CRITICAL" or health < 70:
+        return "P1", "REVIEW REQUIRED", "Prompt engineering review; validate signal and field condition"
+    if c == "ATTENTION" or health < 85:
+        return "P2", "REVIEW REQUIRED", "Review trend, process state and recent maintenance history"
+    if c == "DETERIORATING" or health < 95:
+        return "P3", "REVIEW REQUIRED", "Increase monitoring and verify whether deterioration persists"
+    return "P4", "REVIEW REQUIRED", "Routine monitoring"
+
+
+def _health_score(h):
+    """Calculate a differentiated screening score from parameter evidence.
+
+    The score is not a probability of failure and is not an alarm/trip limit.
+    It emphasizes the worst observed parameter while accounting for the
+    breadth of abnormal behaviour and mapping confidence.
+    """
+    if h.empty:
+        return 100
+
+    conf_weight = {"High": 1.0, "Medium": 0.85, "Low": 0.65}
+    severity = {"Normal": 0.0, "Deteriorating": 12.0, "Attention": 25.0, "Critical": 50.0}
+
+    penalties = []
+    for _, r in h.iterrows():
+        base = severity.get(str(r["Condition"]), 0.0)
+        outside = min(float(r["Outside Fraction"]) * 12.0, 8.0)
+        confidence = conf_weight.get(str(r["Confidence"]), 0.65)
+        penalties.append((base + outside) * confidence)
+
+    penalties = np.asarray(penalties, dtype=float)
+    worst = float(np.max(penalties))
+    secondary = float(np.mean(np.sort(penalties)[-min(3, len(penalties)):]))
+    abnormal_fraction = float((h["Condition"] != "Normal").mean())
+
+    score = 100.0 - (0.72 * worst + 0.20 * secondary + 12.0 * abnormal_fraction)
+    return int(round(max(0, min(100, score))))
+
+
+def build_equipment_screening(master, df, criticality_df=None):
+    """Aggregate PLC evidence into one canonical equipment screening record."""
     records = []
+
+    crit_map = {}
+    if criticality_df is not None and not criticality_df.empty:
+        c = criticality_df.copy().fillna("")
+        if {"Equipment Code", "Criticality"}.issubset(c.columns):
+            crit_map = {
+                str(row["Equipment Code"]).strip().upper(): str(row["Criticality"]).strip()
+                for _, row in c.iterrows()
+                if str(row["Equipment Code"]).strip()
+            }
+
     for eq, ev in master[master["Equipment Code"].astype(str).str.strip() != ""].groupby("Equipment Code"):
         params = []
         seen = set()
+
         for _, meta in ev.iterrows():
             tag = str(meta.get("PLC Tag", "")).strip()
             if not tag or tag in seen:
                 continue
             seen.add(tag)
+
             stats = baseline_condition(_numeric_series(df, tag))
             if stats is None:
                 continue
-            parameter, unit, source = infer_parameter(tag, meta.get("Suggested Parameter", ""), meta.get("Suggested Unit", ""), meta.get("Instrument Type", ""))
+
+            parameter, unit, source = infer_parameter(
+                tag,
+                meta.get("Suggested Parameter", ""),
+                meta.get("Suggested Unit", ""),
+                meta.get("Instrument Type", "")
+            )
             conf = str(meta.get("Confidence", "") or "Low")
-            params.append({"PLC Tag": tag, "Parameter": parameter, "Unit": unit, "Confidence": conf, "Action": parameter_action(parameter, tag), **stats})
+            params.append({
+                "PLC Tag": tag,
+                "Parameter": parameter,
+                "Unit": unit,
+                "Confidence": conf,
+                "Action": parameter_action(parameter, tag),
+                **stats
+            })
+
         if not params:
             continue
+
         h = pd.DataFrame(params)
         counts = h["Condition"].value_counts()
-        critical = int(counts.get("Critical", 0)); attention = int(counts.get("Attention", 0)); deteriorating = int(counts.get("Deteriorating", 0))
-        severity = {"Normal": 0, "Deteriorating": 12, "Attention": 25, "Critical": 50}
-        weights = {"High": 1.0, "Medium": .85, "Low": .65}
-        h["Penalty"] = [(severity.get(r.Condition, 0) + min(r["Outside Fraction"] * 12, 8)) * weights.get(r["Confidence"], .65) for _, r in h.iterrows()]
-        raw = 100 - float(h["Penalty"].mean())
+        critical = int(counts.get("Critical", 0))
+        attention = int(counts.get("Attention", 0))
+        deteriorating = int(counts.get("Deteriorating", 0))
+
         if critical:
-            condition, screening_priority, icon = "CRITICAL", "P1", "🔴"
+            condition = "CRITICAL"
         elif attention:
-            condition, screening_priority, icon = "ATTENTION", "P2", "🟠"
+            condition = "ATTENTION"
         elif deteriorating:
-            condition, screening_priority, icon = "DETERIORATING", "P3", "🟡"
+            condition = "DETERIORATING"
         else:
-            condition, screening_priority, icon = "HEALTHY", "P4", "🟢"
-        cap = {"P1":69, "P2":89, "P3":94, "P4":100}[screening_priority]
-        score = int(round(max(0, min(cap, raw))))
-        flagged = h[h["Condition"] != "Normal"].copy().sort_values("Deviation Sigma", ascending=False)
-        top = flagged.iloc[0] if len(flagged) else None
+            condition = "HEALTHY"
+
+        health = _health_score(h)
+
+        eq_key = str(eq).strip().upper()
+        criticality = crit_map.get(eq_key, "Not configured")
+        priority, risk, decision = _maintenance_decision(condition, criticality, health)
+
+        flagged = h[h["Condition"] != "Normal"].copy()
+        if len(flagged):
+            # Critical > Attention > Deteriorating, then strongest deviation.
+            order = {"Critical": 0, "Attention": 1, "Deteriorating": 2}
+            flagged["_order"] = flagged["Condition"].map(order)
+            top = flagged.sort_values(["_order", "Deviation Sigma"], ascending=[True, False]).iloc[0]
+        else:
+            top = None
+
         names = ev["Equipment"].replace("", np.nan).dropna()
         name = names.iloc[0] if len(names) else "Equipment description not yet mapped"
+
         records.append({
-            "Equipment Code": eq, "Equipment": name, "Health": score, "Condition": condition,
-            "Screening Priority": screening_priority, "Risk": "REVIEW REQUIRED",
-            "Criticality": "Not configured", "Parameters": len(h), "Normal": int(counts.get("Normal",0)),
-            "Deteriorating": deteriorating, "Attention": attention, "Critical": critical,
+            "Equipment Code": eq,
+            "Equipment": name,
+            "Health": health,
+            "Condition": condition,
+            "Screening Priority": priority,
+            "Risk": risk,
+            "Criticality": criticality,
+            "Parameters": len(h),
+            "Normal": int(counts.get("Normal", 0)),
+            "Deteriorating": deteriorating,
+            "Attention": attention,
+            "Critical": critical,
             "Top Parameter": top["Parameter"] if top is not None else "—",
             "Top Tag": top["PLC Tag"] if top is not None else "—",
             "Top Finding": top["Condition"] if top is not None else "—",
             "Top Trend": top["Direction"] if top is not None else "—",
             "Top Shift %": float(top["Shift %"]) if top is not None else 0.0,
-            "Top Action": top["Action"] if top is not None else "No abnormal parameter identified."
+            "Top Action": top["Action"] if top is not None else "No abnormal parameter identified.",
+            "Maintenance Decision": decision,
         })
+
     return pd.DataFrame(records)
 
 
@@ -438,63 +557,180 @@ elif page == "Equipment Health":
             st.caption("Method: historical P05–P95 envelope + recent-vs-prior shift + sustained outside-baseline fraction + mapping-confidence weighting. Score is a screening indicator, not an alarm/trip setting or failure prediction.")
 
 elif page == "Maintenance Priority":
-    st.subheader("Maintenance Priority Center")
-    st.caption("Condition-based engineering screening across canonical equipment. Criticality is intentionally not guessed; validate it before converting screening priority into formal risk priority.")
-    screening = build_equipment_screening(master, df)
+    st.subheader("OPP Maintenance Control Center")
+    st.caption(
+        "Engineering decision support: PLC historical behaviour + validated equipment criticality. "
+        "Screening priority is not an alarm, trip setting, failure prediction or automatic work order."
+    )
+
+    # Session-only validated criticality master.
+    if "validated_criticality" not in st.session_state:
+        st.session_state["validated_criticality"] = pd.DataFrame()
+
+    uploaded_crit = st.file_uploader(
+        "Optional: upload validated Equipment Criticality Master (.csv)",
+        type=["csv"],
+        key="criticality_upload"
+    )
+    if uploaded_crit is not None:
+        crit = pd.read_csv(uploaded_crit).fillna("")
+        if not {"Equipment Code", "Criticality"}.issubset(crit.columns):
+            st.error("Criticality file must contain at least: Equipment Code, Criticality")
+        else:
+            crit["Equipment Code"] = crit["Equipment Code"].apply(normalize_equipment_code)
+            allowed = {"CRITICAL", "VERY HIGH", "HIGH", "MEDIUM", "MODERATE", "LOW"}
+            bad = sorted(set(str(x).strip().upper() for x in crit["Criticality"]) - allowed - {""})
+            if bad:
+                st.warning(f"Unrecognized criticality values: {', '.join(bad)}. They will remain unvalidated.")
+            st.session_state["validated_criticality"] = crit
+            st.success("Validated criticality loaded for this session.")
+
+    criticality_df = st.session_state.get("validated_criticality", pd.DataFrame())
+    screening = build_equipment_screening(master, df, criticality_df)
+
     if screening.empty:
         st.warning("No equipment has sufficient historical numeric data for screening.")
     else:
+        # KPI strip
+        p1n = int((screening["Screening Priority"] == "P1").sum())
+        p2n = int((screening["Screening Priority"] == "P2").sum())
+        p3n = int((screening["Screening Priority"] == "P3").sum())
+        p4n = int((screening["Screening Priority"] == "P4").sum())
+        abnormal = int((screening["Condition"] != "HEALTHY").sum())
+
+        k1, k2, k3, k4, k5 = st.columns(5)
+        k1.metric("P1 — Immediate Review", p1n)
+        k2.metric("P2 — Plan Inspection", p2n)
+        k3.metric("P3 — Monitor", p3n)
+        k4.metric("P4 — Routine", p4n)
+        k5.metric("Equipment Requiring Attention", abnormal)
+
+        st.markdown("#### Maintenance Screening Ranking")
+
         f1, f2, f3 = st.columns(3)
-        area_filter = f1.selectbox("Area", ["All"] + sorted([str(x) for x in master["Area"].unique() if str(x)]), key="priority_area")
-        priority_filter = f2.selectbox("Screening Priority", ["All", "P1", "P2", "P3", "P4"], key="priority_level")
-        condition_filter = f3.selectbox("Condition", ["All", "CRITICAL", "ATTENTION", "DETERIORATING", "HEALTHY"], key="priority_condition")
+        area_filter = f1.selectbox(
+            "Area",
+            ["All"] + sorted([str(x) for x in master["Area"].unique() if str(x)]),
+            key="priority_area"
+        )
+        priority_filter = f2.selectbox(
+            "Screening Priority",
+            ["All", "P1", "P2", "P3", "P4"],
+            key="priority_level"
+        )
+        condition_filter = f3.selectbox(
+            "Condition",
+            ["All", "CRITICAL", "ATTENTION", "DETERIORATING", "HEALTHY"],
+            key="priority_condition"
+        )
+
         view = screening.copy()
+
         if area_filter != "All":
             area_eq = set(master.loc[master["Area"] == area_filter, "Equipment Code"].astype(str))
             view = view[view["Equipment Code"].isin(area_eq)]
+
         if priority_filter != "All":
             view = view[view["Screening Priority"] == priority_filter]
+
         if condition_filter != "All":
             view = view[view["Condition"] == condition_filter]
+
         order = {"P1": 1, "P2": 2, "P3": 3, "P4": 4}
         view["_order"] = view["Screening Priority"].map(order)
-        view = view.sort_values(["_order", "Health", "Top Shift %"], ascending=[True, True, False]).drop(columns="_order")
-        st.markdown("#### OPP Maintenance Screening Ranking")
-        st.dataframe(view[["Equipment Code", "Equipment", "Health", "Condition", "Screening Priority", "Risk", "Criticality", "Parameters", "Deteriorating", "Attention", "Critical", "Top Parameter", "Top Finding", "Top Trend", "Top Shift %"]], use_container_width=True, hide_index=True, height=520)
+        view = view.sort_values(
+            ["_order", "Health", "Top Shift %"],
+            ascending=[True, True, False]
+        ).drop(columns="_order")
+
+        table_cols = [
+            "Equipment Code", "Equipment", "Health", "Condition",
+            "Screening Priority", "Risk", "Criticality", "Parameters",
+            "Deteriorating", "Attention", "Critical",
+            "Top Parameter", "Top Finding", "Top Trend", "Top Shift %"
+        ]
+        st.dataframe(
+            view[table_cols],
+            use_container_width=True,
+            hide_index=True,
+            height=470
+        )
+
         st.markdown("#### Selected Equipment")
         choices = view["Equipment Code"].tolist()
+
         if choices:
-            selected = st.selectbox("Equipment Code", choices, key="priority_equipment")
+            selected = st.selectbox(
+                "Equipment Code",
+                choices,
+                key="priority_equipment"
+            )
             r = view[view["Equipment Code"] == selected].iloc[0]
+
             st.markdown(f"### {r['Equipment Code']} — {r['Equipment']}")
-            a,b,c,d = st.columns(4)
-            a.metric("Health", f"{r['Health']}/100")
-            b.metric("Screening Priority", r["Screening Priority"])
-            c.metric("Risk", r["Risk"])
+
+            a, b, c, d, e = st.columns(5)
+            a.metric("Equipment Health", f"{r['Health']}/100")
+            b.metric("Condition", r["Condition"])
+            c.metric("Priority", r["Screening Priority"])
             d.metric("Criticality", r["Criticality"])
-            if r["Screening Priority"] != "P4":
-                st.warning(f"**Primary finding:** {r['Top Tag']} — {r['Top Parameter']} → {r['Top Finding']} | Trend {r['Top Trend']} ({r['Top Shift %']:+.1f}%).")
+            e.metric("Risk", r["Risk"])
+
+            if r["Screening Priority"] == "P1":
+                st.error(
+                    f"**PRIMARY FINDING:** {r['Top Tag']} — {r['Top Parameter']} → "
+                    f"{r['Top Finding']} | Trend {r['Top Trend']} ({r['Top Shift %']:+.1f}%)."
+                )
+            elif r["Screening Priority"] == "P2":
+                st.warning(
+                    f"**PRIMARY FINDING:** {r['Top Tag']} — {r['Top Parameter']} → "
+                    f"{r['Top Finding']} | Trend {r['Top Trend']} ({r['Top Shift %']:+.1f}%)."
+                )
+            elif r["Screening Priority"] == "P3":
+                st.info(
+                    f"**PRIMARY FINDING:** {r['Top Tag']} — {r['Top Parameter']} → "
+                    f"{r['Top Finding']} | Trend {r['Top Trend']} ({r['Top Shift %']:+.1f}%)."
+                )
             else:
                 st.success("No abnormal parameter currently identified by the historical screening engine.")
+
+            st.markdown("#### Engineering Maintenance Decision")
+            st.info(f"**Recommended decision:** {r['Maintenance Decision']}")
+
             if r["Screening Priority"] != "P4":
-                st.info(f"**Suggested engineering check:** {r['Top Action']}")
-            st.caption("Risk remains REVIEW REQUIRED because equipment criticality has not been supplied. Do not treat P1/P2 as an alarm, trip, or automatic work order.")
+                st.markdown("**Suggested engineering check**")
+                st.write(r["Top Action"])
+
+                # Direct navigation target for the engineer.
+                if st.button(
+                    f"Open Engineering Trend — {r['Top Tag']}",
+                    key=f"priority_open_trend_{selected}"
+                ):
+                    st.session_state["trend_equipment_from_priority"] = selected
+                    st.session_state["trend_tag_from_priority"] = r["Top Tag"]
+                    st.info(
+                        "Open **Engineering Trend** from the navigation panel. "
+                        "The selected equipment/tag has been retained for the next engineering review."
+                    )
+
+            st.caption(
+                "Decision logic uses historical P05–P95 behaviour, recent-vs-prior shift, "
+                "sustained outside-baseline fraction, mapping confidence and—when supplied—"
+                "validated equipment criticality."
+            )
+
         st.markdown("#### Equipment Criticality Master")
-        st.write("Use this template to document criticality from approved engineering/reliability assessment. The application will not infer criticality from equipment type alone.")
+        st.write(
+            "Download the template, fill criticality from the approved engineering/reliability assessment, "
+            "then upload it above. The application will not infer criticality from equipment type."
+        )
         template = criticality_template(master)
-        st.download_button("Download Criticality Master Template", template.to_csv(index=False).encode("utf-8"), "equipment_criticality_master_template.csv", "text/csv")
-        uploaded_crit = st.file_uploader("Optional: upload validated criticality master (.csv)", type=["csv"], key="criticality_upload")
-        if uploaded_crit is not None:
-            crit = pd.read_csv(uploaded_crit).fillna("")
-            needed = {"Equipment Code", "Criticality"}
-            if not needed.issubset(crit.columns):
-                st.error("Criticality file must contain at least: Equipment Code, Criticality")
-            else:
-                merged = screening.merge(crit[["Equipment Code", "Criticality"]], on="Equipment Code", how="left", suffixes=("", "_validated"))
-                merged["Criticality"] = merged["Criticality_validated"].replace("", np.nan).fillna(merged["Criticality"])
-                merged = merged.drop(columns=["Criticality_validated"])
-                st.success("Validated criticality loaded for this session. It is not written back to the repository automatically.")
-                st.dataframe(merged[["Equipment Code", "Criticality", "Screening Priority", "Health", "Condition", "Top Parameter"]], use_container_width=True, hide_index=True)
+        st.download_button(
+            "Download Criticality Master Template",
+            template.to_csv(index=False).encode("utf-8"),
+            "equipment_criticality_master_template.csv",
+            "text/csv"
+        )
 
 elif page == "Tag Master":
     st.subheader("PLC Tag Master")
@@ -523,7 +759,9 @@ elif page == "Engineering Trend":
     if not eq_codes:
         st.warning("No equipment code is mapped for this selection yet.")
     else:
-        selected_eq = st.selectbox("Equipment Code", eq_codes, key="trend_equipment")
+        default_trend_eq = st.session_state.get("trend_equipment_from_priority", "")
+        default_index = eq_codes.index(default_trend_eq) if default_trend_eq in eq_codes else 0
+        selected_eq = st.selectbox("Equipment Code", eq_codes, index=default_index, key="trend_equipment")
         eq_view = area_view[area_view["Equipment Code"] == selected_eq].copy()
         names = eq_view["Equipment"].replace("", np.nan).dropna()
         eq_name = names.iloc[0] if len(names) else "Equipment description not yet mapped"
