@@ -486,7 +486,19 @@ if page == "Dashboard":
         if not top.empty:
             st.dataframe(top[["Equipment Code", "Equipment", "Health", "Condition", "Screening Priority", "Risk", "Top Parameter", "Top Finding", "Top Trend", "Top Shift %"]], use_container_width=True, hide_index=True)
     st.subheader("Area Coverage")
-    ac = master[master["Area"] != ""]["Area"].value_counts().sort_index()
+    # Normalize Area before sorting to prevent mixed-type pandas errors
+area_series = (
+    master["Area"]
+    .fillna("")
+    .astype(str)
+    .str.strip()
+)
+
+ac = (
+    area_series[area_series != ""]
+    .value_counts()
+    .sort_index()
+)
     cols = st.columns(4)
     for i, (area, n) in enumerate(ac.items()):
         cols[i % 4].metric(str(area), f"{n} tags")
