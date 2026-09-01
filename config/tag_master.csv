@@ -1,462 +1,462 @@
-PLC Tag,Area,Suggested Equipment,Suggested Parameter,Suggested Unit,Category,IO Type,Range,Reference Description,Reference Equipment Code,Reference Source,Confidence,Mapping Status,Engineering Note
-FIQ170CDM01,Area 170,170-CDM-01,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,LEACH AUTOMATIC REAGENT ADDING DEVICE,170-CDM-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIQ170CDM02,,,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIQ170CDM03,,,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIQ170CDM04,,,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIQ170CDM05,,,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIQ170CDM06,,,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIQ170CDM07,,,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIQ170CDM08,,,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-IIT180AG001,,,Motor Current,A,Motor Current,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD185CTF01,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD185CTF02,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD185CTF03,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT180CL01A,Area 180,180-CL-01,Filtered Water to Acid Column (180-CL-01) Flowmeter,m³/h,Flow,AI,0~25,Filtered Water to Acid Column (180-CL-01) Flowmeter,180-CL-01,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-FIT180CL01B,Area 180,180-CL-01,Dilute Hydrochloric Acid to Acid Column (180-CL-01) Flowmeter,m³/h,Flow,AI,0~25,Dilute Hydrochloric Acid to Acid Column (180-CL-01) Flowmeter,180-CL-01,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-FIT180ELW01,Area 180,-,Pregnant Solution to Electrowinning Cell 1&2 Flowmeter,m³/h,Flow,AI,0~60,Pregnant Solution to Electrowinning Cell 1&2 Flowmeter,-,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-FIT180ELW03,Area 180,-,Pregnant Solution to Electrowinning Cell 3&4 Flowmeter,m³/h,Flow,AI,0~60,Pregnant Solution to Electrowinning Cell 3&4 Flowmeter,-,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-FIT180ELW05,Area 180,-,Pregnant Solution to Electrowinning Cell 5&6 Flowmeter,m³/h,Flow,AI,0~60,Pregnant Solution to Electrowinning Cell 5&6 Flowmeter,-,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-FIT180HX001,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT180TK03A,Area 180,-,Caustic Solution to Pre-soak Solution Flowmeter,m³/h,Flow,AI,0~7.2,Caustic Solution to Pre-soak Solution Flowmeter,-,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-FIT180TK03B,Area 180,-,Cyanide Solution to Pre-soak Solution Flowmeter,m³/h,Flow,AI,0~7.0,Cyanide Solution to Pre-soak Solution Flowmeter,-,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-IIA180AG001,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT180HP001,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT180HP002,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT180POND2,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT180TK001,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT180TK002,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT180TK003,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT180TK004,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT180TK005,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT180TK006,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT180TK007,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT180TK010,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT185PP002,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT185TK001,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-PIT180CL002,,,Pressure,bar,Pressure,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-PIT180HX02B,Area 180,180-HX-02,Elution Recovery Heat Exchanger (180-HX-02) Outlet Pressure Transmitter,bar,Pressure,AI,0-5,Elution Recovery Heat Exchanger (180-HX-02) Outlet Pressure Transmitter,180-HX-02,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-TIT180CL02A,Area 180,-,Liquor Eluate to Elution Recovery Heat Exchanger Temperature Transmitter,°C,Temperature,AI,0-115,Liquor Eluate to Elution Recovery Heat Exchanger Temperature Transmitter,-,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-TIT180HX01A,Area 180,180-HX-01,Elution Recovery Heat Exchanger (180-HX-01) Outlet Temperature Transmitter,°C,Temperature,AI,0-115,Elution Recovery Heat Exchanger (180-HX-01) Outlet Temperature Transmitter,180-HX-01,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-TIT180HX002,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT210MIP02001,Area 170,210-MIP-02,Flow,m³/h,Flow,,,LEACH FEED THICKENER FLOCCULANT MIXING PLANT,210-MIP-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-DSG210MIP02,Area 170,210-MIP-02,Digital Status / Command,,Digital Status / Command,,,LEACH FEED THICKENER FLOCCULANT MIXING PLANT,210-MIP-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD210MIP02PP1,Area 170,210-MIP-02,VSD / Drive Parameter,%,VSD / Drive Parameter,,,LEACH FEED THICKENER FLOCCULANT MIXING PLANT,210-MIP-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD210MIP02PP2,Area 170,210-MIP-02,VSD / Drive Parameter,%,VSD / Drive Parameter,,,LEACH FEED THICKENER FLOCCULANT MIXING PLANT,210-MIP-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIT210MIP02002,Area 170,210-MIP-02,Flow,m³/h,Flow,,,LEACH FEED THICKENER FLOCCULANT MIXING PLANT,210-MIP-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIT210MIP03001,Area 190,210-MIP-03,Flow,m³/h,Flow,,,TAILING DEWATERING THICKENER FLOCCULANT MIXING PLANT,210-MIP-03,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-DSG210MIP03,Area 190,210-MIP-03,Digital Status / Command,,Digital Status / Command,,,TAILING DEWATERING THICKENER FLOCCULANT MIXING PLANT,210-MIP-03,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD210MIP03PP1,Area 190,210-MIP-03,VSD / Drive Parameter,%,VSD / Drive Parameter,,,TAILING DEWATERING THICKENER FLOCCULANT MIXING PLANT,210-MIP-03,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD210MIP03PP2,Area 190,210-MIP-03,VSD / Drive Parameter,%,VSD / Drive Parameter,,,TAILING DEWATERING THICKENER FLOCCULANT MIXING PLANT,210-MIP-03,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIT210MIP03002,Area 190,210-MIP-03,Flow,m³/h,Flow,,,TAILING DEWATERING THICKENER FLOCCULANT MIXING PLANT,210-MIP-03,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-PIT240OP001TOA,,,Pressure,bar,Pressure,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-PIT240OP001TOB,,,Pressure,bar,Pressure,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-PIT240OP001001,,,Pressure,bar,Pressure,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-PIT240OP001002,,,Pressure,bar,Pressure,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-CNC240OP001,,,Control / CNC,,Control / CNC,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT240OP001002,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD120AF001,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD120BF001,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-WIT120CV001,,,Weight,t,Weight,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-WIQ120CV001,,,Weight / Totalized Weight,t / total,Weight / Totalized Weight,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-WIT120CV002,,,Weight,t,Weight,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-WIQ120CV002,,,Weight / Totalized Weight,t / total,Weight / Totalized Weight,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-IIT120CS001,,,Motor Current,A,Motor Current,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT120BN01A,Area 120,-,ROM Bin Level Sensor,mm,Level,AI,0~9300,ROM Bin Level Sensor,-,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-WIQ130CV001,,,Weight / Totalized Weight,t / total,Weight / Totalized Weight,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD130PP003,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD130PP004,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-IIT160AG003,,,Motor Current,A,Motor Current,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-IIT160AG004,,,Motor Current,A,Motor Current,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-IIT160AG005,,,Motor Current,A,Motor Current,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-IIT160AG006,,,Motor Current,A,Motor Current,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-IIT160AG007,,,Motor Current,A,Motor Current,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD160PP009,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD160PP010,Area 160,160-PP-01,VSD / Drive Parameter,%,VSD / Drive Parameter,,,ACID WASH THICKENER FEED PUMP 01,160-PP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD160PP011,Area 160,160-PP-01,VSD / Drive Parameter,%,VSD / Drive Parameter,,,ACID WASH THICKENER FEED PUMP 01,160-PP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD160PP012,Area 160,160-PP-01,VSD / Drive Parameter,%,VSD / Drive Parameter,,,ACID WASH THICKENER FEED PUMP 01,160-PP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD160PP013,Area 160,160-PP-01,VSD / Drive Parameter,%,VSD / Drive Parameter,,,ACID WASH THICKENER FEED PUMP 01,160-PP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD160PP014,Area 160,160-PP-01,VSD / Drive Parameter,%,VSD / Drive Parameter,,,ACID WASH THICKENER FEED PUMP 01,160-PP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD160PP015,Area 160,160-PP-01,VSD / Drive Parameter,%,VSD / Drive Parameter,,,ACID WASH THICKENER FEED PUMP 01,160-PP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD160PP016,Area 160,160-PP-01,VSD / Drive Parameter,%,VSD / Drive Parameter,,,ACID WASH THICKENER FEED PUMP 01,160-PP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD160PP017,Area 160,160-PP-01,VSD / Drive Parameter,%,VSD / Drive Parameter,,,ACID WASH THICKENER FEED PUMP 01,160-PP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD160PP018,Area 160,160-PP-01,VSD / Drive Parameter,%,VSD / Drive Parameter,,,ACID WASH THICKENER FEED PUMP 01,160-PP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD160PP019,Area 160,160-PP-01,VSD / Drive Parameter,%,VSD / Drive Parameter,,,ACID WASH THICKENER FEED PUMP 01,160-PP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD160PP020,Area 160,160-PP-02,VSD / Drive Parameter,%,VSD / Drive Parameter,,,ACID WASH THICKENER FEED PUMP 02,160-PP-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD160PP021,Area 160,160-PP-02,VSD / Drive Parameter,%,VSD / Drive Parameter,,,ACID WASH THICKENER FEED PUMP 02,160-PP-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD160PP022,Area 160,160-PP-02,VSD / Drive Parameter,%,VSD / Drive Parameter,,,ACID WASH THICKENER FEED PUMP 02,160-PP-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD170PP002,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD170PP003,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD170PP004,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD170PP005,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD170PP008,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD170PP009,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD210SF001,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD220PP019,Area 220,220-PP-01,VSD / Drive Parameter,%,VSD / Drive Parameter,,,RAW WATER SUPPLY PUMP 01 PANGULIR,220-PP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD220PP020,Area 220,220-PP-02,VSD / Drive Parameter,%,VSD / Drive Parameter,,,RAW WATER SUPPLY PUMP 02 PANGULIR,220-PP-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-AIT130SU001PH1,,,Analytical Measurement,,Analytical Measurement,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-AIT160TK001PH1,,,Analytical Measurement,,Analytical Measurement,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-AIT160TK007PH1,,,Analytical Measurement,,Analytical Measurement,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-AIT160TK002DO1,,,Analytical Measurement,,Analytical Measurement,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-AIT160TK011PH1,Area 160,160-TK-01,Analytical Measurement,,Analytical Measurement,,,CALCINE ACID LEACH TANK  01,160-TK-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-AIT170TK002DO1,,,Analytical Measurement,,Analytical Measurement,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-AIT170TK002PH1,,,Analytical Measurement,,Analytical Measurement,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-AIT160AIR01HCN,,,Analytical Measurement,,Analytical Measurement,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-AIT170AIR01HCN,,,Analytical Measurement,,Analytical Measurement,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-AIT210AIR01HCN,,,Analytical Measurement,,Analytical Measurement,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-DIT130CY001,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-DIT160BX001,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-DIT160BX003,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-DIT160CY001,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-DIT170BX002,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT130CY001,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT130ML01A,Area 130,-,Flow meter for Process Water to Hopper In Front of Ball Mill,m³/h,Flow,AI,0~43.4,Flow meter for Process Water to Hopper In Front of Ball Mill,-,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-FIT130ML02A,Area 130,130-ML-02,Process Water to Ball mill (130-ML-02) Flow meter,m³/h,Flow,AI,0~12,Process Water to Ball mill (130-ML-02) Flow meter,130-ML-02,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-FIT160BX001,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT160BX003,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT160CY001,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT170BX002,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT210TK05A,Area 210,210-TK-05,Water to Lime Mixing Tank  (210-TK-05) Flowmeter,nan,Flow,AI,0-14,Water to Lime Mixing Tank  (210-TK-05) Flowmeter,210-TK-05,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-FIT220TK003,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT240OP001,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT130HP004,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT130SU001,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT160BX002,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT160BX009,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT160HP001,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT160TK002,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT160TK005,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT160TK006,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT160TK007,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT160TK008,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT170HP001,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT170TK009,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT210TK001,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT210TK002,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT210TK003,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT210TK004,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT210TK05A,Area 210,210-TK-05,Lime Mixing Tank  (210-TK-05) Level meter,mm,Level,AI,0~3000,Lime Mixing Tank  (210-TK-05) Level meter,210-TK-05,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-LIT210TK06A,Area 210,210-TK-06,Lime Storage Tank  (210-TK-06) Level meter,mm,Level,AI,0~7500,Lime Storage Tank  (210-TK-06) Level meter,210-TK-06,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-PIT130CY001,,,Pressure,bar,Pressure,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-PIT130ML001,,,Pressure,bar,Pressure,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-PIT160CY001,,,Pressure,bar,Pressure,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-PIT210TK05A,Area 210,210-TK-05,Pressure,bar,Pressure,,,LIME MIXING TANK,210-TK-05,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-PIT210TK06A,Area 210,210-TK-06,Pressure,bar,Pressure,,,LIME STORAGE TANK,210-TK-06,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-PIT240AR001,,,Pressure,bar,Pressure,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-PIT240AR002,,,Pressure,bar,Pressure,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-PIT240OP01A,Area 220,-,Public Cooling Tower Supply Water Pressure Transmitter,bar,Pressure,AI,0-5,Public Cooling Tower Supply Water Pressure Transmitter,-,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-PIT240OP01B,Area 240,-,Oxygen Plant Supply Oxygen Pressure Transmitter,bar,Pressure,AI,0-5,Oxygen Plant Supply Oxygen Pressure Transmitter,-,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-TIT130ML001,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT240OP001,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-WIT130CV001,,,Weight,t,Weight,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD140PP013,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD140PP014,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD140PP015,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD140PP016,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD140PP017,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD140PP018,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD140PP019,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD140PP020,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD140PP021,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD140PP022,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD140PP023,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD140PP024,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD140PP025,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD140PP026,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD220PP003,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD220PP004,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD220PP005,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD220PP006,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD220PP007,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD220PP010,Area 220,220-PP-01,VSD / Drive Parameter,%,VSD / Drive Parameter,,,RAW WATER SUPPLY PUMP 01 PANGULIR,220-PP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD220PP011,Area 220,220-PP-01,VSD / Drive Parameter,%,VSD / Drive Parameter,,,RAW WATER SUPPLY PUMP 01 PANGULIR,220-PP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD220PP013,Area 220,220-PP-01,VSD / Drive Parameter,%,VSD / Drive Parameter,,,RAW WATER SUPPLY PUMP 01 PANGULIR,220-PP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD220PP014,Area 220,220-PP-01,VSD / Drive Parameter,%,VSD / Drive Parameter,,,RAW WATER SUPPLY PUMP 01 PANGULIR,220-PP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD220PP015,Area 220,220-PP-01,VSD / Drive Parameter,%,VSD / Drive Parameter,,,RAW WATER SUPPLY PUMP 01 PANGULIR,220-PP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD220PP016,Area 220,220-PP-01,VSD / Drive Parameter,%,VSD / Drive Parameter,,,RAW WATER SUPPLY PUMP 01 PANGULIR,220-PP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD220PP021,Area 220,220-PP-02,VSD / Drive Parameter,%,VSD / Drive Parameter,,,RAW WATER SUPPLY PUMP 02 PANGULIR,220-PP-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD220PP022,Area 220,220-PP-02,VSD / Drive Parameter,%,VSD / Drive Parameter,,,RAW WATER SUPPLY PUMP 02 PANGULIR,220-PP-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-AIT160TK005ORP,,,Analytical Measurement,,Analytical Measurement,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-AIT160TK005PH1,,,Analytical Measurement,,Analytical Measurement,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-DIT140TH001,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-DIT170TH001,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT140TH001,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT140TK06A,Area 140,140-TK-06,Flotation Cell (140-TK-06) Blower air Flowmeter,m³/min,Flow,AI,0~13.2,Flotation Cell (140-TK-06) Blower air Flowmeter,140-TK-06,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-FIT140TK06B,Area 140,-,Scavenger 1 Concentrate Discharge Flowmeter,m³/h,Flow,AI,0~96.6,Scavenger 1 Concentrate Discharge Flowmeter,-,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-FIT140TK06C,Area 140,-,Scavenger 2 Concentrate Discharge Flowmeter,m³/h,Flow,AI,0~66.9,Scavenger 2 Concentrate Discharge Flowmeter,-,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-FIT140TK06D,Area 140,-,Cleaner 1 Tailing Hop Discharge Flowmeter,m³/h,Flow,AI,0~126,Cleaner 1 Tailing Hop Discharge Flowmeter,-,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-FIT140TK007,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT140TK008,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT140TK009,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT140TK10A,Area 140,140-TK-10,Flotation Cell (140-TK-10) Blower air Flowmeter,m³/min,Flow,AI,0~13.2,Flotation Cell (140-TK-10) Blower air Flowmeter,140-TK-10,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-FIT140TK10B,Area 140,-,Scavenger 3 Concentrate Discharge Flowmeter,m³/h,Flow,AI,0~59,Scavenger 3 Concentrate Discharge Flowmeter,-,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-FIT140TK011,Area 140,140-TK-01,Flow,m³/h,Flow,,,PAX MIXING TANK,140-TK-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIT140TK012,Area 140,140-TK-01,Flow,m³/h,Flow,,,PAX MIXING TANK,140-TK-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIT140TK013,Area 140,140-TK-01,Flow,m³/h,Flow,,,PAX MIXING TANK,140-TK-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIT140TK14A,Area 140,140-TK-14,Flotation Cell (140-TK-14) Blower air Flowmeter,m³/min,Flow,AI,0~13.2,Flotation Cell (140-TK-14) Blower air Flowmeter,140-TK-14,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-FIT140TK015,Area 140,140-TK-01,Flow,m³/h,Flow,,,PAX MIXING TANK,140-TK-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIT140TK016,Area 140,140-TK-01,Flow,m³/h,Flow,,,PAX MIXING TANK,140-TK-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIT140TK017,Area 140,140-TK-01,Flow,m³/h,Flow,,,PAX MIXING TANK,140-TK-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIT140TK018,Area 140,140-TK-01,Flow,m³/h,Flow,,,PAX MIXING TANK,140-TK-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIT140TK019,Area 140,140-TK-01,Flow,m³/h,Flow,,,PAX MIXING TANK,140-TK-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIT140TK020,Area 140,140-TK-02,Flow,m³/h,Flow,,,REAGENT TRIAL TANK,140-TK-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIT140TK021,Area 140,140-TK-02,Flow,m³/h,Flow,,,REAGENT TRIAL TANK,140-TK-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIT140TK022,Area 140,140-TK-02,Flow,m³/h,Flow,,,REAGENT TRIAL TANK,140-TK-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIT140TK023,Area 140,140-TK-02,Flow,m³/h,Flow,,,REAGENT TRIAL TANK,140-TK-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIT140TK024,Area 140,140-TK-02,Flow,m³/h,Flow,,,REAGENT TRIAL TANK,140-TK-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIT140TK24B,Area 140,-,Rougher Circuit Concentrate Discharge Slurry Flowmeter,m³/h,Flow,AI,0~146,Rougher Circuit Concentrate Discharge Slurry Flowmeter,-,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-FIT140TK025,Area 140,140-TK-02,Flow,m³/h,Flow,,,REAGENT TRIAL TANK,140-TK-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIT140TK026,Area 140,140-TK-02,Flow,m³/h,Flow,,,REAGENT TRIAL TANK,140-TK-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIT140TK027,Area 140,140-TK-02,Flow,m³/h,Flow,,,REAGENT TRIAL TANK,140-TK-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIT140TK028,Area 140,140-TK-02,Flow,m³/h,Flow,,,REAGENT TRIAL TANK,140-TK-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIT140TK029,Area 140,140-TK-02,Flow,m³/h,Flow,,,REAGENT TRIAL TANK,140-TK-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIT140TK030,Area 140,140-TK-03,Flow,m³/h,Flow,,,CUSO4 MIXING TANK,140-TK-03,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIT140TK031,Area 140,140-TK-03,Flow,m³/h,Flow,,,CUSO4 MIXING TANK,140-TK-03,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIT170TH001,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT220TK001,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LCV140TK09A,Area 140,140-TK-09,Flotation Cell s (140-TK-09) Discharge Valve Position Feedback,%,Valve Position Feedback,AI,0~100%,Flotation Cell s (140-TK-09) Discharge Valve Position Feedback,140-TK-09,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-LCV140TK09B,Area 140,140-TK-09,Flotation Cell s (140-TK-09) Discharge Valve Position Feedback,%,Valve Position Feedback,AI,0~100%,Flotation Cell s (140-TK-09) Discharge Valve Position Feedback,140-TK-09,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-LCV140TK13A,Area 140,140-TK-13,Flotation Cell (140-TK-13) Discharge Valve Position Feedback,%,Valve Position Feedback,AI,0~100%,Flotation Cell (140-TK-13) Discharge Valve Position Feedback,140-TK-13,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-LCV140TK13B,Area 140,140-TK-13,Flotation Cell (140-TK-13) Discharge Valve Position Feedback,%,Valve Position Feedback,AI,0~100%,Flotation Cell (140-TK-13) Discharge Valve Position Feedback,140-TK-13,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-LCV140TK17A,Area 140,140-TK-17,Flotation Cell (140-TK-17) Discharge Valve Position Feedback,%,Valve Position Feedback,AI,0~100%,Flotation Cell (140-TK-17) Discharge Valve Position Feedback,140-TK-17,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-LCV140TK17B,Area 140,140-TK-17,Flotation Cell (140-TK-17) Discharge Valve Position Feedback,%,Valve Position Feedback,AI,0~100%,Flotation Cell (140-TK-17) Discharge Valve Position Feedback,140-TK-17,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-LCV140TK20A,Area 140,140-TK-20,Flotation Cell (140-TK-20) Discharge Valve Position Feedback,%,Valve Position Feedback,AI,0~100%,Flotation Cell (140-TK-20) Discharge Valve Position Feedback,140-TK-20,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-LCV140TK20B,Area 140,140-TK-20,Flotation Cell (140-TK-20) Discharge Valve Position Feedback,%,Valve Position Feedback,AI,0~100%,Flotation Cell (140-TK-20) Discharge Valve Position Feedback,140-TK-20,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-LCV140TK021,Area 140,140-TK-02,Valve Position Feedback,%,Valve Position Feedback,,,REAGENT TRIAL TANK,140-TK-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-LCV140TK025,Area 140,140-TK-02,Valve Position Feedback,%,Valve Position Feedback,,,REAGENT TRIAL TANK,140-TK-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-LCV140TK029,Area 140,140-TK-02,Valve Position Feedback,%,Valve Position Feedback,,,REAGENT TRIAL TANK,140-TK-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-LIT140HP001,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT140HP002,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT140HP006,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT140HP007,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT140HP008,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT140HP009,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT140HP010,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT140TK01A,Area 140,140-TK-01,Reagent Mixing Tank (140-TK-01) Level meter,mm,Level,AI,0~1500,Reagent Mixing Tank (140-TK-01) Level meter,140-TK-01,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-LIT140TK02A,Area 140,140-TK-02,Reagent Mixing Tank (140-TK-02) Level meter,mm,Level,AI,0~1500,Reagent Mixing Tank (140-TK-02) Level meter,140-TK-02,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-LIT140TK03A,Area 140,140-TK-03,Reagent Mixing Tank (140-TK-03) Level meter,mm,Level,AI,0~1500,Reagent Mixing Tank (140-TK-03) Level meter,140-TK-03,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-LIT140TK04A,Area 140,140-TK-04,Level,mm,Level,,,CONDITIONING TANK 01,140-TK-04,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-LIT140TK005,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT140TK009,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT140TK013,Area 140,140-TK-01,Level,mm,Level,,,PAX MIXING TANK,140-TK-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-LIT140TK017,Area 140,140-TK-01,Level,mm,Level,,,PAX MIXING TANK,140-TK-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-LIT140TK020,Area 140,140-TK-02,Level,mm,Level,,,REAGENT TRIAL TANK,140-TK-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-LIT140TK021,Area 140,140-TK-02,Level,mm,Level,,,REAGENT TRIAL TANK,140-TK-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-LIT140TK025,Area 140,140-TK-02,Level,mm,Level,,,REAGENT TRIAL TANK,140-TK-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-LIT140TK029,Area 140,140-TK-02,Level,mm,Level,,,REAGENT TRIAL TANK,140-TK-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-LIT140TK032,Area 140,140-TK-03,Level,mm,Level,,,CUSO4 MIXING TANK,140-TK-03,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-LIT140TK033,Area 140,140-TK-03,Level,mm,Level,,,CUSO4 MIXING TANK,140-TK-03,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-LIT150TK03A,Area 150,150-TK-03,Storage Agitating Tank (150-TK-03) Level Transmitter,mm,Level,AI,0~3000,Storage Agitating Tank (150-TK-03) Level Transmitter,150-TK-03,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-LIT150TK04A,Area 150,150-TK-04,Storage Agitating Tank (150-TK-04) Level Transmitter,mm,Level,AI,0~3000,Storage Agitating Tank (150-TK-04) Level Transmitter,150-TK-04,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-LIT150TK05A,Area 150,150-TK-05,Buffer Agitating Tank (150-TK-05) Level Transmitter,mm,Level,AI,0~3000,Buffer Agitating Tank (150-TK-05) Level Transmitter,150-TK-05,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-LIT190BX01A,Area 190,190-BX-01,Reagent Tank (190-BX-01) Level Meter,mm,Level,AI,0~2000,Reagent Tank (190-BX-01) Level Meter,190-BX-01,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-LIT190BX01B,Area 190,190-BX-01,Reagent Tank (190-BX-01) Level Meter,mm,Level,AI,0~2000,Reagent Tank (190-BX-01) Level Meter,190-BX-01,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-LIT190BX002,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT190BX003,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT190TK008,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT190TK009,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT190TK010,Area 190,190-TK-01,Level,mm,Level,,,TAIL BUFFER TANK,190-TK-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-LIT190TK011,Area 190,190-TK-01,Level,mm,Level,,,TAIL BUFFER TANK,190-TK-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-LIT220TK01A,Area 220,220-TK-01,Raw Water Tank  (220-TK-01) Level meter,mm,Level,AI,0~13500,Raw Water Tank  (220-TK-01) Level meter,220-TK-01,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-LIT220TK02A,Area 220,220-TK-02,Fire Water Tank  (220-TK-02) Level meter,mm,Level,AI,0~8000,Fire Water Tank  (220-TK-02) Level meter,220-TK-02,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-LIT220TK03A,Area 220,220-TK-03,Process Water Tank  (220-TK-03) Level meter,mm,Level,AI,0~15500,Process Water Tank  (220-TK-03) Level meter,220-TK-03,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-LIT220TK04A,Area 220,220-TK-04,Filtered Water Tank  (220-TK-04) Level Meter,mm,Level,AI,0~8500,Filtered Water Tank  (220-TK-04) Level Meter,220-TK-04,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-LIT220TK05A,Area 220,220-TK-05,Hypochlorite Tank  (220-TK-05) Level Meter,mm,Level,AI,0~1000,Hypochlorite Tank  (220-TK-05) Level Meter,220-TK-05,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-LIT220TK06A,Area 220,220-TK-06,Treated Water Tank  (220-TK-06) Level Meter,mm,Level,AI,0~2500,Treated Water Tank  (220-TK-06) Level Meter,220-TK-06,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-PIT220FPP01,Area 220,220-FPP-01,Pressure,bar,Pressure,,,ELECTRIC WATER PUMP,220-FPP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-PIT220PPC01,,,Pressure,bar,Pressure,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-PIT240BWR01,Area 240,-,Blower 1 Outlet Pressure Transmitter,bar,Pressure,AI,0-0.49,Blower 1 Outlet Pressure Transmitter,-,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-PIT240BWR02,Area 240,-,Blower 2 Outlet Pressure Transmitter,bar,Pressure,AI,0-0.49,Blower 2 Outlet Pressure Transmitter,-,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-TIT240BWR01,Area 240,240-BWR-01,Temperature,°C,Temperature,,,FLOTATION AREA BLOWER 01,240-BWR-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-TIT240BWR02,Area 240,240-BWR-02,Temperature,°C,Temperature,,,FLOTATION AREA BLOWER 02,240-BWR-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-WIT150TK01A,Area 150,150-TK-01,Slurry Making Tank (150-TK-01) Weightometer,t,Weight,AI,0-100,Slurry Making Tank (150-TK-01) Weightometer,150-TK-01,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-WIT150TK02A,Area 150,150-TK-02,Slurry Making Tank (150-TK-02) Weightometer,t,Weight,AI,0-100,Slurry Making Tank (150-TK-02) Weightometer,150-TK-02,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-IIT190AG008,,,Motor Current,A,Motor Current,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-IIT190AG009,,,Motor Current,A,Motor Current,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-IIT190AG010,Area 190,190-AG-01,Motor Current,A,Motor Current,,,CYANIDE DESTRUCTION TANK AGITATOR,190-AG-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD190PP001,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD190PP002,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD190PP003,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD190PP004,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD190PP005,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD190PP006,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD190PP007,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD190PP008,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD190PP009,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD190PP010,Area 190,190-PP-01,VSD / Drive Parameter,%,VSD / Drive Parameter,,,TAILING DEWATERING THICKENER UNDERFLOW PUMP-01,190-PP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD190PP028,Area 190,190-PP-02,VSD / Drive Parameter,%,VSD / Drive Parameter,,,TAILING DEWATERING THICKENER UNDERFLOW PUMP-02,190-PP-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD190PP029,Area 190,190-PP-02,VSD / Drive Parameter,%,VSD / Drive Parameter,,,TAILING DEWATERING THICKENER UNDERFLOW PUMP-02,190-PP-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD190PP031,Area 190,190-PP-03,VSD / Drive Parameter,%,VSD / Drive Parameter,,,FILTER PRESS FEEDING PUMP 01,190-PP-03,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD190PP032,Area 190,190-PP-03,VSD / Drive Parameter,%,VSD / Drive Parameter,,,FILTER PRESS FEEDING PUMP 01,190-PP-03,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-AIT190TK005PH1,,,Analytical Measurement,,Analytical Measurement,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-AIT190TK007PH1,,,Analytical Measurement,,Analytical Measurement,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-AIT190TK015PH1,Area 190,190-TK-01,Analytical Measurement,,Analytical Measurement,,,TAIL BUFFER TANK,190-TK-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-AIT190AIR01HCN,,,Analytical Measurement,,Analytical Measurement,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-AIT190AIR02HCN,,,Analytical Measurement,,Analytical Measurement,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-DIT190TK001,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT190TK001,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT190HP022,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT190TK001,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT190TK002,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT190TK003,,,Level,mm,Level,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT190TK012,Area 190,190-TK-01,Level,mm,Level,,,TAIL BUFFER TANK,190-TK-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-LIT190TK015,Area 190,190-TK-01,Level,mm,Level,,,TAIL BUFFER TANK,190-TK-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-TIT130ML002001,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML002002,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML002003,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML002004,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML002005,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML002006,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT130ML002001,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT130ML002002,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-PIT130ML002001,,,Pressure,bar,Pressure,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-PIT130ML002002,,,Pressure,bar,Pressure,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-PIT130ML002003,,,Pressure,bar,Pressure,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-PIT130ML002004,,,Pressure,bar,Pressure,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT130ML002003,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT130ML002004,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-PIT130ML002005,,,Pressure,bar,Pressure,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML002007,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML002008,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VIT130ML002001,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VIT130ML002002,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML002009,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML002010,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-IIT130ML002001,,,Motor Current,A,Motor Current,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML002011,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML002012,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML002013,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML002014,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML002015,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML002016,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML002017,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML002018,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML002019,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VIT130ML002003,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VIT130ML002004,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VIT130ML002005,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VIT130ML002006,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML002020,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML002021,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT130ML002005,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT130ML002006,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML002022,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML002023,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML002024,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML001001,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML001002,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML001003,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML001004,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML001005,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML001006,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT130ML001001,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT130ML001002,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-PIT130ML001001,,,Pressure,bar,Pressure,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-PIT130ML001002,,,Pressure,bar,Pressure,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-PIT130ML001003,,,Pressure,bar,Pressure,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-PIT130ML001004,,,Pressure,bar,Pressure,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT130ML001003,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT130ML001004,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT130ML001005,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML001007,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML001008,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VIT130ML001001,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VIT130ML001002,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML001009,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML001010,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-IIT130ML001001,,,Motor Current,A,Motor Current,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VSD130ML001,,,VSD / Drive Parameter,%,VSD / Drive Parameter,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML0O1011,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML0O1012,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT130ML001006,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-PIT130ML001006,,,Pressure,bar,Pressure,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT130ML001007,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-PIT130ML001007,,,Pressure,bar,Pressure,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML001013,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML001014,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML001015,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML001016,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML001017,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML001018,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML001019,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML001020,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML001021,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-PWR130ML001,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VIT130ML001003,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VIT130ML001004,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VIT130ML001005,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-VIT130ML001006,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML001022,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML001023,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT130ML001008,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIT130ML001009,,,Flow,m³/h,Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML001024,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML001025,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TIT130ML001026,,,Temperature,°C,Temperature,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-OIL170TH001001,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-OIL170TH001002,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-PRV170TH001,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-RPV170TH001,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-SCV170TH001,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-TQV170TH001,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-OIL190TH001001,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-OIL190TH001002,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-PRV190TH001,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-RPV190TH001,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-SCV190TH001,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-PQV190TH001,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT220PP2728,Area 220,-,Polishing Water First Stage Pond Level meter,mm,Level,AI,0~10000,Polishing Water First Stage Pond Level meter,-,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-LIT220PP1718,Area 220,-,Raw Water Pond Level Transmitter,mm,Level,AI,0~5000,Raw Water Pond Level Transmitter,-,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-LIT220CAG0102,Area 220,-,River First Stage Pond Level meter,mm,Level,AI,0~10000,River First Stage Pond Level meter,-,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-LIT220PP0102,Area 220,-,River Level Transmitter,mm,Level,AI,0~5000,River Level Transmitter,-,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-LIT220PP0809,Area 220,-,Polishing Pond Level Transmitter,mm,Level,AI,0~5000,Polishing Pond Level Transmitter,-,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-LIT220CAG0304,Area 220,-,Raw First Stage Pond Level meter,mm,Level,AI,0~10000,Raw First Stage Pond Level meter,-,Instrument List (exact tag),High,Needs Review,"Direct PLC tag found in Instrument List. Equipment code, description, IO type and unit are reference-backed; verify PLC scaling/value before final approval."
-Running Hours Jaw Crusher,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-Running Minutes Jaw Crusher,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-Running Hours Apron Feeder,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-Running Minutes Apron Feeder,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-Running Hours Belt Feeder,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-Running Minutes Belt Feeder,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-Running HoursSAG Mill,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-Running Minutes SAG Mill,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-IIT180ELW01,,,Motor Current,A,Motor Current,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-EIT180ELW01,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-IIT180ELW03,,,Motor Current,A,Motor Current,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-EIT180ELW03,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-IIT180ELW05,,,Motor Current,A,Motor Current,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-EIT180ELW05,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIQ130ML01A,Area 130,130-ML-01,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,SAG MILL,130-ML-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIQ130ML02A,Area 130,130-ML-02,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,BALL MILL,130-ML-02,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIQ130CY001,,,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIQ170BX002,,,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIQ220TK003,,,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIQ220TK001,,,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIQ190TK001,,,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIQ180CL01A,,,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIQ180CL01B,,,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIQ180ELW01,,,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIQ180ELW03,,,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIQ180ELW05,,,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIQ180HX001,,,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIQ180TK03A,,,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIQ180TK03B,,,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-DIR190PP013,Area 190,190-PP-01,Unknown,,Unknown,,,TAILING DEWATERING THICKENER UNDERFLOW PUMP-01,190-PP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-DIR190PP014,Area 190,190-PP-01,Unknown,,Unknown,,,TAILING DEWATERING THICKENER UNDERFLOW PUMP-01,190-PP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-DIR190PP015,Area 190,190-PP-01,Unknown,,Unknown,,,TAILING DEWATERING THICKENER UNDERFLOW PUMP-01,190-PP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-DIR190PP016,Area 190,190-PP-01,Unknown,,Unknown,,,TAILING DEWATERING THICKENER UNDERFLOW PUMP-01,190-PP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-DIR190PP017,Area 190,190-PP-01,Unknown,,Unknown,,,TAILING DEWATERING THICKENER UNDERFLOW PUMP-01,190-PP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIQ170TH01,,,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-FIQ140TK06D,Area 140,140-TK-06,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,ROUGHER FLOTATION TANK 01,140-TK-06,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIQ140TK06C,Area 140,140-TK-06,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,ROUGHER FLOTATION TANK 01,140-TK-06,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIQ140TK06B,Area 140,140-TK-06,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,ROUGHER FLOTATION TANK 01,140-TK-06,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIQ140TK10B,Area 140,140-TK-10,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,SCAVENGER FLOTATION TANK 01,140-TK-10,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIQ140TK24B,Area 140,140-TK-24,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,CLEANER FLOTATION TANK 04,140-TK-24,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIQ140TH01,Area 140,140-TH-01,Flow / Totalized Flow,m³/h / total,Flow / Totalized Flow,,,FLOTATION CONCENTRATE THICKENER,140-TH-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-DIR240CP001,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-DIR240CP002,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-DIR240CP003,,,Unknown,,Unknown,,,,,,Low,Needs Review,No direct reference found; requires engineering review.
-LIT170CDM01,Area 170,170-CDM-01,Level,mm,Level,,,LEACH AUTOMATIC REAGENT ADDING DEVICE,170-CDM-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIT210MIP01001,Area 140,210-MIP-01,Flow,m³/h,Flow,,,CONCENTRATE THICKENER FLOCCULANT MIXING PLANT,210-MIP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-DSG210MIP01,Area 140,210-MIP-01,Digital Status / Command,,Digital Status / Command,,,CONCENTRATE THICKENER FLOCCULANT MIXING PLANT,210-MIP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD210MIP01PP1,Area 140,210-MIP-01,VSD / Drive Parameter,%,VSD / Drive Parameter,,,CONCENTRATE THICKENER FLOCCULANT MIXING PLANT,210-MIP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-VSD210MIP01PP2,Area 140,210-MIP-01,VSD / Drive Parameter,%,VSD / Drive Parameter,,,CONCENTRATE THICKENER FLOCCULANT MIXING PLANT,210-MIP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
-FIT210MIP01002,Area 140,210-MIP-01,Flow,m³/h,Flow,,,CONCENTRATE THICKENER FLOCCULANT MIXING PLANT,210-MIP-01,Equipment List (equipment-code pattern),Medium,Needs Review,Equipment association inferred from PLC tag/equipment-code pattern. Verify exact instrument/equipment relationship.
+PLC Tag,Area,Equipment Code,Equipment,Instrument Tag,Suggested Parameter,Suggested Unit,IO Type,Instrument Type,Calibration Range,Evidence,Reference Source,Confidence,Mapping Status,Active
+FIQ170CDM01,Area 170,170-CDM-01,LEACH AUTOMATIC REAGENT ADDING DEVICE,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIQ170CDM02,Area 170,170-CDM-02,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIQ170CDM03,Area 170,170-CDM-03,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIQ170CDM04,Area 170,170-CDM-04,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIQ170CDM05,Area 170,170-CDM-05,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIQ170CDM06,Area 170,170-CDM-06,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIQ170CDM07,Area 170,170-CDM-07,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIQ170CDM08,Area 170,170-CDM-08,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+IIT180AG001,Area 180,180-AG-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD185CTF01,Area 185,185-CTF-01,CENTRIFUGAL FAN 01,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD185CTF02,Area 185,185-CTF-02,CENTRIFUGAL FAN 02,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD185CTF03,Area 185,185-CTF-03,CENTRIFUGAL FAN 03,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIT180CL01A,Area 180,180-CL-01,ACID COLUMN,FIT180CL01A,Filtered Water to Acid Column (180-CL-01) Flowmeter,m³/h,AI,"Flowmeter, Electromagnetic",0~25,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+FIT180CL01B,Area 180,180-CL-01,ACID COLUMN,FIT180CL01B,Dilute Hydrochloric Acid to Acid Column (180-CL-01) Flowmeter,m³/h,AI,"Flowmeter, Electromagnetic",0~25,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+FIT180ELW01,Area 180,180-ELW-01,ELECTROWINNING CELL 01,FIT180ELW01,Pregnant Solution to Electrowinning Cell 1&2 Flowmeter,m³/h,AI,"Flowmeter, Electromagnetic",0~60,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+FIT180ELW03,Area 180,180-ELW-03,ELECTROWINNING CELL 03,FIT180ELW03,Pregnant Solution to Electrowinning Cell 3&4 Flowmeter,m³/h,AI,"Flowmeter, Electromagnetic",0~60,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+FIT180ELW05,Area 180,180-ELW-05,ELECTROWINNING CELL 05,FIT180ELW05,Pregnant Solution to Electrowinning Cell 5&6 Flowmeter,m³/h,AI,"Flowmeter, Electromagnetic",0~60,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+FIT180HX001,Area 180,180-HX-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIT180TK03A,Area 180,180-TK-03,PRESOAK ELUTION TANK,FIT180TK03A,Caustic Solution to Pre-soak Solution Flowmeter,m³/h,AI,"Flowmeter, Electromagnetic",0~7.2,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+FIT180TK03B,Area 180,180-TK-03,PRESOAK ELUTION TANK,FIT180TK03B,Cyanide Solution to Pre-soak Solution Flowmeter,m³/h,AI,"Flowmeter, Electromagnetic",0~7.0,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+IIA180AG001,Area 180,180-AG-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT180HP001,Area 180,180-HP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT180HP002,Area 180,180-HP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT180POND2,Area 180,,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT180TK001,Area 180,180-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT180TK002,Area 180,180-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT180TK003,Area 180,180-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT180TK004,Area 180,180-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT180TK005,Area 180,180-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT180TK006,Area 180,180-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT180TK007,Area 180,180-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT180TK010,Area 180,180-TK-01,ACID STORAGE TANK,LIT180TK01,Acid Storage Tank (180-TK-01) Level meter,mm,AI,"Level Transmitter, Ultrasonic",0~3000,180-TK-01 + LI,Equipment code + measurement family match,Medium,Needs Review,True
+LIT185PP002,Area 185,185-PP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT185TK001,Area 185,185-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+PIT180CL002,Area 180,180-CL-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+PIT180HX02B,Area 180,180-HX-02,ELUTION PRIMARY  HEAT EXCHANGER,PIT180HX02B,Elution Recovery Heat Exchanger (180-HX-02) Outlet Pressure Transmitter,bar,AI,Pressure Transmitter,0-5,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+TIT180CL02A,Area 180,180-CL-02,ELUTION COLUMN,TIT180CL02A,Liquor Eluate to Elution Recovery Heat Exchanger Temperature Transmitter,°C,AI,Temperature Transmitter,0-115,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+TIT180HX01A,Area 180,180-HX-01,ELUTION RECOVERY  HEAT EXCHANGER,TIT180HX01A,Elution Recovery Heat Exchanger (180-HX-01) Outlet Temperature Transmitter,°C,AI,Temperature Transmitter,0-115,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+TIT180HX002,Area 180,180-HX-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIT210MIP02001,Area 210,210-MIP-20,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+DSG210MIP02,Area 210,210-MIP-02,LEACH FEED THICKENER FLOCCULANT MIXING PLANT,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD210MIP02PP1,Area 210,210-MIP-02,LEACH FEED THICKENER FLOCCULANT MIXING PLANT,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD210MIP02PP2,Area 210,210-MIP-02,LEACH FEED THICKENER FLOCCULANT MIXING PLANT,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIT210MIP02002,Area 210,210-MIP-20,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIT210MIP03001,Area 210,210-MIP-30,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+DSG210MIP03,Area 210,210-MIP-03,TAILING DEWATERING THICKENER FLOCCULANT MIXING PLANT,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD210MIP03PP1,Area 210,210-MIP-03,TAILING DEWATERING THICKENER FLOCCULANT MIXING PLANT,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD210MIP03PP2,Area 210,210-MIP-03,TAILING DEWATERING THICKENER FLOCCULANT MIXING PLANT,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIT210MIP03002,Area 210,210-MIP-30,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+PIT240OP001TOA,Area 240,240-OP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+PIT240OP001TOB,Area 240,240-OP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+PIT240OP001001,Area 240,240-OP-01,OXYGEN PLANT,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+PIT240OP001002,Area 240,240-OP-01,OXYGEN PLANT,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+CNC240OP001,Area 240,240-OP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIT240OP001002,Area 240,240-OP-01,OXYGEN PLANT,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD120AF001,Area 120,120-AF-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD120BF001,Area 120,120-BF-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+WIT120CV001,Area 120,120-CV-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+WIQ120CV001,Area 120,120-CV-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+WIT120CV002,Area 120,120-CV-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+WIQ120CV002,Area 120,120-CV-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+IIT120CS001,Area 120,120-CS-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT120BN01A,Area 120,120-BN-01,ROM BIN GRIZZLY,LIT120BN01A,ROM Bin Level Sensor,mm,AI,"Level Transmitter, Radar",0~9300,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+WIQ130CV001,Area 130,130-CV-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD130PP003,Area 130,130-PP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD130PP004,Area 130,130-PP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+IIT160AG003,Area 160,160-AG-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+IIT160AG004,Area 160,160-AG-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+IIT160AG005,Area 160,160-AG-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+IIT160AG006,Area 160,160-AG-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+IIT160AG007,Area 160,160-AG-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD160PP009,Area 160,160-PP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD160PP010,Area 160,160-PP-01,ACID WASH THICKENER FEED PUMP 01,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD160PP011,Area 160,160-PP-01,ACID WASH THICKENER FEED PUMP 01,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD160PP012,Area 160,160-PP-01,ACID WASH THICKENER FEED PUMP 01,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD160PP013,Area 160,160-PP-01,ACID WASH THICKENER FEED PUMP 01,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD160PP014,Area 160,160-PP-01,ACID WASH THICKENER FEED PUMP 01,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD160PP015,Area 160,160-PP-01,ACID WASH THICKENER FEED PUMP 01,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD160PP016,Area 160,160-PP-01,ACID WASH THICKENER FEED PUMP 01,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD160PP017,Area 160,160-PP-01,ACID WASH THICKENER FEED PUMP 01,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD160PP018,Area 160,160-PP-01,ACID WASH THICKENER FEED PUMP 01,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD160PP019,Area 160,160-PP-01,ACID WASH THICKENER FEED PUMP 01,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD160PP020,Area 160,160-PP-02,ACID WASH THICKENER FEED PUMP 02,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD160PP021,Area 160,160-PP-02,ACID WASH THICKENER FEED PUMP 02,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD160PP022,Area 160,160-PP-02,ACID WASH THICKENER FEED PUMP 02,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD170PP002,Area 170,170-PP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD170PP003,Area 170,170-PP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD170PP004,Area 170,170-PP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD170PP005,Area 170,170-PP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD170PP008,Area 170,170-PP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD170PP009,Area 170,170-PP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD210SF001,Area 210,210-SF-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD220PP019,Area 220,220-PP-01,RAW WATER SUPPLY PUMP 01 PANGULIR,,,,,,,220-PP-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+VSD220PP020,Area 220,220-PP-02,RAW WATER SUPPLY PUMP 02 PANGULIR,,,,,,,220-PP-02; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+AIT130SU001PH1,Area 130,130-SU-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+AIT160TK001PH1,Area 160,160-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+AIT160TK007PH1,Area 160,160-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+AIT160TK002DO1,Area 160,160-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+AIT160TK011PH1,Area 160,160-TK-01,CALCINE ACID LEACH TANK  01,AIT160TK01,Calcine Acid Leach Tank (160-TK-01) Slurry PH meter,,AI,pH Transmitter,0-14,160-TK-01 + AI,Equipment code + measurement family match,Medium,Needs Review,True
+AIT170TK002DO1,Area 170,170-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+AIT170TK002PH1,Area 170,170-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+AIT160AIR01HCN,Area 160,160-AIR-01,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+AIT170AIR01HCN,Area 170,170-AIR-01,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+AIT210AIR01HCN,Area 210,210-AIR-01,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+DIT130CY001,Area 130,130-CY-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+DIT160BX001,Area 160,160-BX-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+DIT160BX003,Area 160,160-BX-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+DIT160CY001,Area 160,160-CY-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+DIT170BX002,Area 170,170-BX-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIT130CY001,Area 130,130-CY-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIT130ML01A,Area 130,130-ML-01,SAG MILL,FIT130ML01A,Flow meter for Process Water to Hopper In Front of Ball Mill,m³/h,AI,"Flowmeter, Electromagnetic",0~43.4,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+FIT130ML02A,Area 130,130-ML-02,BALL MILL,FIT130ML02A,Process Water to Ball mill (130-ML-02) Flow meter,m³/h,AI,"Flowmeter, Electromagnetic",0~12,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+FIT160BX001,Area 160,160-BX-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIT160BX003,Area 160,160-BX-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIT160CY001,Area 160,160-CY-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIT170BX002,Area 170,170-BX-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIT210TK05A,Area 210,210-TK-05,LIME MIXING TANK,FIT210TK05A,Water to Lime Mixing Tank  (210-TK-05) Flowmeter,,AI,"Flowmeter, Electromagnetic",0-14,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+FIT220TK003,Area 220,220-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIT240OP001,Area 240,240-OP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT130HP004,Area 130,130-HP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT130SU001,Area 130,130-SU-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT160BX002,Area 160,160-BX-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT160BX009,Area 160,160-BX-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT160HP001,Area 160,160-HP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT160TK002,Area 160,160-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT160TK005,Area 160,160-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT160TK006,Area 160,160-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT160TK007,Area 160,160-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT160TK008,Area 160,160-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT170HP001,Area 170,170-HP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT170TK009,Area 170,170-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT210TK001,Area 210,210-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT210TK002,Area 210,210-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT210TK003,Area 210,210-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT210TK004,Area 210,210-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT210TK05A,Area 210,210-TK-05,LIME MIXING TANK,LIT210TK05A,Lime Mixing Tank  (210-TK-05) Level meter,mm,AI,"Level Transmitter, Ultrasonic",0~3000,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+LIT210TK06A,Area 210,210-TK-06,LIME STORAGE TANK,LIT210TK06A,Lime Storage Tank  (210-TK-06) Level meter,mm,AI,"Level Transmitter, Ultrasonic",0~7500,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+PIT130CY001,Area 130,130-CY-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+PIT130ML001,Area 130,130-ML-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+PIT160CY001,Area 160,160-CY-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+PIT210TK05A,Area 210,210-TK-05,LIME MIXING TANK,,,,,,,210-TK-05; 5 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+PIT210TK06A,Area 210,210-TK-06,LIME STORAGE TANK,,,,,,,210-TK-06; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+PIT240AR001,Area 240,240-AR-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+PIT240AR002,Area 240,240-AR-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+PIT240OP01A,Area 240,240-OP-01,OXYGEN PLANT,PIT240OP01A,Public Cooling Tower Supply Water Pressure Transmitter,bar,AI,Pressure Transmitter,0-5,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+PIT240OP01B,Area 240,240-OP-01,OXYGEN PLANT,PIT240OP01B,Oxygen Plant Supply Oxygen Pressure Transmitter,bar,AI,Pressure Transmitter,0-5,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+TIT130ML001,Area 130,130-ML-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+TIT240OP001,Area 240,240-OP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+WIT130CV001,Area 130,130-CV-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD140PP013,Area 140,140-PP-01,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD140PP014,Area 140,140-PP-01,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD140PP015,Area 140,140-PP-01,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD140PP016,Area 140,140-PP-01,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD140PP017,Area 140,140-PP-01,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD140PP018,Area 140,140-PP-01,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD140PP019,Area 140,140-PP-01,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD140PP020,Area 140,140-PP-02,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD140PP021,Area 140,140-PP-02,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD140PP022,Area 140,140-PP-02,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD140PP023,Area 140,140-PP-02,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD140PP024,Area 140,140-PP-02,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD140PP025,Area 140,140-PP-02,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD140PP026,Area 140,140-PP-02,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD220PP003,Area 220,220-PP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD220PP004,Area 220,220-PP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD220PP005,Area 220,220-PP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD220PP006,Area 220,220-PP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD220PP007,Area 220,220-PP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD220PP010,Area 220,220-PP-01,RAW WATER SUPPLY PUMP 01 PANGULIR,,,,,,,220-PP-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+VSD220PP011,Area 220,220-PP-01,RAW WATER SUPPLY PUMP 01 PANGULIR,,,,,,,220-PP-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+VSD220PP013,Area 220,220-PP-01,RAW WATER SUPPLY PUMP 01 PANGULIR,,,,,,,220-PP-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+VSD220PP014,Area 220,220-PP-01,RAW WATER SUPPLY PUMP 01 PANGULIR,,,,,,,220-PP-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+VSD220PP015,Area 220,220-PP-01,RAW WATER SUPPLY PUMP 01 PANGULIR,,,,,,,220-PP-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+VSD220PP016,Area 220,220-PP-01,RAW WATER SUPPLY PUMP 01 PANGULIR,,,,,,,220-PP-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+VSD220PP021,Area 220,220-PP-02,RAW WATER SUPPLY PUMP 02 PANGULIR,,,,,,,220-PP-02; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+VSD220PP022,Area 220,220-PP-02,RAW WATER SUPPLY PUMP 02 PANGULIR,,,,,,,220-PP-02; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+AIT160TK005ORP,Area 160,160-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+AIT160TK005PH1,Area 160,160-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+DIT140TH001,Area 140,140-TH-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+DIT170TH001,Area 170,170-TH-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIT140TH001,Area 140,140-TH-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIT140TK06A,Area 140,140-TK-06,ROUGHER FLOTATION TANK 01,FIT140TK06A,Flotation Cell (140-TK-06) Blower air Flowmeter,m³/min,AI,"Flowmeter, Calorimetric",0~13.2,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+FIT140TK06B,Area 140,140-TK-06,ROUGHER FLOTATION TANK 01,FIT140TK06B,Scavenger 1 Concentrate Discharge Flowmeter,m³/h,AI,"Flowmeter, Electromagnetic",0~96.6,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+FIT140TK06C,Area 140,140-TK-06,ROUGHER FLOTATION TANK 01,FIT140TK06C,Scavenger 2 Concentrate Discharge Flowmeter,m³/h,AI,"Flowmeter, Electromagnetic",0~66.9,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+FIT140TK06D,Area 140,140-TK-06,ROUGHER FLOTATION TANK 01,FIT140TK06D,Cleaner 1 Tailing Hop Discharge Flowmeter,m³/h,AI,"Flowmeter, Electromagnetic",0~126,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+FIT140TK007,Area 140,140-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIT140TK008,Area 140,140-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIT140TK009,Area 140,140-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIT140TK10A,Area 140,140-TK-10,SCAVENGER FLOTATION TANK 01,FIT140TK10A,Flotation Cell (140-TK-10) Blower air Flowmeter,m³/min,AI,"Flowmeter, Calorimetric",0~13.2,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+FIT140TK10B,Area 140,140-TK-10,SCAVENGER FLOTATION TANK 01,FIT140TK10B,Scavenger 3 Concentrate Discharge Flowmeter,m³/h,AI,"Flowmeter, Electromagnetic",0~59,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+FIT140TK011,Area 140,140-TK-01,PAX MIXING TANK,,,,,,,140-TK-01; 2 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT140TK012,Area 140,140-TK-01,PAX MIXING TANK,,,,,,,140-TK-01; 2 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT140TK013,Area 140,140-TK-01,PAX MIXING TANK,,,,,,,140-TK-01; 2 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT140TK14A,Area 140,140-TK-14,SCAVENGER FLOTATION TANK 05,FIT140TK14A,Flotation Cell (140-TK-14) Blower air Flowmeter,m³/min,AI,"Flowmeter, Calorimetric",0~13.2,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+FIT140TK015,Area 140,140-TK-01,PAX MIXING TANK,,,,,,,140-TK-01; 2 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT140TK016,Area 140,140-TK-01,PAX MIXING TANK,,,,,,,140-TK-01; 2 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT140TK017,Area 140,140-TK-01,PAX MIXING TANK,,,,,,,140-TK-01; 2 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT140TK018,Area 140,140-TK-01,PAX MIXING TANK,,,,,,,140-TK-01; 2 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT140TK019,Area 140,140-TK-01,PAX MIXING TANK,,,,,,,140-TK-01; 2 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT140TK020,Area 140,140-TK-02,REAGENT TRIAL TANK,,,,,,,140-TK-02; 2 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT140TK021,Area 140,140-TK-02,REAGENT TRIAL TANK,,,,,,,140-TK-02; 2 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT140TK022,Area 140,140-TK-02,REAGENT TRIAL TANK,,,,,,,140-TK-02; 2 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT140TK023,Area 140,140-TK-02,REAGENT TRIAL TANK,,,,,,,140-TK-02; 2 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT140TK024,Area 140,140-TK-02,REAGENT TRIAL TANK,,,,,,,140-TK-02; 2 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT140TK24B,Area 140,140-TK-24,CLEANER FLOTATION TANK 04,FIT140TK24B,Rougher Circuit Concentrate Discharge Slurry Flowmeter,m³/h,AI,"Flowmeter, Electromagnetic",0~146,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+FIT140TK025,Area 140,140-TK-02,REAGENT TRIAL TANK,,,,,,,140-TK-02; 2 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT140TK026,Area 140,140-TK-02,REAGENT TRIAL TANK,,,,,,,140-TK-02; 2 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT140TK027,Area 140,140-TK-02,REAGENT TRIAL TANK,,,,,,,140-TK-02; 2 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT140TK028,Area 140,140-TK-02,REAGENT TRIAL TANK,,,,,,,140-TK-02; 2 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT140TK029,Area 140,140-TK-02,REAGENT TRIAL TANK,,,,,,,140-TK-02; 2 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT140TK030,Area 140,140-TK-03,CUSO4 MIXING TANK,,,,,,,140-TK-03; 2 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT140TK031,Area 140,140-TK-03,CUSO4 MIXING TANK,,,,,,,140-TK-03; 2 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT170TH001,Area 170,170-TH-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIT220TK001,Area 220,220-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LCV140TK09A,Area 140,140-TK-09,ROUGHER FLOTATION TANK 04,LCV140TK09A,Flotation Cell s (140-TK-09) Discharge Valve Position Feedback,%,AI,Air Modulation Actuator,0~100%,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+LCV140TK09B,Area 140,140-TK-09,ROUGHER FLOTATION TANK 04,LCV140TK09B,Flotation Cell s (140-TK-09) Discharge Valve Position Feedback,%,AI,Air Modulation Actuator,0~100%,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+LCV140TK13A,Area 140,140-TK-13,SCAVENGER FLOTATION TANK 04,LCV140TK13A,Flotation Cell (140-TK-13) Discharge Valve Position Feedback,%,AI,Air Modulation Actuator,0~100%,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+LCV140TK13B,Area 140,140-TK-13,SCAVENGER FLOTATION TANK 04,LCV140TK13B,Flotation Cell (140-TK-13) Discharge Valve Position Feedback,%,AI,Air Modulation Actuator,0~100%,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+LCV140TK17A,Area 140,140-TK-17,SCAVENGER FLOTATION TANK 08,LCV140TK17A,Flotation Cell (140-TK-17) Discharge Valve Position Feedback,%,AI,Air Modulation Actuator,0~100%,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+LCV140TK17B,Area 140,140-TK-17,SCAVENGER FLOTATION TANK 08,LCV140TK17B,Flotation Cell (140-TK-17) Discharge Valve Position Feedback,%,AI,Air Modulation Actuator,0~100%,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+LCV140TK20A,Area 140,140-TK-20,SCAVENGER FLOTATION TANK 11,LCV140TK20A,Flotation Cell (140-TK-20) Discharge Valve Position Feedback,%,AI,Air Modulation Actuator,0~100%,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+LCV140TK20B,Area 140,140-TK-20,SCAVENGER FLOTATION TANK 11,LCV140TK20B,Flotation Cell (140-TK-20) Discharge Valve Position Feedback,%,AI,Air Modulation Actuator,0~100%,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+LCV140TK021,Area 140,140-TK-02,REAGENT TRIAL TANK,,,,,,,140-TK-02; 2 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+LCV140TK025,Area 140,140-TK-02,REAGENT TRIAL TANK,,,,,,,140-TK-02; 2 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+LCV140TK029,Area 140,140-TK-02,REAGENT TRIAL TANK,,,,,,,140-TK-02; 2 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+LIT140HP001,Area 140,140-HP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT140HP002,Area 140,140-HP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT140HP006,Area 140,140-HP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT140HP007,Area 140,140-HP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT140HP008,Area 140,140-HP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT140HP009,Area 140,140-HP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT140HP010,Area 140,140-HP-01,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT140TK01A,Area 140,140-TK-01,PAX MIXING TANK,LIT140TK01A,Reagent Mixing Tank (140-TK-01) Level meter,mm,AI,"Level Transmitter, Ultrasonic",0~1500,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+LIT140TK02A,Area 140,140-TK-02,REAGENT TRIAL TANK,LIT140TK02A,Reagent Mixing Tank (140-TK-02) Level meter,mm,AI,"Level Transmitter, Ultrasonic",0~1500,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+LIT140TK03A,Area 140,140-TK-03,CUSO4 MIXING TANK,LIT140TK03A,Reagent Mixing Tank (140-TK-03) Level meter,mm,AI,"Level Transmitter, Ultrasonic",0~1500,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+LIT140TK04A,Area 140,140-TK-04,CONDITIONING TANK 01,LIT140TK04,Reagent Mixing Tank (140-TK-04) Level Meter,mm,AI,"Level Transmitter, Ultrasonic",0~4500,140-TK-04 + LI,Equipment code + measurement family match,Medium,Needs Review,True
+LIT140TK005,Area 140,140-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT140TK009,Area 140,140-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT140TK013,Area 140,140-TK-01,PAX MIXING TANK,LIT140TK01A,Reagent Mixing Tank (140-TK-01) Level meter,mm,AI,"Level Transmitter, Ultrasonic",0~1500,140-TK-01 + LI,Equipment code + measurement family match,Medium,Needs Review,True
+LIT140TK017,Area 140,140-TK-01,PAX MIXING TANK,LIT140TK01A,Reagent Mixing Tank (140-TK-01) Level meter,mm,AI,"Level Transmitter, Ultrasonic",0~1500,140-TK-01 + LI,Equipment code + measurement family match,Medium,Needs Review,True
+LIT140TK020,Area 140,140-TK-02,REAGENT TRIAL TANK,LIT140TK02A,Reagent Mixing Tank (140-TK-02) Level meter,mm,AI,"Level Transmitter, Ultrasonic",0~1500,140-TK-02 + LI,Equipment code + measurement family match,Medium,Needs Review,True
+LIT140TK021,Area 140,140-TK-02,REAGENT TRIAL TANK,LIT140TK02A,Reagent Mixing Tank (140-TK-02) Level meter,mm,AI,"Level Transmitter, Ultrasonic",0~1500,140-TK-02 + LI,Equipment code + measurement family match,Medium,Needs Review,True
+LIT140TK025,Area 140,140-TK-02,REAGENT TRIAL TANK,LIT140TK02A,Reagent Mixing Tank (140-TK-02) Level meter,mm,AI,"Level Transmitter, Ultrasonic",0~1500,140-TK-02 + LI,Equipment code + measurement family match,Medium,Needs Review,True
+LIT140TK029,Area 140,140-TK-02,REAGENT TRIAL TANK,LIT140TK02A,Reagent Mixing Tank (140-TK-02) Level meter,mm,AI,"Level Transmitter, Ultrasonic",0~1500,140-TK-02 + LI,Equipment code + measurement family match,Medium,Needs Review,True
+LIT140TK032,Area 140,140-TK-03,CUSO4 MIXING TANK,LIT140TK03A,Reagent Mixing Tank (140-TK-03) Level meter,mm,AI,"Level Transmitter, Ultrasonic",0~1500,140-TK-03 + LI,Equipment code + measurement family match,Medium,Needs Review,True
+LIT140TK033,Area 140,140-TK-03,CUSO4 MIXING TANK,LIT140TK03A,Reagent Mixing Tank (140-TK-03) Level meter,mm,AI,"Level Transmitter, Ultrasonic",0~1500,140-TK-03 + LI,Equipment code + measurement family match,Medium,Needs Review,True
+LIT150TK03A,Area 150,150-TK-03,STORAGE AGITATING TANK 01,LIT150TK03A,Storage Agitating Tank (150-TK-03) Level Transmitter,mm,AI,"Level Transmitter, Ultrasonic",0~3000,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+LIT150TK04A,Area 150,150-TK-04,STORAGE AGITATING TANK 02,LIT150TK04A,Storage Agitating Tank (150-TK-04) Level Transmitter,mm,AI,"Level Transmitter, Ultrasonic",0~3000,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+LIT150TK05A,Area 150,150-TK-05,BUFFER AGITATING TANK,LIT150TK05A,Buffer Agitating Tank (150-TK-05) Level Transmitter,mm,AI,"Level Transmitter, Ultrasonic",0~3000,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+LIT190BX01A,Area 190,190-BX-01,REAGENT STORAGE BOX 01 CUSO4 /H2O2,LIT190BX01A,Reagent Tank (190-BX-01) Level Meter,mm,AI,"Level Transmitter, Ultrasonic",0~2000,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+LIT190BX01B,Area 190,190-BX-01,REAGENT STORAGE BOX 01 CUSO4 /H2O2,LIT190BX01B,Reagent Tank (190-BX-01) Level Meter,mm,AI,"Level Transmitter, Ultrasonic",0~2000,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+LIT190BX002,Area 190,190-BX-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT190BX003,Area 190,190-BX-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT190TK008,Area 190,190-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT190TK009,Area 190,190-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT190TK010,Area 190,190-TK-01,TAIL BUFFER TANK,,,,,,,190-TK-01; 2 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+LIT190TK011,Area 190,190-TK-01,TAIL BUFFER TANK,,,,,,,190-TK-01; 2 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+LIT220TK01A,Area 220,220-TK-01,RAW WATER TANK,LIT220TK01A,Raw Water Tank  (220-TK-01) Level meter,mm,AI,"Level Transmitter, Ultrasonic",0~13500,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+LIT220TK02A,Area 220,220-TK-02,FIRE WATER TANK,LIT220TK02A,Fire Water Tank  (220-TK-02) Level meter,mm,AI,"Level Transmitter, Ultrasonic",0~8000,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+LIT220TK03A,Area 220,220-TK-03,PROCESS WATER TANK FREE CYANIDE,LIT220TK03A,Process Water Tank  (220-TK-03) Level meter,mm,AI,"Level Transmitter, Ultrasonic",0~15500,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+LIT220TK04A,Area 220,220-TK-04,FILTERED WATER TANK,LIT220TK04A,Filtered Water Tank  (220-TK-04) Level Meter,mm,AI,"Level Transmitter, Ultrasonic",0~8500,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+LIT220TK05A,Area 220,220-TK-05,HYPOCHLORIDE TANK,LIT220TK05A,Hypochlorite Tank  (220-TK-05) Level Meter,mm,AI,"Level Transmitter, Ultrasonic",0~1000,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+LIT220TK06A,Area 220,220-TK-06,TREATED WATER TANK,LIT220TK06A,Treated Water Tank  (220-TK-06) Level Meter,mm,AI,"Level Transmitter, Ultrasonic",0~2500,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+PIT220FPP01,Area 220,220-FPP-01,ELECTRIC WATER PUMP,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+PIT220PPC01,Area 220,220-PPC-01,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+PIT240BWR01,Area 240,240-BWR-01,FLOTATION AREA BLOWER 01,PIT240BWR01,Blower 1 Outlet Pressure Transmitter,bar,AI,Pressure Transmitter,0-0.49,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+PIT240BWR02,Area 240,240-BWR-02,FLOTATION AREA BLOWER 02,PIT240BWR02,Blower 2 Outlet Pressure Transmitter,bar,AI,Pressure Transmitter,0-0.49,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+TIT240BWR01,Area 240,240-BWR-01,FLOTATION AREA BLOWER 01,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+TIT240BWR02,Area 240,240-BWR-02,FLOTATION AREA BLOWER 02,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+WIT150TK01A,Area 150,150-TK-01,SLURRY MAKING TANK 01,WIT150TK01A,Slurry Making Tank (150-TK-01) Weightometer,t,AI,Weightometer,0-100,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+WIT150TK02A,Area 150,150-TK-02,SLURRY MAKING TANK 02,WIT150TK02A,Slurry Making Tank (150-TK-02) Weightometer,t,AI,Weightometer,0-100,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+IIT190AG008,Area 190,190-AG-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+IIT190AG009,Area 190,190-AG-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+IIT190AG010,Area 190,190-AG-01,CYANIDE DESTRUCTION TANK AGITATOR,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD190PP001,Area 190,190-PP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD190PP002,Area 190,190-PP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD190PP003,Area 190,190-PP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD190PP004,Area 190,190-PP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD190PP005,Area 190,190-PP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD190PP006,Area 190,190-PP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD190PP007,Area 190,190-PP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD190PP008,Area 190,190-PP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD190PP009,Area 190,190-PP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD190PP010,Area 190,190-PP-01,TAILING DEWATERING THICKENER UNDERFLOW PUMP-01,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD190PP028,Area 190,190-PP-02,TAILING DEWATERING THICKENER UNDERFLOW PUMP-02,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD190PP029,Area 190,190-PP-02,TAILING DEWATERING THICKENER UNDERFLOW PUMP-02,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD190PP031,Area 190,190-PP-03,FILTER PRESS FEEDING PUMP 01,,,,,,,190-PP-03; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+VSD190PP032,Area 190,190-PP-03,FILTER PRESS FEEDING PUMP 01,,,,,,,190-PP-03; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+AIT190TK005PH1,Area 190,190-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+AIT190TK007PH1,Area 190,190-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+AIT190TK015PH1,Area 190,190-TK-01,TAIL BUFFER TANK,,,,,,,190-TK-01; 2 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+AIT190AIR01HCN,Area 190,190-AIR-01,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+AIT190AIR02HCN,Area 190,190-AIR-02,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+DIT190TK001,Area 190,190-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIT190TK001,Area 190,190-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT190HP022,Area 190,190-HP-02,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT190TK001,Area 190,190-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT190TK002,Area 190,190-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT190TK003,Area 190,190-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT190TK012,Area 190,190-TK-01,TAIL BUFFER TANK,,,,,,,190-TK-01; 2 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+LIT190TK015,Area 190,190-TK-01,TAIL BUFFER TANK,,,,,,,190-TK-01; 2 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML002001,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML002002,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML002003,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML002004,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML002005,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML002006,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT130ML002001,Area 130,130-ML-02,BALL MILL,FIT130ML02A,Process Water to Ball mill (130-ML-02) Flow meter,m³/h,AI,"Flowmeter, Electromagnetic",0~12,130-ML-02 + FI,Equipment code + measurement family match,Medium,Needs Review,True
+FIT130ML002002,Area 130,130-ML-02,BALL MILL,FIT130ML02A,Process Water to Ball mill (130-ML-02) Flow meter,m³/h,AI,"Flowmeter, Electromagnetic",0~12,130-ML-02 + FI,Equipment code + measurement family match,Medium,Needs Review,True
+PIT130ML002001,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+PIT130ML002002,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+PIT130ML002003,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+PIT130ML002004,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT130ML002003,Area 130,130-ML-02,BALL MILL,FIT130ML02A,Process Water to Ball mill (130-ML-02) Flow meter,m³/h,AI,"Flowmeter, Electromagnetic",0~12,130-ML-02 + FI,Equipment code + measurement family match,Medium,Needs Review,True
+FIT130ML002004,Area 130,130-ML-02,BALL MILL,FIT130ML02A,Process Water to Ball mill (130-ML-02) Flow meter,m³/h,AI,"Flowmeter, Electromagnetic",0~12,130-ML-02 + FI,Equipment code + measurement family match,Medium,Needs Review,True
+PIT130ML002005,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML002007,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML002008,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+VIT130ML002001,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+VIT130ML002002,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML002009,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML002010,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+IIT130ML002001,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML002011,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML002012,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML002013,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML002014,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML002015,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML002016,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML002017,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML002018,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML002019,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+VIT130ML002003,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+VIT130ML002004,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+VIT130ML002005,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+VIT130ML002006,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML002020,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML002021,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT130ML002005,Area 130,130-ML-02,BALL MILL,FIT130ML02A,Process Water to Ball mill (130-ML-02) Flow meter,m³/h,AI,"Flowmeter, Electromagnetic",0~12,130-ML-02 + FI,Equipment code + measurement family match,Medium,Needs Review,True
+FIT130ML002006,Area 130,130-ML-02,BALL MILL,FIT130ML02A,Process Water to Ball mill (130-ML-02) Flow meter,m³/h,AI,"Flowmeter, Electromagnetic",0~12,130-ML-02 + FI,Equipment code + measurement family match,Medium,Needs Review,True
+TIT130ML002022,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML002023,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML002024,Area 130,130-ML-02,BALL MILL,,,,,,,130-ML-02; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML001001,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML001002,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML001003,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML001004,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML001005,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML001006,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT130ML001001,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT130ML001002,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+PIT130ML001001,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+PIT130ML001002,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+PIT130ML001003,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+PIT130ML001004,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT130ML001003,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT130ML001004,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT130ML001005,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML001007,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML001008,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+VIT130ML001001,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+VIT130ML001002,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML001009,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML001010,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+IIT130ML001001,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+VSD130ML001,Area 130,130-ML-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+TIT130ML0O1011,Area 130,130-ML-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+TIT130ML0O1012,Area 130,130-ML-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIT130ML001006,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+PIT130ML001006,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT130ML001007,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+PIT130ML001007,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML001013,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML001014,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML001015,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML001016,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML001017,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML001018,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML001019,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML001020,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML001021,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+PWR130ML001,Area 130,130-ML-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VIT130ML001003,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+VIT130ML001004,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+VIT130ML001005,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+VIT130ML001006,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML001022,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML001023,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT130ML001008,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIT130ML001009,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML001024,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML001025,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+TIT130ML001026,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+OIL170TH001001,Area 170,170-TH-01,,,,,,,,170-TH-01; 8 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+OIL170TH001002,Area 170,170-TH-01,,,,,,,,170-TH-01; 8 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+PRV170TH001,Area 170,170-TH-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+RPV170TH001,Area 170,170-TH-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+SCV170TH001,Area 170,170-TH-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+TQV170TH001,Area 170,170-TH-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+OIL190TH001001,Area 190,190-TH-01,,,,,,,,190-TH-01; 12 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+OIL190TH001002,Area 190,190-TH-01,,,,,,,,190-TH-01; 12 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+PRV190TH001,Area 190,190-TH-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+RPV190TH001,Area 190,190-TH-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+SCV190TH001,Area 190,190-TH-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+PQV190TH001,Area 190,190-TH-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT220PP2728,Area 220,220-PP-272,,LIT220PP2728,Polishing Water First Stage Pond Level meter,mm,AI,"Level Transmitter, Ultrasonic",0~10000,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+LIT220PP1718,Area 220,220-PP-171,,LIT220PP1718,Raw Water Pond Level Transmitter,mm,AI,"Level Transmitter, Ultrasonic",0~5000,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+LIT220CAG0102,Area 220,220-CAG-10,,LIT220CAG0102,River First Stage Pond Level meter,mm,AI,"Level Transmitter, Ultrasonic",0~10000,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+LIT220PP0102,Area 220,220-PP-10,FILTERED WATER PUMP 01,LIT220PP0102,River Level Transmitter,mm,AI,"Level Transmitter, Ultrasonic",0~5000,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+LIT220PP0809,Area 220,220-PP-80,,LIT220PP0809,Polishing Pond Level Transmitter,mm,AI,"Level Transmitter, Ultrasonic",0~5000,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+LIT220CAG0304,Area 220,220-CAG-30,,LIT220CAG0304,Raw First Stage Pond Level meter,mm,AI,"Level Transmitter, Ultrasonic",0~10000,Exact tag,Exact Instrument List tag match,High,Needs Review,True
+Running Hours Jaw Crusher,,,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+Running Minutes Jaw Crusher,,,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+Running Hours Apron Feeder,,,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+Running Minutes Apron Feeder,,,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+Running Hours Belt Feeder,,,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+Running Minutes Belt Feeder,,,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+Running HoursSAG Mill,,,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+Running Minutes SAG Mill,,,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+IIT180ELW01,Area 180,180-ELW-01,ELECTROWINNING CELL 01,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+EIT180ELW01,Area 180,180-ELW-01,ELECTROWINNING CELL 01,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+IIT180ELW03,Area 180,180-ELW-03,ELECTROWINNING CELL 03,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+EIT180ELW03,Area 180,180-ELW-03,ELECTROWINNING CELL 03,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+IIT180ELW05,Area 180,180-ELW-05,ELECTROWINNING CELL 05,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+EIT180ELW05,Area 180,180-ELW-05,ELECTROWINNING CELL 05,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIQ130ML01A,Area 130,130-ML-01,SAG MILL,,,,,,,130-ML-01; 1 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIQ130ML02A,Area 130,130-ML-02,BALL MILL,FIT130ML02A,Process Water to Ball mill (130-ML-02) Flow meter,m³/h,AI,"Flowmeter, Electromagnetic",0~12,130-ML-02 + FI,Equipment code + measurement family match,Medium,Needs Review,True
+FIQ130CY001,Area 130,130-CY-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIQ170BX002,Area 170,170-BX-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIQ220TK003,Area 220,220-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIQ220TK001,Area 220,220-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIQ190TK001,Area 190,190-TK-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIQ180CL01A,Area 180,180-CL-01,ACID COLUMN,,,,,,,180-CL-01; 8 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIQ180CL01B,Area 180,180-CL-01,ACID COLUMN,,,,,,,180-CL-01; 8 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIQ180ELW01,Area 180,180-ELW-01,ELECTROWINNING CELL 01,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIQ180ELW03,Area 180,180-ELW-03,ELECTROWINNING CELL 03,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIQ180ELW05,Area 180,180-ELW-05,ELECTROWINNING CELL 05,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIQ180HX001,Area 180,180-HX-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIQ180TK03A,Area 180,180-TK-03,PRESOAK ELUTION TANK,,,,,,,180-TK-03; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIQ180TK03B,Area 180,180-TK-03,PRESOAK ELUTION TANK,,,,,,,180-TK-03; 3 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+DIR190PP013,Area 190,190-PP-01,TAILING DEWATERING THICKENER UNDERFLOW PUMP-01,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+DIR190PP014,Area 190,190-PP-01,TAILING DEWATERING THICKENER UNDERFLOW PUMP-01,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+DIR190PP015,Area 190,190-PP-01,TAILING DEWATERING THICKENER UNDERFLOW PUMP-01,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+DIR190PP016,Area 190,190-PP-01,TAILING DEWATERING THICKENER UNDERFLOW PUMP-01,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+DIR190PP017,Area 190,190-PP-01,TAILING DEWATERING THICKENER UNDERFLOW PUMP-01,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIQ170TH01,Area 170,170-TH-01,,,,,,,,170-TH-01; 8 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+FIQ140TK06D,Area 140,140-TK-06,ROUGHER FLOTATION TANK 01,FIT140TK06A,Flotation Cell (140-TK-06) Blower air Flowmeter,m³/min,AI,"Flowmeter, Calorimetric",0~13.2,140-TK-06 + FI,Equipment code + measurement family match,Medium,Needs Review,True
+FIQ140TK06C,Area 140,140-TK-06,ROUGHER FLOTATION TANK 01,FIT140TK06A,Flotation Cell (140-TK-06) Blower air Flowmeter,m³/min,AI,"Flowmeter, Calorimetric",0~13.2,140-TK-06 + FI,Equipment code + measurement family match,Medium,Needs Review,True
+FIQ140TK06B,Area 140,140-TK-06,ROUGHER FLOTATION TANK 01,FIT140TK06A,Flotation Cell (140-TK-06) Blower air Flowmeter,m³/min,AI,"Flowmeter, Calorimetric",0~13.2,140-TK-06 + FI,Equipment code + measurement family match,Medium,Needs Review,True
+FIQ140TK10B,Area 140,140-TK-10,SCAVENGER FLOTATION TANK 01,FIT140TK10A,Flotation Cell (140-TK-10) Blower air Flowmeter,m³/min,AI,"Flowmeter, Calorimetric",0~13.2,140-TK-10 + FI,Equipment code + measurement family match,Medium,Needs Review,True
+FIQ140TK24B,Area 140,140-TK-24,CLEANER FLOTATION TANK 04,FIT140TK24A,Cleaner 1 Flotation Cell (140-TK-24) Blower Air Flowmeter,m³/min,AI,"Flowmeter, Calorimetric",0~7.84,140-TK-24 + FI,Equipment code + measurement family match,Medium,Needs Review,True
+FIQ140TH01,Area 140,140-TH-01,FLOTATION CONCENTRATE THICKENER,,,,,,,140-TH-01; 4 instrument candidates,Equipment code match; instrument family ambiguous,Medium,Needs Review,True
+DIR240CP001,Area 240,240-CP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+DIR240CP002,Area 240,240-CP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+DIR240CP003,Area 240,240-CP-00,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+LIT170CDM01,Area 170,170-CDM-01,LEACH AUTOMATIC REAGENT ADDING DEVICE,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIT210MIP01001,Area 210,210-MIP-10,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+DSG210MIP01,Area 210,210-MIP-01,CONCENTRATE THICKENER FLOCCULANT MIXING PLANT,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD210MIP01PP1,Area 210,210-MIP-01,CONCENTRATE THICKENER FLOCCULANT MIXING PLANT,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+VSD210MIP01PP2,Area 210,210-MIP-01,CONCENTRATE THICKENER FLOCCULANT MIXING PLANT,,,,,,,,PLC tag pattern only,Low,Needs Review,True
+FIT210MIP01002,Area 210,210-MIP-10,,,,,,,,,PLC tag pattern only,Low,Needs Review,True
