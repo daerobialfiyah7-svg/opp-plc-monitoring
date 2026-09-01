@@ -5,6 +5,45 @@ from pathlib import Path
 import re
 
 st.set_page_config(page_title="OPP Engineering Monitoring", page_icon="⚙️", layout="wide")
+
+st.markdown("""
+<style>
+[data-testid="stAppViewContainer"] {
+  background:
+    linear-gradient(rgba(31,111,178,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(31,111,178,.035) 1px, transparent 1px),
+    #f4f7fa;
+  background-size: 32px 32px, 32px 32px, auto;
+}
+[data-testid="stHeader"] { background: rgba(244,247,250,.9); }
+[data-testid="stSidebar"] {
+  background: linear-gradient(180deg, #eaf0f6 0%, #f7f9fb 75%);
+  border-right: 1px solid #d9e1ea;
+}
+.block-container { max-width: 1500px; padding-top: 2.4rem; }
+h1 { font-size: 2.15rem !important; color: #263445; }
+h2 { font-size: 1.55rem !important; color: #263445; }
+h3 { font-size: 1.18rem !important; color: #263445; }
+[data-testid="stMetricValue"] { font-size: 1.75rem !important; }
+[data-testid="stMetricLabel"] { font-size: .88rem !important; color: #66758a; }
+.eng-hero {
+  position: relative; overflow: hidden; padding: 1.15rem 1.35rem;
+  border: 1px solid #d7e2ee; border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255,255,255,.97), rgba(239,245,250,.97));
+  box-shadow: 0 8px 24px rgba(45,65,85,.07);
+  margin-bottom: 1rem;
+}
+.eng-hero:after {
+  content: "⚙  ⚙  ⚙";
+  position: absolute; right: 22px; top: 12px;
+  font-size: 48px; letter-spacing: 12px; color: rgba(31,111,178,.075);
+}
+.eng-badge {
+  display:inline-block; padding: .28rem .65rem; border-radius: 999px;
+  background:#e8f3fb; color:#1f6fb2; font-weight:600; font-size:.78rem;
+}
+</style>
+""", unsafe_allow_html=True)
 ROOT = Path(__file__).resolve().parent
 
 @st.cache_data
@@ -97,9 +136,11 @@ def canonicalize_equipment_master(master, equipment_reference=None):
         ref_area = dict(zip(ref["Equipment Code"], ref["Area"]))
         ref_crit = dict(zip(ref["Equipment Code"], ref["Criticality"]))
 
-        master["Equipment"] = master["Equipment Code"].map(ref_name).fillna(master["Equipment"])
-        master["Area"] = master["Equipment Code"].map(ref_area).fillna(master.get("Area", ""))
-        master["Reference Criticality"] = master["Equipment Code"].map(ref_crit).fillna("")
+        ref_equipment = master["Equipment Code"].map(ref_name).replace("", np.nan)
+        ref_area_values = master["Equipment Code"].map(ref_area).replace("", np.nan)
+        master["Equipment"] = ref_equipment.fillna(master["Equipment"])
+        master["Area"] = ref_area_values.fillna(master.get("Area", ""))
+        master["Reference Criticality"] = master["Equipment Code"].map(ref_crit).replace("", np.nan).fillna("")
 
     # Merge artificial -00 only when the reference or current master confirms
     # that the corresponding -01 equipment exists.
@@ -118,9 +159,11 @@ def canonicalize_equipment_master(master, equipment_reference=None):
     if replacements:
         master["Equipment Code"] = master["Equipment Code"].replace(replacements)
         if not ref.empty:
-            master["Equipment"] = master["Equipment Code"].map(ref_name).fillna(master["Equipment"])
-            master["Area"] = master["Equipment Code"].map(ref_area).fillna(master.get("Area", ""))
-            master["Reference Criticality"] = master["Equipment Code"].map(ref_crit).fillna("")
+            ref_equipment = master["Equipment Code"].map(ref_name).replace("", np.nan)
+            ref_area_values = master["Equipment Code"].map(ref_area).replace("", np.nan)
+            master["Equipment"] = ref_equipment.fillna(master["Equipment"])
+            master["Area"] = ref_area_values.fillna(master.get("Area", ""))
+            master["Reference Criticality"] = master["Equipment Code"].map(ref_crit).replace("", np.nan).fillna("")
 
     master["Equipment Mapping Key"] = master["Equipment Code"]
     original_compact = master["Original Equipment Code"].str.upper().str.replace("-", "", regex=False)
@@ -449,10 +492,16 @@ for col in required:
         master[col] = ""
 
 st.sidebar.header("Navigation")
-page = st.sidebar.radio("Go to", ["Dashboard", "Equipment Health", "Maintenance Priority", "Tag Master", "Engineering Trend", "Data Import"])
+page = st.sidebar.radio("Go to", ["Dashboard", "Equipment Health", "Maintenance Priority", "Action Center", "Tag Master", "Engineering Trend", "Data Import"])
 
-st.title("⚙️ OPP Engineering Monitoring")
-st.caption("Phase 4.1 — Equipment Health + Engineering Decision Support")
+st.markdown("""
+<div class="eng-hero">
+  <div class="eng-badge">ORE PROCESSING PLANT • ENGINEERING INTELLIGENCE</div>
+  <h1 style="margin:.45rem 0 .15rem 0;">⚙️ OPP Engineering Monitoring</h1>
+  <div style="font-size:1rem;color:#66758a;">Equipment health • PLC behaviour • maintenance decision support • engineering action workflow</div>
+</div>
+""", unsafe_allow_html=True)
+st.caption("Phase 7 — From PLC screening to engineering action. Screening remains decision-support, not an alarm or automatic work order.")
 
 high = int((master["Confidence"] == "High").sum())
 medium = int((master["Confidence"] == "Medium").sum())
@@ -486,19 +535,18 @@ if page == "Dashboard":
         if not top.empty:
             st.dataframe(top[["Equipment Code", "Equipment", "Health", "Condition", "Screening Priority", "Risk", "Top Parameter", "Top Finding", "Top Trend", "Top Shift %"]], use_container_width=True, hide_index=True)
     st.subheader("Area Coverage")
-    # Normalize Area before sorting to prevent mixed-type pandas errors
-area_series = (
-    master["Area"]
-    .fillna("")
-    .astype(str)
-    .str.strip()
-)
-
-ac = (
-    area_series[area_series != ""]
-    .value_counts()
-    .sort_index()
-)
+    # Normalize Area before sorting to prevent mixed-type pandas errors.
+    area_series = (
+        master["Area"]
+        .fillna("")
+        .astype(str)
+        .str.strip()
+    )
+    ac = (
+        area_series[area_series != ""]
+        .value_counts()
+        .sort_index()
+    )
     cols = st.columns(4)
     for i, (area, n) in enumerate(ac.items()):
         cols[i % 4].metric(str(area), f"{n} tags")
@@ -794,6 +842,147 @@ elif page == "Maintenance Priority":
             "text/csv"
         )
 
+elif page == "Action Center":
+    st.subheader("Engineering Action Center")
+    st.caption("Mengubah hasil PLC screening menjadi worklist engineering: prioritas → verifikasi lapangan → catatan → closure. Status bersifat session-only.")
+
+    screening = build_equipment_screening(master, df, st.session_state.get("validated_criticality", pd.DataFrame()))
+
+    if screening.empty:
+        st.warning("Belum ada equipment dengan data historis numerik yang cukup.")
+    else:
+        abnormal = screening[screening["Condition"] != "HEALTHY"].copy()
+        if abnormal.empty:
+            st.success("Tidak ada equipment yang saat ini menghasilkan finding abnormal.")
+        else:
+            action_register = abnormal[[
+                "Equipment Code", "Equipment", "Health", "Condition",
+                "Screening Priority", "Risk", "Criticality", "Top Tag",
+                "Top Parameter", "Top Finding", "Top Trend", "Top Shift %",
+                "Top Action", "Maintenance Decision"
+            ]].copy()
+
+            status_key = "engineering_action_status"
+            if status_key not in st.session_state:
+                st.session_state[status_key] = {}
+
+            action_register["Action Status"] = action_register["Equipment Code"].map(
+                lambda x: st.session_state[status_key].get(str(x), "OPEN")
+            )
+
+            p_order = {"P1": 1, "P2": 2, "P3": 3, "P4": 4}
+            c_order = {"CRITICAL": 1, "ATTENTION": 2, "DETERIORATING": 3, "HEALTHY": 4}
+            action_register["_p"] = action_register["Screening Priority"].map(p_order).fillna(9)
+            action_register["_c"] = action_register["Condition"].map(c_order).fillna(9)
+            action_register = action_register.sort_values(
+                ["_p", "_c", "Health"], ascending=[True, True, True]
+            ).drop(columns=["_p", "_c"])
+
+            o1, o2, o3, o4 = st.columns(4)
+            o1.metric("Open Actions", int((action_register["Action Status"] == "OPEN").sum()))
+            o2.metric("P1 / Immediate Review", int((action_register["Screening Priority"] == "P1").sum()))
+            o3.metric("P2 / Plan Inspection", int((action_register["Screening Priority"] == "P2").sum()))
+            o4.metric("P3 / Monitor", int((action_register["Screening Priority"] == "P3").sum()))
+
+            st.markdown("#### Engineering Worklist")
+            af1, af2, af3 = st.columns(3)
+            af_area = af1.selectbox(
+                "Area",
+                ["All"] + sorted([str(x) for x in master["Area"].unique() if str(x)]),
+                key="action_area"
+            )
+            af_priority = af2.selectbox(
+                "Priority", ["All", "P1", "P2", "P3"], key="action_priority"
+            )
+            af_status = af3.selectbox(
+                "Status", ["All", "OPEN", "FIELD CHECK", "VERIFIED", "CLOSED"], key="action_status"
+            )
+
+            filtered = action_register.copy()
+            if af_area != "All":
+                area_codes = set(master.loc[master["Area"] == af_area, "Equipment Code"].astype(str))
+                filtered = filtered[filtered["Equipment Code"].isin(area_codes)]
+            if af_priority != "All":
+                filtered = filtered[filtered["Screening Priority"] == af_priority]
+            if af_status != "All":
+                filtered = filtered[filtered["Action Status"] == af_status]
+
+            show_cols = [
+                "Equipment Code", "Equipment", "Health", "Condition",
+                "Screening Priority", "Top Parameter", "Top Finding",
+                "Top Trend", "Top Shift %", "Action Status"
+            ]
+            st.dataframe(filtered[show_cols], use_container_width=True, hide_index=True, height=390)
+
+            choices = filtered["Equipment Code"].tolist()
+            if choices:
+                selected_action = st.selectbox(
+                    "Select equipment for action review", choices, key="action_equipment"
+                )
+                ar = action_register[action_register["Equipment Code"] == selected_action].iloc[0]
+
+                st.markdown(f"### {ar['Equipment Code']} — {ar['Equipment']}")
+                ac1, ac2, ac3, ac4, ac5 = st.columns(5)
+                ac1.metric("Health", f"{ar['Health']}/100")
+                ac2.metric("Condition", ar["Condition"])
+                ac3.metric("Priority", ar["Screening Priority"])
+                ac4.metric("Top Parameter", ar["Top Parameter"])
+                ac5.metric("Trend", f"{ar['Top Trend']} ({ar['Top Shift %']:+.1f}%)")
+
+                st.warning(
+                    f"**Primary finding:** {ar['Top Tag']} — {ar['Top Parameter']} → "
+                    f"{ar['Top Finding']}. Recommendation: {ar['Top Action']}"
+                )
+
+                st.markdown("#### Field Verification Workflow")
+                s1, s2 = st.columns(2)
+                current_status = st.session_state[status_key].get(str(selected_action), "OPEN")
+                new_status = s1.selectbox(
+                    "Action status",
+                    ["OPEN", "FIELD CHECK", "VERIFIED", "CLOSED"],
+                    index=["OPEN", "FIELD CHECK", "VERIFIED", "CLOSED"].index(current_status),
+                    key=f"action_status_edit_{selected_action}"
+                )
+                note = s2.text_area(
+                    "Engineering note / field finding",
+                    value=st.session_state.get(f"action_note_{selected_action}", ""),
+                    key=f"action_note_edit_{selected_action}",
+                    height=100
+                )
+
+                if st.button("Save Engineering Review", key=f"save_action_{selected_action}"):
+                    st.session_state[status_key][str(selected_action)] = new_status
+                    st.session_state[f"action_note_{selected_action}"] = note
+                    st.success(f"Engineering review saved: {selected_action} → {new_status}")
+
+                b1, b2 = st.columns(2)
+                if b1.button(
+                    f"Open Engineering Trend — {ar['Top Tag']}",
+                    key=f"action_trend_{selected_action}"
+                ):
+                    st.session_state["trend_equipment_from_priority"] = selected_action
+                    st.session_state["trend_tag_from_priority"] = ar["Top Tag"]
+                    st.info("Buka **Engineering Trend** dari panel navigasi. Equipment dan tag sudah disiapkan.")
+                if b2.button("Refresh Screening", key=f"refresh_action_{selected_action}"):
+                    st.cache_data.clear()
+                    st.rerun()
+
+            export = action_register.copy()
+            export["Engineering Note"] = export["Equipment Code"].map(
+                lambda x: st.session_state.get(f"action_note_{x}", "")
+            )
+            st.download_button(
+                "Export Engineering Worklist (.csv)",
+                export.to_csv(index=False).encode("utf-8"),
+                "OPP_Engineering_Action_Worklist.csv",
+                "text/csv",
+            )
+
+            st.caption(
+                "Workflow: PLC finding → engineering screening → field verification → engineering note → closure. "
+                "Status dan catatan belum tersimpan ke database permanen."
+            )
+
 elif page == "Tag Master":
     st.subheader("PLC Tag Master")
     st.caption("Source engineering mapping is preserved. Derived parameter/unit labels are used only for display when the source mapping is blank.")
@@ -808,8 +997,12 @@ elif page == "Tag Master":
         view = view[view["Area"] == area]
     if conf != "All":
         view = view[view["Confidence"] == conf]
+    tm1, tm2, tm3 = st.columns(3)
+    tm1.metric("PLC Tag Rows", f"{len(view):,}")
+    tm2.metric("Canonical Equipment", f"{view['Equipment Code'].nunique():,}")
+    tm3.metric("Normalized / Merged", f"{int((view['Source Code Variant'] == 'Normalized / merged').sum()):,}")
     st.dataframe(view, use_container_width=True, height=620)
-    st.download_button("Download Tag Master CSV", master.to_csv(index=False).encode("utf-8"), "OPP_Tag_Master_Phase4_1.csv", "text/csv")
+    st.download_button("Download Tag Master CSV", master.to_csv(index=False).encode("utf-8"), "OPP_Tag_Master_Phase7.csv", "text/csv")
 
 elif page == "Engineering Trend":
     st.subheader("Engineering Trend — Equipment View")
@@ -880,4 +1073,18 @@ elif page == "Data Import":
             q2.metric("New timestamps", f"{(~incoming['ArchiveTime'].isin(known)).sum():,}")
             q3.metric("Invalid timestamps", f"{incoming['ArchiveTime'].isna().sum():,}")
             st.dataframe(incoming.head(20), use_container_width=True)
-            st.info("Permanent database append will be implemented after mapping validation.")
+            st.markdown("#### Import Validation")
+            required_time = incoming["ArchiveTime"].notna()
+            numeric_candidates = [c for c in incoming.columns if c != "ArchiveTime"]
+            numeric_ready = sum(
+                pd.to_numeric(incoming[c], errors="coerce").notna().sum() > 0
+                for c in numeric_candidates
+            )
+            i1, i2, i3 = st.columns(3)
+            i1.metric("Valid timestamps", f"{int(required_time.sum()):,}")
+            i2.metric("Candidate PLC columns", f"{len(numeric_candidates):,}")
+            i3.metric("Numeric PLC columns", f"{numeric_ready:,}")
+            st.success(
+                "File passes the basic structural validation. Permanent database append remains disabled "
+                "until mapping and duplicate handling are approved."
+            )
