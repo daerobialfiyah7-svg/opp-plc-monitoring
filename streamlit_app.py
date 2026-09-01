@@ -472,7 +472,10 @@ elif page == "Maintenance Priority":
             b.metric("Screening Priority", r["Screening Priority"])
             c.metric("Risk", r["Risk"])
             d.metric("Criticality", r["Criticality"])
-            st.warning(f"**Primary finding:** {r['Top Tag']} — {r['Top Parameter']} → {r['Top Finding']} | Trend {r['Top Trend']} ({r['Top Shift %']:+.1f}%).") if r["Screening Priority"] != "P4" else st.success("No abnormal parameter currently identified by the historical screening engine.")
+            if r["Screening Priority"] != "P4":
+                st.warning(f"**Primary finding:** {r['Top Tag']} — {r['Top Parameter']} → {r['Top Finding']} | Trend {r['Top Trend']} ({r['Top Shift %']:+.1f}%).")
+            else:
+                st.success("No abnormal parameter currently identified by the historical screening engine.")
             if r["Screening Priority"] != "P4":
                 st.info(f"**Suggested engineering check:** {r['Top Action']}")
             st.caption("Risk remains REVIEW REQUIRED because equipment criticality has not been supplied. Do not treat P1/P2 as an alarm, trip, or automatic work order.")
