@@ -5,45 +5,6 @@ from pathlib import Path
 import re
 
 st.set_page_config(page_title="OPP Engineering Monitoring", page_icon="⚙️", layout="wide")
-
-st.markdown("""
-<style>
-[data-testid="stAppViewContainer"] {
-  background:
-    linear-gradient(rgba(31,111,178,.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(31,111,178,.035) 1px, transparent 1px),
-    #f4f7fa;
-  background-size: 32px 32px, 32px 32px, auto;
-}
-[data-testid="stHeader"] { background: rgba(244,247,250,.9); }
-[data-testid="stSidebar"] {
-  background: linear-gradient(180deg, #eaf0f6 0%, #f7f9fb 75%);
-  border-right: 1px solid #d9e1ea;
-}
-.block-container { max-width: 1500px; padding-top: 2.4rem; }
-h1 { font-size: 2.15rem !important; color: #263445; }
-h2 { font-size: 1.55rem !important; color: #263445; }
-h3 { font-size: 1.18rem !important; color: #263445; }
-[data-testid="stMetricValue"] { font-size: 1.75rem !important; }
-[data-testid="stMetricLabel"] { font-size: .88rem !important; color: #66758a; }
-.eng-hero {
-  position: relative; overflow: hidden; padding: 1.15rem 1.35rem;
-  border: 1px solid #d7e2ee; border-radius: 16px;
-  background: linear-gradient(135deg, rgba(255,255,255,.97), rgba(239,245,250,.97));
-  box-shadow: 0 8px 24px rgba(45,65,85,.07);
-  margin-bottom: 1rem;
-}
-.eng-hero:after {
-  content: "⚙  ⚙  ⚙";
-  position: absolute; right: 22px; top: 12px;
-  font-size: 48px; letter-spacing: 12px; color: rgba(31,111,178,.075);
-}
-.eng-badge {
-  display:inline-block; padding: .28rem .65rem; border-radius: 999px;
-  background:#e8f3fb; color:#1f6fb2; font-weight:600; font-size:.78rem;
-}
-</style>
-""", unsafe_allow_html=True)
 ROOT = Path(__file__).resolve().parent
 
 @st.cache_data
@@ -136,11 +97,9 @@ def canonicalize_equipment_master(master, equipment_reference=None):
         ref_area = dict(zip(ref["Equipment Code"], ref["Area"]))
         ref_crit = dict(zip(ref["Equipment Code"], ref["Criticality"]))
 
-        ref_equipment = master["Equipment Code"].map(ref_name).replace("", np.nan)
-        ref_area_values = master["Equipment Code"].map(ref_area).replace("", np.nan)
-        master["Equipment"] = ref_equipment.fillna(master["Equipment"])
-        master["Area"] = ref_area_values.fillna(master.get("Area", ""))
-        master["Reference Criticality"] = master["Equipment Code"].map(ref_crit).replace("", np.nan).fillna("")
+        master["Equipment"] = master["Equipment Code"].map(ref_name).fillna(master["Equipment"])
+        master["Area"] = master["Equipment Code"].map(ref_area).fillna(master.get("Area", ""))
+        master["Reference Criticality"] = master["Equipment Code"].map(ref_crit).fillna("")
 
     # Merge artificial -00 only when the reference or current master confirms
     # that the corresponding -01 equipment exists.
@@ -159,11 +118,9 @@ def canonicalize_equipment_master(master, equipment_reference=None):
     if replacements:
         master["Equipment Code"] = master["Equipment Code"].replace(replacements)
         if not ref.empty:
-            ref_equipment = master["Equipment Code"].map(ref_name).replace("", np.nan)
-            ref_area_values = master["Equipment Code"].map(ref_area).replace("", np.nan)
-            master["Equipment"] = ref_equipment.fillna(master["Equipment"])
-            master["Area"] = ref_area_values.fillna(master.get("Area", ""))
-            master["Reference Criticality"] = master["Equipment Code"].map(ref_crit).replace("", np.nan).fillna("")
+            master["Equipment"] = master["Equipment Code"].map(ref_name).fillna(master["Equipment"])
+            master["Area"] = master["Equipment Code"].map(ref_area).fillna(master.get("Area", ""))
+            master["Reference Criticality"] = master["Equipment Code"].map(ref_crit).fillna("")
 
     master["Equipment Mapping Key"] = master["Equipment Code"]
     original_compact = master["Original Equipment Code"].str.upper().str.replace("-", "", regex=False)
@@ -470,6 +427,101 @@ def build_equipment_screening(master, df, criticality_df=None):
     return pd.DataFrame(records)
 
 
+# --- Phase 8: Engineering Action Center --------------------------------------------
+ACTION_STATUSES = ["OPEN", "INVESTIGATION", "ACTION", "VERIFICATION", "CLOSED"]
+ACTION_PRIORITIES = ["P1", "P2", "P3", "P4"]
+
+
+def _finding_id(eq, tag, condition, direction):
+    raw = f"{eq}|{tag}|{condition}|{direction}"
+    return re.sub(r"[^A-Z0-9|+.-]", "", raw.upper())
+
+
+def _action_defaults(finding):
+    return {
+        "Finding ID": finding["Finding ID"], "Equipment Code": finding["Equipment Code"],
+        "Equipment": finding["Equipment"], "Area": finding["Area"], "PLC Tag": finding["PLC Tag"],
+        "Parameter": finding["Parameter"], "Condition": finding["Condition"], "Priority": finding["Priority"],
+        "Risk": finding["Risk"], "Current": finding["Current"], "Unit": finding["Unit"],
+        "Baseline Low": finding["Baseline Low"], "Baseline High": finding["Baseline High"],
+        "Trend": finding["Direction"], "Shift %": finding["Shift %"], "Outside Fraction": finding["Outside Fraction"],
+        "Evidence": "Historical PLC behaviour screening", "Recommendation": finding["Action"],
+        "Status": "OPEN", "PIC": "", "Target Date": "", "Investigation Result": "", "Root Cause": "",
+        "Action Taken": "", "Verification Result": "", "Engineer Notes": "",
+    }
+
+
+def build_action_findings(master, df, criticality_df=None):
+    """Create one actionable finding per abnormal PLC parameter."""
+    findings = []
+    crit_map = {}
+    if "Reference Criticality" in master.columns:
+        for _, r in master[["Equipment Code", "Reference Criticality"]].drop_duplicates().iterrows():
+            code, crit = str(r["Equipment Code"]).strip().upper(), str(r["Reference Criticality"]).strip()
+            if code and crit: crit_map[code] = crit
+    if criticality_df is not None and not criticality_df.empty and {"Equipment Code", "Criticality"}.issubset(criticality_df.columns):
+        for _, r in criticality_df.iterrows():
+            code, crit = normalize_equipment_code(r["Equipment Code"]), str(r["Criticality"]).strip()
+            if code and crit: crit_map[code.upper()] = crit
+
+    for eq, ev in master[master["Equipment Code"].astype(str).str.strip() != ""].groupby("Equipment Code"):
+        eq = str(eq).strip()
+        names = ev["Equipment"].replace("", np.nan).dropna()
+        eq_name = names.iloc[0] if len(names) else "Equipment description not yet mapped"
+        area = str(ev["Area"].iloc[0]) if len(ev) else ""
+        criticality = crit_map.get(eq.upper(), "Not configured")
+        seen = set()
+        for _, meta in ev.iterrows():
+            tag = str(meta.get("PLC Tag", "")).strip()
+            if not tag or tag in seen: continue
+            seen.add(tag)
+            stats = baseline_condition(_numeric_series(df, tag))
+            if stats is None or stats["Condition"] == "Normal": continue
+            parameter, unit, source = infer_parameter(tag, meta.get("Suggested Parameter", ""), meta.get("Suggested Unit", ""), meta.get("Instrument Type", ""))
+            condition = str(stats["Condition"]).upper()
+            health_proxy = max(0, int(round(100 - {"Critical": 50, "Attention": 25, "Deteriorating": 12}.get(stats["Condition"], 0))))
+            priority, risk, _ = _maintenance_decision(condition, criticality, health_proxy)
+            findings.append({
+                "Finding ID": _finding_id(eq, tag, condition, stats["Direction"]), "Area": area,
+                "Equipment Code": eq, "Equipment": str(eq_name), "PLC Tag": tag, "Parameter": parameter,
+                "Unit": unit, "Condition": condition, "Priority": priority, "Risk": risk,
+                "Criticality": criticality, "Current": float(stats["Current"]),
+                "Baseline Low": float(stats["Baseline Low"]), "Baseline High": float(stats["Baseline High"]),
+                "Direction": stats["Direction"], "Shift %": float(stats["Shift %"]),
+                "Outside Fraction": float(stats["Outside Fraction"]), "Deviation Sigma": float(stats["Deviation Sigma"]),
+                "Confidence": str(meta.get("Confidence", "") or "Low"), "Parameter Source": source,
+                "Action": parameter_action(parameter, tag),
+            })
+    if not findings: return pd.DataFrame()
+    out = pd.DataFrame(findings)
+    out["_priority"] = out["Priority"].map({"P1":1,"P2":2,"P3":3,"P4":4}).fillna(9)
+    return out.sort_values(["_priority", "Deviation Sigma"], ascending=[True, False]).drop(columns="_priority").reset_index(drop=True)
+
+
+def ensure_action_store(findings):
+    if "engineering_actions" not in st.session_state: st.session_state["engineering_actions"] = {}
+    store = st.session_state["engineering_actions"]
+    if isinstance(store, pd.DataFrame): store = {str(r["Finding ID"]): r.to_dict() for _, r in store.iterrows()}
+    for _, finding in findings.iterrows():
+        fid = str(finding["Finding ID"])
+        if fid not in store:
+            store[fid] = _action_defaults(finding)
+        else:
+            existing = store[fid]
+            for key in ["Equipment Code","Equipment","Area","PLC Tag","Parameter","Condition","Priority","Risk","Current","Unit","Baseline Low","Baseline High","Trend","Shift %","Outside Fraction","Recommendation"]:
+                source_key = "Direction" if key == "Trend" else ("Action" if key == "Recommendation" else key)
+                if source_key in finding: existing[key] = finding[source_key]
+    st.session_state["engineering_actions"] = store
+    return store
+
+
+def actions_dataframe(store):
+    if not store: return pd.DataFrame()
+    df_actions = pd.DataFrame(list(store.values()))
+    desired = ["Finding ID","Area","Equipment Code","Equipment","PLC Tag","Parameter","Condition","Priority","Status","PIC","Target Date","Shift %","Root Cause","Action Taken","Verification Result"]
+    return df_actions[[c for c in desired if c in df_actions.columns]]
+
+
 def criticality_template(master):
     eqs = sorted([x for x in master["Equipment Code"].astype(str).unique() if x])
     return pd.DataFrame({
@@ -492,20 +544,10 @@ for col in required:
         master[col] = ""
 
 st.sidebar.header("Navigation")
-page = st.sidebar.radio(
-    "Go to",
-    ["Dashboard", "Equipment Health", "Maintenance Priority", "Action Center", "Tag Master", "Engineering Trend", "Data Import"],
-    key="page_nav"
-)
+page = st.sidebar.radio("Go to", ["Dashboard", "Equipment Health", "Maintenance Priority", "Action Center", "Tag Master", "Engineering Trend", "Data Import"])
 
-st.markdown("""
-<div class="eng-hero">
-  <div class="eng-badge">ORE PROCESSING PLANT • ENGINEERING INTELLIGENCE</div>
-  <h1 style="margin:.45rem 0 .15rem 0;">⚙️ OPP Engineering Monitoring</h1>
-  <div style="font-size:1rem;color:#66758a;">Equipment health • PLC behaviour • maintenance decision support • engineering action workflow</div>
-</div>
-""", unsafe_allow_html=True)
-st.caption("Phase 7 — From PLC screening to engineering action. Screening remains decision-support, not an alarm or automatic work order.")
+st.title("⚙️ OPP Engineering Monitoring")
+st.caption("Phase 8 — Equipment Health + Maintenance Decision + Engineering Action Center")
 
 high = int((master["Confidence"] == "High").sum())
 medium = int((master["Confidence"] == "Medium").sum())
@@ -522,12 +564,17 @@ st.divider()
 if page == "Dashboard":
     st.subheader("OPP Engineering Overview")
     st.write("Dashboard diarahkan sebagai decision-support untuk monitoring proses, kesehatan equipment, identifikasi penyimpangan dan prioritas pemeriksaan.")
-    st.caption("💡 Interaktif: pilih baris equipment pada tabel Maintenance Screening untuk membuka problem, rekomendasi, dan detail pemeriksaan.")
     x, y, z = st.columns(3)
     x.metric("High", f"{high:,}", "Exact / strong evidence")
     y.metric("Medium", f"{medium:,}", "Equipment / family evidence")
     z.metric("Low", f"{low:,}", "Pattern / limited evidence")
     screening = build_equipment_screening(master, df)
+    findings = build_action_findings(master, df)
+    if not findings.empty:
+        store = ensure_action_store(findings)
+        action_df = actions_dataframe(store)
+        open_count = int((action_df["Status"] != "CLOSED").sum()) if not action_df.empty else 0
+        st.caption(f"Engineering Action Center: {open_count} open finding(s) from current historical screening.")
     if not screening.empty:
         st.subheader("Maintenance Screening")
         p1, p2, p3, p4 = st.columns(4)
@@ -536,75 +583,18 @@ if page == "Dashboard":
         p3.metric("P3 — Deteriorating", int((screening["Screening Priority"] == "P3").sum()))
         p4.metric("P4 — Healthy", int((screening["Screening Priority"] == "P4").sum()))
         st.caption("P1–P4 are condition-based screening priorities. Equipment criticality is not inferred and remains Engineering Review Required until validated.")
-        top = screening[screening["Screening Priority"] != "P4"].sort_values(
-            ["Screening Priority", "Health"], ascending=[True, True]
-        ).head(12)
-
+        top = screening[screening["Screening Priority"] != "P4"].sort_values(["Screening Priority", "Health"], ascending=[True, True]).head(8)
         if not top.empty:
-            st.caption("Klik satu baris pada tabel untuk melihat problem/finding equipment tersebut.")
-
-            dashboard_event = st.dataframe(
-                top[[
-                    "Equipment Code", "Equipment", "Health", "Condition",
-                    "Screening Priority", "Risk", "Top Parameter",
-                    "Top Finding", "Top Trend", "Top Shift %"
-                ]],
-                use_container_width=True,
-                hide_index=True,
-                height=390,
-                on_select="rerun",
-                selection_mode="single-row",
-                key="dashboard_screening_table"
-            )
-
-            selected_rows = dashboard_event.selection.rows
-            if selected_rows:
-                selected_idx = selected_rows[0]
-                selected_code = str(top.iloc[selected_idx]["Equipment Code"])
-                selected_row = top.iloc[selected_idx]
-
-                st.markdown("#### Selected Problem")
-                s1, s2, s3, s4 = st.columns(4)
-                s1.metric("Equipment", selected_code)
-                s2.metric("Health", f"{int(selected_row['Health'])}/100")
-                s3.metric("Priority", selected_row["Screening Priority"])
-                s4.metric("Condition", selected_row["Condition"])
-
-                st.warning(
-                    f"**{selected_code} — {selected_row['Equipment']}** | "
-                    f"Problem utama: **{selected_row['Top Parameter']} → {selected_row['Top Finding']}** | "
-                    f"Trend: **{selected_row['Top Trend']} ({selected_row['Top Shift %']:+.1f}%)**"
-                )
-                st.info(
-                    f"**Engineering recommendation:** {selected_row['Top Action']}"
-                    if "Top Action" in selected_row.index
-                    else "Review engineering trend and verify field condition."
-                )
-
-                b1, b2 = st.columns(2)
-                if b1.button(
-                    "🔎 Lihat Detail Equipment Health",
-                    key=f"dashboard_health_{selected_code}"
-                ):
-                    st.session_state["health_equipment_from_dashboard"] = selected_code
-                    st.session_state["page_nav"] = "Equipment Health"
-                    st.rerun()
-
-                if b2.button(
-                    "🛠️ Buka Engineering Action Center",
-                    key=f"dashboard_action_{selected_code}"
-                ):
-                    st.session_state["action_equipment_from_dashboard"] = selected_code
-                    st.session_state["page_nav"] = "Action Center"
-                    st.rerun()
+            st.dataframe(top[["Equipment Code", "Equipment", "Health", "Condition", "Screening Priority", "Risk", "Top Parameter", "Top Finding", "Top Trend", "Top Shift %"]], use_container_width=True, hide_index=True)
     st.subheader("Area Coverage")
-    # Normalize Area before sorting to prevent mixed-type pandas errors.
+    # Normalize Area before sorting to prevent mixed-type pandas errors
     area_series = (
         master["Area"]
         .fillna("")
         .astype(str)
         .str.strip()
     )
+
     ac = (
         area_series[area_series != ""]
         .value_counts()
@@ -875,16 +865,24 @@ elif page == "Maintenance Priority":
                 st.write(r["Top Action"])
 
                 # Direct navigation target for the engineer.
-                if st.button(
+                b1, b2 = st.columns(2)
+                if b1.button(
                     f"Open Engineering Trend — {r['Top Tag']}",
                     key=f"priority_open_trend_{selected}"
                 ):
                     st.session_state["trend_equipment_from_priority"] = selected
                     st.session_state["trend_tag_from_priority"] = r["Top Tag"]
-                    st.info(
-                        "Open **Engineering Trend** from the navigation panel. "
-                        "The selected equipment/tag has been retained for the next engineering review."
-                    )
+                    st.info("Open **Engineering Trend** from the navigation panel. The selected equipment/tag has been retained for the next engineering review.")
+                if b2.button(
+                    "Open Engineering Action Center",
+                    key=f"priority_open_action_{selected}"
+                ):
+                    fdf = build_action_findings(master[master["Equipment Code"] == selected], df, criticality_df)
+                    if not fdf.empty:
+                        st.session_state["action_selected_finding"] = str(fdf.iloc[0]["Finding ID"])
+                        st.info("Finding transferred to Engineering Action Center. Use the navigation panel to continue the workflow.")
+                    else:
+                        st.info("No abnormal finding is currently available for this equipment.")
 
             st.caption(
                 "Decision logic uses historical P05–P95 behaviour, recent-vs-prior shift, "
@@ -906,150 +904,74 @@ elif page == "Maintenance Priority":
         )
 
 elif page == "Action Center":
-    st.subheader("Engineering Action Center")
-    st.caption("Mengubah hasil PLC screening menjadi worklist engineering: prioritas → verifikasi lapangan → catatan → closure. Status bersifat session-only.")
+    st.subheader("OPP Engineering Action Center")
+    st.caption("Finding management for engineering follow-up. PLC screening provides evidence; field verification, engineering judgement and approved maintenance processes remain mandatory.")
 
-    screening = build_equipment_screening(master, df, st.session_state.get("validated_criticality", pd.DataFrame()))
-
-    if screening.empty:
-        st.warning("Belum ada equipment dengan data historis numerik yang cukup.")
+    criticality_df = st.session_state.get("validated_criticality", pd.DataFrame())
+    findings = build_action_findings(master, df, criticality_df)
+    if findings.empty:
+        st.success("No abnormal PLC finding is currently generated by the historical screening engine.")
     else:
-        abnormal = screening[screening["Condition"] != "HEALTHY"].copy()
-        if abnormal.empty:
-            st.success("Tidak ada equipment yang saat ini menghasilkan finding abnormal.")
+        store = ensure_action_store(findings)
+        action_df = actions_dataframe(store)
+        k1,k2,k3,k4,k5 = st.columns(5)
+        for col,status in zip([k1,k2,k3,k4,k5], ACTION_STATUSES):
+            col.metric(status, int((action_df["Status"] == status).sum()) if not action_df.empty else 0)
+        st.markdown("### Engineering Finding Queue")
+        f1,f2,f3,f4 = st.columns(4)
+        area_f=f1.selectbox("Area", ["All"]+sorted([str(x) for x in findings["Area"].dropna().unique() if str(x).strip()]), key="action_area")
+        priority_f=f2.selectbox("Priority", ["All"]+ACTION_PRIORITIES, key="action_priority")
+        status_f=f3.selectbox("Status", ["All"]+ACTION_STATUSES, key="action_status")
+        search_f=f4.text_input("Search equipment / tag", key="action_search")
+        q=action_df.copy()
+        if area_f!="All": q=q[q["Area"].astype(str)==area_f]
+        if priority_f!="All": q=q[q["Priority"].astype(str)==priority_f]
+        if status_f!="All": q=q[q["Status"].astype(str)==status_f]
+        if search_f.strip(): q=q[q.astype(str).apply(lambda s:s.str.contains(search_f.strip(),case=False,na=False)).any(axis=1)]
+        q["_p"]=q["Priority"].map({"P1":1,"P2":2,"P3":3,"P4":4}).fillna(9)
+        q["_s"]=q["Status"].map({"OPEN":1,"INVESTIGATION":2,"ACTION":3,"VERIFICATION":4,"CLOSED":5}).fillna(9)
+        q=q.sort_values(["_p","_s","Shift %"],ascending=[True,True,False]).drop(columns=["_p","_s"])
+        if q.empty:
+            st.info("No finding matches the selected filters.")
         else:
-            action_register = abnormal[[
-                "Equipment Code", "Equipment", "Health", "Condition",
-                "Screening Priority", "Risk", "Criticality", "Top Tag",
-                "Top Parameter", "Top Finding", "Top Trend", "Top Shift %",
-                "Top Action", "Maintenance Decision"
-            ]].copy()
-
-            status_key = "engineering_action_status"
-            if status_key not in st.session_state:
-                st.session_state[status_key] = {}
-
-            action_register["Action Status"] = action_register["Equipment Code"].map(
-                lambda x: st.session_state[status_key].get(str(x), "OPEN")
-            )
-
-            p_order = {"P1": 1, "P2": 2, "P3": 3, "P4": 4}
-            c_order = {"CRITICAL": 1, "ATTENTION": 2, "DETERIORATING": 3, "HEALTHY": 4}
-            action_register["_p"] = action_register["Screening Priority"].map(p_order).fillna(9)
-            action_register["_c"] = action_register["Condition"].map(c_order).fillna(9)
-            action_register = action_register.sort_values(
-                ["_p", "_c", "Health"], ascending=[True, True, True]
-            ).drop(columns=["_p", "_c"])
-
-            o1, o2, o3, o4 = st.columns(4)
-            o1.metric("Open Actions", int((action_register["Action Status"] == "OPEN").sum()))
-            o2.metric("P1 / Immediate Review", int((action_register["Screening Priority"] == "P1").sum()))
-            o3.metric("P2 / Plan Inspection", int((action_register["Screening Priority"] == "P2").sum()))
-            o4.metric("P3 / Monitor", int((action_register["Screening Priority"] == "P3").sum()))
-
-            st.markdown("#### Engineering Worklist")
-            af1, af2, af3 = st.columns(3)
-            af_area = af1.selectbox(
-                "Area",
-                ["All"] + sorted([str(x) for x in master["Area"].unique() if str(x)]),
-                key="action_area"
-            )
-            af_priority = af2.selectbox(
-                "Priority", ["All", "P1", "P2", "P3"], key="action_priority"
-            )
-            af_status = af3.selectbox(
-                "Status", ["All", "OPEN", "FIELD CHECK", "VERIFIED", "CLOSED"], key="action_status"
-            )
-
-            filtered = action_register.copy()
-            if af_area != "All":
-                area_codes = set(master.loc[master["Area"] == af_area, "Equipment Code"].astype(str))
-                filtered = filtered[filtered["Equipment Code"].isin(area_codes)]
-            if af_priority != "All":
-                filtered = filtered[filtered["Screening Priority"] == af_priority]
-            if af_status != "All":
-                filtered = filtered[filtered["Action Status"] == af_status]
-
-            show_cols = [
-                "Equipment Code", "Equipment", "Health", "Condition",
-                "Screening Priority", "Top Parameter", "Top Finding",
-                "Top Trend", "Top Shift %", "Action Status"
-            ]
-            st.dataframe(filtered[show_cols], use_container_width=True, hide_index=True, height=390)
-
-            choices = filtered["Equipment Code"].tolist()
-            if choices:
-                default_action_eq = st.session_state.get("action_equipment_from_dashboard", "")
-                action_index = choices.index(default_action_eq) if default_action_eq in choices else 0
-                selected_action = st.selectbox(
-                    "Select equipment for action review",
-                    choices,
-                    index=action_index,
-                    key="action_equipment"
-                )
-                ar = action_register[action_register["Equipment Code"] == selected_action].iloc[0]
-
-                st.markdown(f"### {ar['Equipment Code']} — {ar['Equipment']}")
-                ac1, ac2, ac3, ac4, ac5 = st.columns(5)
-                ac1.metric("Health", f"{ar['Health']}/100")
-                ac2.metric("Condition", ar["Condition"])
-                ac3.metric("Priority", ar["Screening Priority"])
-                ac4.metric("Top Parameter", ar["Top Parameter"])
-                ac5.metric("Trend", f"{ar['Top Trend']} ({ar['Top Shift %']:+.1f}%)")
-
-                st.warning(
-                    f"**Primary finding:** {ar['Top Tag']} — {ar['Top Parameter']} → "
-                    f"{ar['Top Finding']}. Recommendation: {ar['Top Action']}"
-                )
-
-                st.markdown("#### Field Verification Workflow")
-                s1, s2 = st.columns(2)
-                current_status = st.session_state[status_key].get(str(selected_action), "OPEN")
-                new_status = s1.selectbox(
-                    "Action status",
-                    ["OPEN", "FIELD CHECK", "VERIFIED", "CLOSED"],
-                    index=["OPEN", "FIELD CHECK", "VERIFIED", "CLOSED"].index(current_status),
-                    key=f"action_status_edit_{selected_action}"
-                )
-                note = s2.text_area(
-                    "Engineering note / field finding",
-                    value=st.session_state.get(f"action_note_{selected_action}", ""),
-                    key=f"action_note_edit_{selected_action}",
-                    height=100
-                )
-
-                if st.button("Save Engineering Review", key=f"save_action_{selected_action}"):
-                    st.session_state[status_key][str(selected_action)] = new_status
-                    st.session_state[f"action_note_{selected_action}"] = note
-                    st.success(f"Engineering review saved: {selected_action} → {new_status}")
-
-                b1, b2 = st.columns(2)
-                if b1.button(
-                    f"Open Engineering Trend — {ar['Top Tag']}",
-                    key=f"action_trend_{selected_action}"
-                ):
-                    st.session_state["trend_equipment_from_priority"] = selected_action
-                    st.session_state["trend_tag_from_priority"] = ar["Top Tag"]
-                    st.info("Buka **Engineering Trend** dari panel navigasi. Equipment dan tag sudah disiapkan.")
-                if b2.button("Refresh Screening", key=f"refresh_action_{selected_action}"):
-                    st.cache_data.clear()
-                    st.rerun()
-
-            export = action_register.copy()
-            export["Engineering Note"] = export["Equipment Code"].map(
-                lambda x: st.session_state.get(f"action_note_{x}", "")
-            )
-            st.download_button(
-                "Export Engineering Worklist (.csv)",
-                export.to_csv(index=False).encode("utf-8"),
-                "OPP_Engineering_Action_Worklist.csv",
-                "text/csv",
-            )
-
-            st.caption(
-                "Workflow: PLC finding → engineering screening → field verification → engineering note → closure. "
-                "Status dan catatan belum tersimpan ke database permanen."
-            )
+            st.dataframe(q[["Equipment Code","Equipment","PLC Tag","Parameter","Condition","Priority","Status","PIC","Target Date","Shift %"]],use_container_width=True,hide_index=True,height=360)
+            choices=q["Finding ID"].tolist()
+            labels={fid: (lambda rr:f"{rr['Equipment Code']} • {rr['PLC Tag']} • {rr['Parameter']} • {rr['Status']}")(q[q["Finding ID"]==fid].iloc[0]) for fid in choices}
+            selected_default=st.session_state.get("action_selected_finding")
+            if selected_default not in choices: selected_default=choices[0]
+            selected_finding=st.selectbox("Select finding to work on",choices,index=choices.index(selected_default),format_func=lambda x:labels.get(x,x),key="action_finding_select")
+            st.session_state["action_selected_finding"]=selected_finding
+            record=store[selected_finding]
+            st.markdown("### Selected Finding")
+            a,b,c,d=st.columns(4); a.metric("Equipment",record["Equipment Code"]); b.metric("Health Signal",record["Condition"]); c.metric("Priority",record["Priority"]); d.metric("Workflow",record["Status"])
+            st.warning(f"**{record['PLC Tag']} — {record['Parameter']}** | Current {float(record['Current']):.3f} {record['Unit']} | Historical P05–P95 {float(record['Baseline Low']):.3f}–{float(record['Baseline High']):.3f} {record['Unit']} | Trend {record['Trend']} ({float(record['Shift %']):+.1f}%).")
+            st.info(f"**Recommended engineering check:** {record['Recommendation']}")
+            with st.expander("Evidence & Screening Context",expanded=True):
+                e1,e2,e3=st.columns(3); e1.metric("Outside Recent Fraction",f"{float(record['Outside Fraction'])*100:.1f}%"); e2.metric("Risk",record["Risk"]); e3.metric("Criticality",record.get("Criticality","Not configured"))
+                st.write("This finding is generated from historical PLC behaviour using a P05–P95 baseline, recent-vs-prior shift and sustained outside-baseline behaviour. It is not a failure prediction, alarm, trip setting or automatic work order.")
+            st.markdown("### Engineering Workflow")
+            with st.form(f"action_form_{selected_finding}"):
+                c1,c2,c3=st.columns(3); status=c1.selectbox("Status",ACTION_STATUSES,index=ACTION_STATUSES.index(record.get("Status","OPEN"))); pic=c2.text_input("PIC",value=str(record.get("PIC",""))); target_date=c3.text_input("Target Date (YYYY-MM-DD)",value=str(record.get("Target Date","")))
+                inv=st.text_area("Investigation Result",value=str(record.get("Investigation Result","")),placeholder="What did the field / instrument / process verification show?")
+                root=st.text_area("Root Cause",value=str(record.get("Root Cause","")),placeholder="Engineering-confirmed cause; do not infer from PLC screening alone.")
+                action_taken=st.text_area("Action Taken",value=str(record.get("Action Taken","")),placeholder="Inspection, adjustment, repair, calibration, cleaning, alignment, etc.")
+                verification=st.text_area("Verification Result",value=str(record.get("Verification Result","")),placeholder="Post-action evidence: PLC trend, field inspection, test result, or other approved verification.")
+                notes=st.text_area("Engineer Notes",value=str(record.get("Engineer Notes","")))
+                submitted=st.form_submit_button("Save Engineering Action")
+            if submitted:
+                record.update({"Status":status,"PIC":pic.strip(),"Target Date":target_date.strip(),"Investigation Result":inv.strip(),"Root Cause":root.strip(),"Action Taken":action_taken.strip(),"Verification Result":verification.strip(),"Engineer Notes":notes.strip()})
+                store[selected_finding]=record; st.session_state["engineering_actions"]=store; st.success("Engineering action saved in this session."); st.rerun()
+            st.markdown("### Workflow Guidance")
+            st.write("**OPEN → INVESTIGATION → ACTION → VERIFICATION → CLOSED**. Do not move to CLOSED until the engineering verification is documented and the condition is acceptable.")
+            d1,d2=st.columns(2); export_df=actions_dataframe(store)
+            d1.download_button("Download Engineering Action Log (.csv)",export_df.to_csv(index=False).encode("utf-8"),"OPP_engineering_action_log.csv","text/csv",use_container_width=True)
+            uploaded_actions=d2.file_uploader("Restore Action Log (.csv)",type=["csv"],key="action_restore")
+            if uploaded_actions is not None:
+                restored=pd.read_csv(uploaded_actions).fillna("")
+                if "Finding ID" not in restored.columns: st.error("Action Log must contain the Finding ID column.")
+                else:
+                    for _,rr in restored.iterrows(): store[str(rr["Finding ID"])]=rr.to_dict()
+                    st.session_state["engineering_actions"]=store; st.success(f"Restored {len(restored):,} engineering action record(s).")
 
 elif page == "Tag Master":
     st.subheader("PLC Tag Master")
@@ -1065,12 +987,8 @@ elif page == "Tag Master":
         view = view[view["Area"] == area]
     if conf != "All":
         view = view[view["Confidence"] == conf]
-    tm1, tm2, tm3 = st.columns(3)
-    tm1.metric("PLC Tag Rows", f"{len(view):,}")
-    tm2.metric("Canonical Equipment", f"{view['Equipment Code'].nunique():,}")
-    tm3.metric("Normalized / Merged", f"{int((view['Source Code Variant'] == 'Normalized / merged').sum()):,}")
     st.dataframe(view, use_container_width=True, height=620)
-    st.download_button("Download Tag Master CSV", master.to_csv(index=False).encode("utf-8"), "OPP_Tag_Master_Phase7.csv", "text/csv")
+    st.download_button("Download Tag Master CSV", master.to_csv(index=False).encode("utf-8"), "OPP_Tag_Master_Phase4_1.csv", "text/csv")
 
 elif page == "Engineering Trend":
     st.subheader("Engineering Trend — Equipment View")
@@ -1141,18 +1059,4 @@ elif page == "Data Import":
             q2.metric("New timestamps", f"{(~incoming['ArchiveTime'].isin(known)).sum():,}")
             q3.metric("Invalid timestamps", f"{incoming['ArchiveTime'].isna().sum():,}")
             st.dataframe(incoming.head(20), use_container_width=True)
-            st.markdown("#### Import Validation")
-            required_time = incoming["ArchiveTime"].notna()
-            numeric_candidates = [c for c in incoming.columns if c != "ArchiveTime"]
-            numeric_ready = sum(
-                pd.to_numeric(incoming[c], errors="coerce").notna().sum() > 0
-                for c in numeric_candidates
-            )
-            i1, i2, i3 = st.columns(3)
-            i1.metric("Valid timestamps", f"{int(required_time.sum()):,}")
-            i2.metric("Candidate PLC columns", f"{len(numeric_candidates):,}")
-            i3.metric("Numeric PLC columns", f"{numeric_ready:,}")
-            st.success(
-                "File passes the basic structural validation. Permanent database append remains disabled "
-                "until mapping and duplicate handling are approved."
-            )
+            st.info("Permanent database append will be implemented after mapping validation.")
