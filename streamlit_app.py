@@ -21,6 +21,18 @@ def load_history():
 def load_master():
     return pd.read_csv(ROOT / "config" / "tag_master.csv").fillna("")
 
+@st.cache_data
+def load_equipment_reference():
+    path = ROOT / "config" / "equipment_reference.csv"
+    if not path.exists():
+        return pd.DataFrame(columns=["Equipment Code", "Area", "Equipment", "Criticality"])
+    ref = pd.read_csv(path).fillna("")
+    for c in ["Equipment Code", "Area", "Equipment", "Criticality"]:
+        if c not in ref.columns:
+            ref[c] = ""
+    ref["Equipment Code"] = ref["Equipment Code"].apply(normalize_equipment_code)
+    return ref
+
 
 def _compact_code(value):
     if pd.isna(value):
@@ -60,7 +72,7 @@ def normalize_equipment_code(value, evidence_values=None):
     return f"{area}-{family}-{number:02d}"
 
 
-def canonicalize_equipment_master(master):
+def canonicalize_equipment_master(master, equipment_reference=None):
     master = master.copy()
     for c in ["Equipment Code", "PLC Tag", "Instrument Tag", "Equipment"]:
         if c not in master.columns:
@@ -73,8 +85,28 @@ def canonicalize_equipment_master(master):
 
     master["Equipment Code"] = master.apply(row_normalize, axis=1)
 
-    # Merge artificial -00 only when a corresponding -01 exists.
+    # If the reference master contains the canonical code, use it as the
+    # authoritative equipment identity. This also makes PLC variants such as
+    # 130ML0001 / 130ML001 / 130-ML-01 resolve to the same equipment.
+    ref = equipment_reference.copy() if equipment_reference is not None else pd.DataFrame()
+    if not ref.empty:
+        ref["Equipment Code"] = ref["Equipment Code"].apply(normalize_equipment_code)
+        ref = ref.drop_duplicates("Equipment Code", keep="first")
+
+        ref_name = dict(zip(ref["Equipment Code"], ref["Equipment"]))
+        ref_area = dict(zip(ref["Equipment Code"], ref["Area"]))
+        ref_crit = dict(zip(ref["Equipment Code"], ref["Criticality"]))
+
+        master["Equipment"] = master["Equipment Code"].map(ref_name).fillna(master["Equipment"])
+        master["Area"] = master["Equipment Code"].map(ref_area).fillna(master.get("Area", ""))
+        master["Reference Criticality"] = master["Equipment Code"].map(ref_crit).fillna("")
+
+    # Merge artificial -00 only when the reference or current master confirms
+    # that the corresponding -01 equipment exists.
     existing = set(x for x in master["Equipment Code"].astype(str) if x)
+    if not ref.empty:
+        existing |= set(ref["Equipment Code"].astype(str))
+
     replacements = {}
     for code in existing:
         m = re.fullmatch(r"(\d{3})-([A-Z]{2,5})-00", code)
@@ -82,13 +114,22 @@ def canonicalize_equipment_master(master):
             sibling01 = f"{m.group(1)}-{m.group(2)}-01"
             if sibling01 in existing:
                 replacements[code] = sibling01
+
     if replacements:
         master["Equipment Code"] = master["Equipment Code"].replace(replacements)
+        if not ref.empty:
+            master["Equipment"] = master["Equipment Code"].map(ref_name).fillna(master["Equipment"])
+            master["Area"] = master["Equipment Code"].map(ref_area).fillna(master.get("Area", ""))
+            master["Reference Criticality"] = master["Equipment Code"].map(ref_crit).fillna("")
 
     master["Equipment Mapping Key"] = master["Equipment Code"]
     original_compact = master["Original Equipment Code"].str.upper().str.replace("-", "", regex=False)
     canonical_compact = master["Equipment Code"].str.replace("-", "", regex=False)
-    master["Source Code Variant"] = np.where(original_compact == canonical_compact, "Canonical", "Normalized / merged")
+    master["Source Code Variant"] = np.where(
+        original_compact == canonical_compact,
+        "Canonical",
+        "Normalized / merged"
+    )
     return master
 
 
@@ -278,14 +319,22 @@ def build_equipment_screening(master, df, criticality_df=None):
     records = []
 
     crit_map = {}
+    # Use the supplied equipment reference as the default source of criticality.
+    # A separately uploaded validated criticality file overrides it.
+    if "Reference Criticality" in master.columns:
+        crit_map.update({
+            str(row["Equipment Code"]).strip().upper(): str(row["Reference Criticality"]).strip()
+            for _, row in master[["Equipment Code", "Reference Criticality"]].drop_duplicates().iterrows()
+            if str(row["Equipment Code"]).strip() and str(row["Reference Criticality"]).strip()
+        })
     if criticality_df is not None and not criticality_df.empty:
         c = criticality_df.copy().fillna("")
         if {"Equipment Code", "Criticality"}.issubset(c.columns):
-            crit_map = {
+            crit_map.update({
                 str(row["Equipment Code"]).strip().upper(): str(row["Criticality"]).strip()
                 for _, row in c.iterrows()
-                if str(row["Equipment Code"]).strip()
-            }
+                if str(row["Equipment Code"]).strip() and str(row["Criticality"]).strip()
+            })
 
     for eq, ev in master[master["Equipment Code"].astype(str).str.strip() != ""].groupby("Equipment Code"):
         params = []
@@ -391,7 +440,8 @@ def criticality_template(master):
 
 # --- Data -------------------------------------------------------------------------
 df = load_history()
-master = canonicalize_equipment_master(load_master())
+equipment_reference = load_equipment_reference()
+master = canonicalize_equipment_master(load_master(), equipment_reference)
 required = ["Area", "Equipment Code", "Equipment", "Instrument Tag", "Suggested Parameter", "Suggested Unit",
             "IO Type", "Instrument Type", "Calibration Range", "Evidence", "Reference Source", "Confidence", "Mapping Status"]
 for col in required:
