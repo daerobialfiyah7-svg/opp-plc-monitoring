@@ -169,124 +169,233 @@ if page=="Dashboard":
         cols[i%4].metric(area,f"{n} tags")
 
 elif page=="Equipment Health":
-    st.subheader("Equipment Health — Engineering Decision Support")
+    st.subheader("Equipment Health — Engineering Decision Support 2.0")
     st.caption(
-        "Preliminary screening from historical PLC behaviour. "
-        "This is NOT an alarm/protection limit and does not replace OEM limits, "
+        "Historical-behaviour screening for engineering prioritisation. "
+        "It is NOT an alarm/protection limit and does not replace OEM limits, "
         "operating philosophy, inspection standards, or engineer judgement."
     )
 
+    def _numeric_series(tag):
+        if tag not in df.columns:
+            return pd.Series(dtype=float)
+        return pd.to_numeric(df[tag], errors="coerce").dropna()
+
+    def _baseline_and_condition(s):
+        """Build a robust historical envelope and recent-condition indicators."""
+        s = s.replace([np.inf, -np.inf], np.nan).dropna()
+        if len(s) < 20:
+            return None
+
+        # Historical envelope: P05-P95. A median/MAD indicator is also used so
+        # a single extreme PLC point cannot dominate the health assessment.
+        p05, p95 = float(s.quantile(0.05)), float(s.quantile(0.95))
+        median = float(s.median())
+        mad = float(np.median(np.abs(s - median)))
+        robust_sigma = max(1.4826 * mad, (p95 - p05) / 3.29, 1e-12)
+
+        recent_n = max(10, min(120, len(s) // 10))
+        prior_start = max(0, len(s) - 2 * recent_n)
+        prior = s.iloc[prior_start:len(s)-recent_n]
+        recent = s.iloc[-recent_n:]
+        current = float(s.iloc[-1])
+        recent_mean = float(recent.mean())
+        prior_mean = float(prior.mean()) if len(prior) else float(s.iloc[:-recent_n].mean())
+        shift_pct = (recent_mean - prior_mean) / max(abs(prior_mean), 1e-9) * 100.0
+
+        # Current deviation from historical envelope.
+        if current < p05:
+            outside = (p05 - current) / robust_sigma
+            side = "Below baseline"
+        elif current > p95:
+            outside = (current - p95) / robust_sigma
+            side = "Above baseline"
+        else:
+            outside = 0.0
+            side = "Within baseline"
+
+        # Sustained deviation: how much of the recent window sits outside P05-P95.
+        recent_outside_frac = float(((recent < p05) | (recent > p95)).mean())
+
+        # Trend is deliberately conservative: require both a meaningful
+        # recent-vs-prior shift and a directional slope.
+        if shift_pct >= 5:
+            direction = "Increasing"
+        elif shift_pct <= -5:
+            direction = "Decreasing"
+        else:
+            direction = "Stable"
+
+        if outside >= 3.0 or (recent_outside_frac >= 0.50 and outside >= 1.5):
+            condition = "Critical"
+        elif outside >= 1.5 or recent_outside_frac >= 0.25:
+            condition = "Attention"
+        elif direction != "Stable" and abs(shift_pct) >= 10:
+            condition = "Deteriorating"
+        else:
+            condition = "Normal"
+
+        return {
+            "Current": current,
+            "Baseline Low": p05,
+            "Baseline High": p95,
+            "Recent Mean": recent_mean,
+            "Prior Mean": prior_mean,
+            "Shift %": shift_pct,
+            "Direction": direction,
+            "Outside Fraction": recent_outside_frac,
+            "Deviation Sigma": outside,
+            "Deviation Side": side,
+            "Condition": condition,
+        }
+
+    def _parameter_action(parameter, tag):
+        text = f"{parameter} {tag}".upper()
+        if any(k in text for k in ["VIBRATION", "VIT", "VIB"]):
+            return "Verify vibration; inspect bearing, alignment/coupling and mechanical looseness."
+        if any(k in text for k in ["TEMPERATURE", "TEMP", "TIT"]):
+            return "Verify temperature trend; check lubrication, cooling and bearing/drive condition."
+        if any(k in text for k in ["PRESSURE", "PRESS", "PIT"]):
+            return "Verify pressure against process condition; inspect restriction, leakage and pump/valve condition."
+        if any(k in text for k in ["FLOW", "FLOWMETER", "FIT"]):
+            return "Verify flow signal and process demand; inspect pump, valve, line restriction and instrument health."
+        if any(k in text for k in ["CURRENT", "POWER", "AMP", "IIT"]):
+            return "Verify electrical load; inspect motor loading, drive condition and mechanical resistance."
+        if any(k in text for k in ["SPEED", "VSD"]):
+            return "Verify speed command/feedback and drive condition against operating requirement."
+        if any(k in text for k in ["LEVEL", "LIT"]):
+            return "Verify level behaviour and instrument signal; check upstream/downstream process condition."
+        return "Verify signal against operating condition, recent maintenance history and OEM/design limits."
+
     area_options = ["All"] + sorted([str(x) for x in master["Area"].unique() if str(x)])
     selected_area = st.selectbox("Area", area_options, key="health_area")
-
     area_view = master if selected_area == "All" else master[master["Area"] == selected_area]
     eq_codes = sorted([str(x) for x in area_view["Equipment Code"].unique() if str(x)])
 
     if not eq_codes:
-        st.warning("No mapped equipment code is available for this area.")
+        st.warning("No canonical equipment code is available for this area.")
     else:
         selected_eq = st.selectbox("Equipment Code", eq_codes, key="health_equipment")
         ev = area_view[area_view["Equipment Code"] == selected_eq].copy()
 
         names = ev["Equipment"].replace("", np.nan).dropna()
         eq_name = names.iloc[0] if len(names) else "Equipment description not yet mapped"
-
         st.markdown(f"### {selected_eq}")
         st.caption(eq_name)
 
         rows = []
+        seen_tags = set()
         for _, meta in ev.iterrows():
-            tag = str(meta["PLC Tag"])
-            if tag not in df.columns:
+            tag = str(meta.get("PLC Tag", "")).strip()
+            if not tag or tag in seen_tags:
+                continue
+            seen_tags.add(tag)
+            s = _numeric_series(tag)
+            stats = _baseline_and_condition(s)
+            if stats is None:
                 continue
 
-            s = pd.to_numeric(df[tag], errors="coerce").dropna()
-            if len(s) < 20:
-                continue
-
-            try:
-                low = float(meta.get("Baseline Low", ""))
-                high = float(meta.get("Baseline High", ""))
-                if not np.isfinite(low) or not np.isfinite(high):
-                    raise ValueError
-            except Exception:
-                low = float(s.quantile(0.05))
-                high = float(s.quantile(0.95))
-
-            current = float(s.iloc[-1])
-            span = max(abs(high - low), 1e-12)
-
-            if current < low:
-                deviation = (low - current) / span
-                status = "Attention" if deviation <= 0.25 else "Critical"
-            elif current > high:
-                deviation = (current - high) / span
-                status = "Attention" if deviation <= 0.25 else "Critical"
-            else:
-                status = "Normal"
-
-            n = min(60, len(s) // 2)
-            if n >= 10:
-                recent = float(s.iloc[-n:].mean())
-                prior = float(s.iloc[-2*n:-n].mean())
-                pct = (recent - prior) / max(abs(prior), 1e-9) * 100
-                direction = "Increasing" if pct > 5 else ("Decreasing" if pct < -5 else "Stable")
-            else:
-                direction = "Stable"
-
+            parameter = meta.get("Suggested Parameter", "") or meta.get("Instrument Type", "") or "PLC Parameter"
+            unit = meta.get("Suggested Unit", "") or "—"
+            confidence = meta.get("Confidence", "") or "Low"
             rows.append({
                 "PLC Tag": tag,
-                "Parameter": meta.get("Suggested Parameter", "") or meta.get("Instrument Type", "") or "PLC Parameter",
-                "Unit": meta.get("Suggested Unit", "") or "—",
-                "Current": current,
-                "Baseline Low": low,
-                "Baseline High": high,
-                "Direction": direction,
-                "Status": status,
-                "Confidence": meta.get("Confidence", "Low") or "Low"
+                "Parameter": parameter,
+                "Unit": unit,
+                **stats,
+                "Confidence": confidence,
+                "Action": _parameter_action(parameter, tag),
             })
 
         if not rows:
-            st.warning("No sufficient historical data is available for this equipment.")
+            st.warning("No sufficient historical numeric data is available for this equipment.")
         else:
             health = pd.DataFrame(rows)
-            critical = int((health["Status"] == "Critical").sum())
-            attention = int((health["Status"] == "Attention").sum())
-            overall = "CRITICAL" if critical else ("ATTENTION" if attention else "HEALTHY")
-            icon = "🔴" if overall == "CRITICAL" else ("🟡" if overall == "ATTENTION" else "🟢")
-            score = max(0, 100 - 25 * critical - 8 * attention)
 
-            c1, c2, c3, c4 = st.columns(4)
+            # Evidence-weighted screening score. High-confidence mappings carry
+            # full weight; low-confidence mappings cannot create a severe score
+            # by themselves without strong historical deviation.
+            severity = {"Normal": 0, "Deteriorating": 8, "Attention": 18, "Critical": 35}
+            conf_weight = {"High": 1.0, "Medium": 0.85, "Low": 0.65}
+            penalties = []
+            for _, r in health.iterrows():
+                base = severity.get(r["Condition"], 0)
+                # Sustained deviation adds a small penalty, capped for stability.
+                sustain = min(float(r["Outside Fraction"]) * 12.0, 8.0)
+                penalties.append(min(45.0, (base + sustain) * conf_weight.get(r["Confidence"], 0.65)))
+            health["Penalty"] = penalties
+
+            total_penalty = float(np.mean(penalties)) if penalties else 0.0
+            score = int(round(max(0, min(100, 100 - total_penalty))))
+            critical = int((health["Condition"] == "Critical").sum())
+            attention = int((health["Condition"] == "Attention").sum())
+            deteriorating = int((health["Condition"] == "Deteriorating").sum())
+
+            if critical:
+                overall, risk, priority, icon = "CRITICAL", "HIGH", "P1", "🔴"
+            elif attention:
+                overall, risk, priority, icon = "ATTENTION", "MEDIUM", "P2", "🟠"
+            elif deteriorating:
+                overall, risk, priority, icon = "DETERIORATING", "MEDIUM-LOW", "P3", "🟡"
+            else:
+                overall, risk, priority, icon = "HEALTHY", "LOW", "P4", "🟢"
+
+            c1, c2, c3, c4, c5 = st.columns(5)
             c1.metric("Equipment Health", f"{icon} {overall}")
             c2.metric("Screening Score", f"{score}/100")
             c3.metric("Parameters", f"{len(health):,}")
-            c4.metric("Critical / Attention", f"{critical} / {attention}")
+            c4.metric("Risk", risk)
+            c5.metric("Maintenance Priority", priority)
+
+            st.markdown("#### Condition Distribution")
+            d1, d2, d3, d4 = st.columns(4)
+            d1.metric("Normal", int((health["Condition"] == "Normal").sum()))
+            d2.metric("Deteriorating", deteriorating)
+            d3.metric("Attention", attention)
+            d4.metric("Critical", critical)
 
             st.markdown("#### Parameter Condition")
-            st.dataframe(health, use_container_width=True, height=420)
+            display_cols = ["PLC Tag", "Parameter", "Unit", "Current", "Baseline Low", "Baseline High",
+                            "Direction", "Shift %", "Outside Fraction", "Condition", "Confidence"]
+            st.dataframe(health[display_cols], use_container_width=True, height=440)
 
-            st.markdown("#### Engineering Focus")
-            flagged = health[health["Status"] != "Normal"]
-
+            flagged = health[health["Condition"] != "Normal"].copy()
+            st.markdown("#### Engineering Findings & Maintenance Focus")
             if flagged.empty:
-                st.success("No parameter is outside the preliminary historical baseline.")
+                st.success("No parameter currently shows a significant historical-behaviour deviation.")
             else:
+                flagged = flagged.sort_values(["Condition", "Deviation Sigma"], ascending=[True, False])
                 for _, r in flagged.iterrows():
                     st.warning(
-                        f"**{r['PLC Tag']} — {r['Parameter']}**: {r['Status']}. "
-                        f"Current={r['Current']:.3f} {r['Unit']}; "
-                        f"Baseline P05–P95={r['Baseline Low']:.3f}–{r['Baseline High']:.3f} {r['Unit']}; "
-                        f"Direction={r['Direction']}."
+                        f"**{r['PLC Tag']} — {r['Parameter']}** → **{r['Condition']}** | "
+                        f"Current {r['Current']:.3f} {r['Unit']} | "
+                        f"Historical P05–P95 {r['Baseline Low']:.3f}–{r['Baseline High']:.3f} {r['Unit']} | "
+                        f"Trend {r['Direction']} ({r['Shift %']:+.1f}%)."
                     )
-                st.info(
-                    "Engineering action: verify the signal against process conditions, "
-                    "equipment operating state, OEM/design limits and recent maintenance history "
-                    "before creating a maintenance work order."
+                    st.caption(f"Suggested engineering check: {r['Action']}")
+
+            st.markdown("#### Engineering Decision")
+            if overall == "CRITICAL":
+                st.error(
+                    f"Priority {priority}: {critical} parameter(s) show strong deviation from historical behaviour. "
+                    "Validate the signal and equipment condition promptly before deciding on corrective maintenance."
                 )
+            elif overall == "ATTENTION":
+                st.warning(
+                    f"Priority {priority}: {attention} parameter(s) require engineering review. "
+                    "Check the trend, process state and recent maintenance history; plan inspection if the deviation persists."
+                )
+            elif overall == "DETERIORATING":
+                st.info(
+                    f"Priority {priority}: the equipment remains inside/near its historical envelope, "
+                    f"but {deteriorating} parameter(s) show a meaningful directional change. Increase monitoring frequency and verify field condition."
+                )
+            else:
+                st.success("Equipment behaviour is consistent with its historical operating envelope based on the available PLC data.")
 
             st.caption(
-                "Screening logic: historical P05–P95 baseline + recent direction. "
-                "This is decision support only, not an alarm or protection setting."
+                "Method: historical P05–P95 envelope + recent-vs-prior shift + sustained outside-baseline fraction, "
+                "with mapping-confidence weighting. The result is a screening indicator, not an alarm/trip setting or failure prediction."
             )
 
 elif page=="Tag Master":
