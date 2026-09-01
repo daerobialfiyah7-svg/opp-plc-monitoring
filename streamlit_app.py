@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import re
 from pathlib import Path
 
 st.set_page_config(
@@ -354,6 +355,45 @@ def load_master():
 df = load_history()
 master = load_master()
 
+# ============================================================
+# EQUIPMENT CODE NORMALIZATION
+# ============================================================
+# Different PLC/instrument sources can represent the same physical
+# equipment with different zero-padding or separators, for example:
+#   130ML0001  -> 130-ML-01
+#   130ML01    -> 130-ML-01
+#   130CY001   -> 130-CY-01
+# The normalization is intentionally conservative: only strings that
+# clearly match AREA(3 digits) + TYPE(letters) + NUMBER are changed.
+# PLC Tag values themselves are NOT rewritten.
+def normalize_equipment_code(value):
+    if value is None:
+        return ""
+
+    s = str(value).strip().upper()
+    if not s or s in {"NAN", "NONE", "N/A", "NA"}:
+        return ""
+
+    # Normalize common separators first.
+    s = re.sub(r"[\\s_]+", "-", s)
+    s = re.sub(r"-+", "-", s).strip("-")
+
+    # Canonical form: 3-digit area + equipment family + numeric suffix.
+    # Minimum 2 digits are displayed for the equipment number; 101, 102,
+    # etc. remain 3 digits rather than being truncated.
+    match = re.fullmatch(r"(\\d{3})-?([A-Z]{1,8})-?(\\d+)", s)
+    if not match:
+        return s
+
+    area, family, number = match.groups()
+    number_i = int(number)
+    return f"{area}-{family}-{number_i:02d}"
+
+
+if len(master):
+    master["Equipment Code Original"] = master["Equipment Code"].astype(str).str.strip()
+    master["Equipment Code"] = master["Equipment Code"].apply(normalize_equipment_code)
+
 # Defensive schema: never let a missing enrichment column crash the app.
 required = [
     "PLC Tag", "Area", "Equipment Code", "Equipment", "Instrument Tag",
@@ -682,6 +722,14 @@ if page == "Dashboard":
         for i, (area, n) in enumerate(ac.items()):
             cols[i % 4].metric(str(area), f"{n} tags")
 
+    if len(master):
+        original_codes = master["Equipment Code Original"].replace("", np.nan).dropna().nunique()
+        canonical_codes = master["Equipment Code"].replace("", np.nan).dropna().nunique()
+        st.caption(
+            f"Equipment identity normalization: {original_codes:,} source code variants → "
+            f"{canonical_codes:,} canonical equipment groups."
+        )
+
     st.subheader("Equipment Health — Portfolio View")
     st.caption(
         "Screening otomatis berdasarkan historical behaviour. "
@@ -860,6 +908,11 @@ elif page == "Tag Master":
         "Gunakan tabel ini sebagai kamus resmi mapping PLC. "
         "Confidence menunjukkan kekuatan evidence, bukan final engineering approval."
     )
+    st.info(
+        "Equipment Code dinormalisasi otomatis agar format berbeda untuk equipment fisik yang sama "
+        "digabung dalam satu equipment group. Contoh: 130ML0001, 130ML01 → 130-ML-01; "
+        "130CY001, 130CY01 → 130-CY-01. PLC Tag asli tetap tidak diubah."
+    )
 
     q = st.text_input("Search tag / equipment / parameter")
     area = st.selectbox(
@@ -888,7 +941,7 @@ elif page == "Tag Master":
     st.download_button(
         "Download Tag Master CSV",
         master.to_csv(index=False).encode("utf-8"),
-        "OPP_Tag_Master_Phase5.csv",
+        "OPP_Tag_Master_Normalized.csv",
         "text/csv",
     )
 
