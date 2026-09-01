@@ -72,6 +72,34 @@ def normalize_equipment_code(value, evidence_values=None):
     return f"{area}-{family}-{number:02d}"
 
 
+def normalize_area_label(value):
+    """Normalize Area labels so numeric/text variants do not appear as duplicates.
+
+    Examples:
+      130.0   -> Area 130
+      "130"  -> Area 130
+      "Area 130" -> Area 130
+      "Area 130.0" -> Area 130
+    """
+    if pd.isna(value):
+        return ""
+    s = str(value).strip()
+    if not s:
+        return ""
+
+    # Remove optional "Area" prefix, then normalize integer-like numbers.
+    s_clean = re.sub(r"^area\\s*", "", s, flags=re.IGNORECASE).strip()
+    try:
+        num = float(s_clean)
+        if num.is_integer():
+            return f"Area {int(num)}"
+    except (ValueError, TypeError):
+        pass
+
+    # Keep non-numeric area labels, but standardize the prefix.
+    return f"Area {s_clean}" if not re.match(r"^area\\s", s, flags=re.IGNORECASE) else re.sub(r"^area\\s*", "Area ", s, flags=re.IGNORECASE)
+
+
 def canonicalize_equipment_master(master, equipment_reference=None):
     master = master.copy()
     for c in ["Equipment Code", "PLC Tag", "Instrument Tag", "Equipment"]:
@@ -537,6 +565,7 @@ def criticality_template(master):
 df = load_history()
 equipment_reference = load_equipment_reference()
 master = canonicalize_equipment_master(load_master(), equipment_reference)
+master["Area"] = master["Area"].apply(normalize_area_label)
 required = ["Area", "Equipment Code", "Equipment", "Instrument Tag", "Suggested Parameter", "Suggested Unit",
             "IO Type", "Instrument Type", "Calibration Range", "Evidence", "Reference Source", "Confidence", "Mapping Status"]
 for col in required:
