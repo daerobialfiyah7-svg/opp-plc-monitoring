@@ -26,10 +26,10 @@ for c in required:
     if c not in master.columns: master[c]=""
 
 st.sidebar.header("Navigation")
-page=st.sidebar.radio("Go to",["Dashboard","Tag Master","Engineering Trend","Data Import"])
+page=st.sidebar.radio("Go to",["Dashboard","Equipment Health","Tag Master","Engineering Trend","Data Import"])
 
 st.title("⚙️ OPP Engineering Monitoring")
-st.caption("Phase 2.2 — Evidence-based PLC Tag Master")
+st.caption("Phase 4 — Equipment Health + Evidence-based PLC Monitoring")
 
 high=int((master["Confidence"]=="High").sum())
 medium=int((master["Confidence"]=="Medium").sum())
