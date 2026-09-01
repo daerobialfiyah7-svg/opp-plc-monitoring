@@ -492,7 +492,11 @@ for col in required:
         master[col] = ""
 
 st.sidebar.header("Navigation")
-page = st.sidebar.radio("Go to", ["Dashboard", "Equipment Health", "Maintenance Priority", "Action Center", "Tag Master", "Engineering Trend", "Data Import"])
+page = st.sidebar.radio(
+    "Go to",
+    ["Dashboard", "Equipment Health", "Maintenance Priority", "Action Center", "Tag Master", "Engineering Trend", "Data Import"],
+    key="page_nav"
+)
 
 st.markdown("""
 <div class="eng-hero">
@@ -518,6 +522,7 @@ st.divider()
 if page == "Dashboard":
     st.subheader("OPP Engineering Overview")
     st.write("Dashboard diarahkan sebagai decision-support untuk monitoring proses, kesehatan equipment, identifikasi penyimpangan dan prioritas pemeriksaan.")
+    st.caption("💡 Interaktif: pilih baris equipment pada tabel Maintenance Screening untuk membuka problem, rekomendasi, dan detail pemeriksaan.")
     x, y, z = st.columns(3)
     x.metric("High", f"{high:,}", "Exact / strong evidence")
     y.metric("Medium", f"{medium:,}", "Equipment / family evidence")
@@ -531,9 +536,67 @@ if page == "Dashboard":
         p3.metric("P3 — Deteriorating", int((screening["Screening Priority"] == "P3").sum()))
         p4.metric("P4 — Healthy", int((screening["Screening Priority"] == "P4").sum()))
         st.caption("P1–P4 are condition-based screening priorities. Equipment criticality is not inferred and remains Engineering Review Required until validated.")
-        top = screening[screening["Screening Priority"] != "P4"].sort_values(["Screening Priority", "Health"], ascending=[True, True]).head(8)
+        top = screening[screening["Screening Priority"] != "P4"].sort_values(
+            ["Screening Priority", "Health"], ascending=[True, True]
+        ).head(12)
+
         if not top.empty:
-            st.dataframe(top[["Equipment Code", "Equipment", "Health", "Condition", "Screening Priority", "Risk", "Top Parameter", "Top Finding", "Top Trend", "Top Shift %"]], use_container_width=True, hide_index=True)
+            st.caption("Klik satu baris pada tabel untuk melihat problem/finding equipment tersebut.")
+
+            dashboard_event = st.dataframe(
+                top[[
+                    "Equipment Code", "Equipment", "Health", "Condition",
+                    "Screening Priority", "Risk", "Top Parameter",
+                    "Top Finding", "Top Trend", "Top Shift %"
+                ]],
+                use_container_width=True,
+                hide_index=True,
+                height=390,
+                on_select="rerun",
+                selection_mode="single-row",
+                key="dashboard_screening_table"
+            )
+
+            selected_rows = dashboard_event.selection.rows
+            if selected_rows:
+                selected_idx = selected_rows[0]
+                selected_code = str(top.iloc[selected_idx]["Equipment Code"])
+                selected_row = top.iloc[selected_idx]
+
+                st.markdown("#### Selected Problem")
+                s1, s2, s3, s4 = st.columns(4)
+                s1.metric("Equipment", selected_code)
+                s2.metric("Health", f"{int(selected_row['Health'])}/100")
+                s3.metric("Priority", selected_row["Screening Priority"])
+                s4.metric("Condition", selected_row["Condition"])
+
+                st.warning(
+                    f"**{selected_code} — {selected_row['Equipment']}** | "
+                    f"Problem utama: **{selected_row['Top Parameter']} → {selected_row['Top Finding']}** | "
+                    f"Trend: **{selected_row['Top Trend']} ({selected_row['Top Shift %']:+.1f}%)**"
+                )
+                st.info(
+                    f"**Engineering recommendation:** {selected_row['Top Action']}"
+                    if "Top Action" in selected_row.index
+                    else "Review engineering trend and verify field condition."
+                )
+
+                b1, b2 = st.columns(2)
+                if b1.button(
+                    "🔎 Lihat Detail Equipment Health",
+                    key=f"dashboard_health_{selected_code}"
+                ):
+                    st.session_state["health_equipment_from_dashboard"] = selected_code
+                    st.session_state["page_nav"] = "Equipment Health"
+                    st.rerun()
+
+                if b2.button(
+                    "🛠️ Buka Engineering Action Center",
+                    key=f"dashboard_action_{selected_code}"
+                ):
+                    st.session_state["action_equipment_from_dashboard"] = selected_code
+                    st.session_state["page_nav"] = "Action Center"
+                    st.rerun()
     st.subheader("Area Coverage")
     # Normalize Area before sorting to prevent mixed-type pandas errors.
     area_series = (
@@ -916,8 +979,13 @@ elif page == "Action Center":
 
             choices = filtered["Equipment Code"].tolist()
             if choices:
+                default_action_eq = st.session_state.get("action_equipment_from_dashboard", "")
+                action_index = choices.index(default_action_eq) if default_action_eq in choices else 0
                 selected_action = st.selectbox(
-                    "Select equipment for action review", choices, key="action_equipment"
+                    "Select equipment for action review",
+                    choices,
+                    index=action_index,
+                    key="action_equipment"
                 )
                 ar = action_register[action_register["Equipment Code"] == selected_action].iloc[0]
 
