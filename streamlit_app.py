@@ -32,6 +32,21 @@ if "Reference Source" not in master.columns:
 
 # Normalize common column-name variants and missing values.
 master.columns = [str(c).strip() for c in master.columns]
+# Ensure every Phase 2.1 reference field exists, so old/new Tag Master schemas
+# cannot break Dashboard or Engineering Trend.
+for col, default in {
+    "Area": "",
+    "Suggested Equipment": "",
+    "Suggested Parameter": "",
+    "Suggested Unit": "",
+    "Reference Description": "",
+    "Reference Equipment Code": "",
+    "Reference Source": "",
+    "Confidence": "Low",
+    "Mapping Status": "Needs Review",
+}.items():
+    if col not in master.columns:
+        master[col] = default
 master["Confidence"] = master["Confidence"].fillna("Low").astype(str).str.strip().str.title()
 master["Mapping Status"] = master["Mapping Status"].fillna("Needs Review").astype(str).str.strip()
 params=[c for c in df.columns if c!="ArchiveTime"]
@@ -106,9 +121,16 @@ elif page=="Engineering Trend":
     s=d[tag].dropna()
 
     st.markdown(f"**{r['PLC Tag']}**")
-    st.caption(f"Area: {r['Area'] or 'Unassigned'} | Equipment: {r['Suggested Equipment'] or 'Unassigned'} | Parameter: {r['Suggested Parameter']} | Unit: {r['Suggested Unit'] or 'Not configured'}")
-    if r["Reference Description"]:
-        st.info(f"Reference: {r['Reference Description']}  |  Source: {r['Reference Source']}  |  Confidence: {r['Confidence']}")
+    area_v = str(r.get("Area", "") or "").strip()
+    equip_v = str(r.get("Suggested Equipment", "") or "").strip()
+    param_v = str(r.get("Suggested Parameter", "") or "").strip()
+    unit_v = str(r.get("Suggested Unit", "") or "").strip()
+    ref_v = str(r.get("Reference Description", "") or "").strip()
+    source_v = str(r.get("Reference Source", "") or "").strip()
+    conf_v = str(r.get("Confidence", "Low") or "Low").strip()
+    st.caption(f"Area: {area_v or 'Unassigned'} | Equipment: {equip_v or 'Unassigned'} | Parameter: {param_v or 'Unassigned'} | Unit: {unit_v or 'Not configured'}")
+    if ref_v and ref_v.lower() != "nan":
+        st.info(f"Reference: {ref_v}  |  Source: {source_v or 'Not specified'}  |  Confidence: {conf_v}")
 
     if len(s):
         a,b,c,d1=st.columns(4)
