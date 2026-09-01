@@ -299,59 +299,172 @@ st.markdown("""<style>
 
 </style>""",unsafe_allow_html=True)
 
-@st.cache_data
+DB_PATH = ROOT / "data" / "plc_history.sqlite"
+DB_SCHEMA_VERSION = 1
 
-def load_history():
-    """Load the persistent PLC history used by all analytical pages."""
+
+def _db_connect():
+    """Open the persistent SQLite history database."""
     data_dir = ROOT / "data"
     data_dir.mkdir(parents=True, exist_ok=True)
-    fs = sorted(data_dir.glob("*.csv.gz"))
-    if not fs:
+    import sqlite3
+    conn = sqlite3.connect(DB_PATH, timeout=30)
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=NORMAL")
+    conn.execute("PRAGMA foreign_keys=ON")
+    return conn
+
+
+def _init_history_db():
+    """Create the database and migrate legacy CSV archives once."""
+    conn = _db_connect()
+    try:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS plc_history (
+                archive_time TEXT PRIMARY KEY,
+                payload BLOB NOT NULL,
+                source_file TEXT,
+                imported_at TEXT NOT NULL
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS import_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                source_file TEXT NOT NULL,
+                imported_at TEXT NOT NULL,
+                rows_received INTEGER NOT NULL,
+                rows_inserted INTEGER NOT NULL,
+                rows_duplicate INTEGER NOT NULL,
+                rows_invalid INTEGER NOT NULL,
+                first_timestamp TEXT,
+                last_timestamp TEXT
+            )
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_plc_history_time ON plc_history(archive_time)")
+        conn.execute("CREATE TABLE IF NOT EXISTS app_meta (key TEXT PRIMARY KEY, value TEXT)")
+        conn.execute("INSERT OR IGNORE INTO app_meta(key,value) VALUES('schema_version',?)", (str(DB_SCHEMA_VERSION),))
+        conn.commit()
+
+        # One-time migration of existing v9 *.csv.gz history into SQLite.
+        existing_count = conn.execute("SELECT COUNT(*) FROM plc_history").fetchone()[0]
+        legacy_files = sorted((ROOT / "data").glob("*.csv.gz"))
+        migrated = conn.execute("SELECT value FROM app_meta WHERE key='legacy_csv_migrated'").fetchone()
+        if existing_count == 0 and legacy_files and not migrated:
+            import gzip, json
+            now = pd.Timestamp.utcnow().isoformat()
+            for f in legacy_files:
+                try:
+                    part = pd.read_csv(f, parse_dates=["ArchiveTime"])
+                    if "ArchiveTime" not in part.columns:
+                        continue
+                    part["ArchiveTime"] = pd.to_datetime(part["ArchiveTime"], errors="coerce")
+                    part = part.dropna(subset=["ArchiveTime"]).drop_duplicates("ArchiveTime", keep="last")
+                    for _, row in part.iterrows():
+                        ts = pd.Timestamp(row["ArchiveTime"]).isoformat()
+                        raw = json.dumps(row.to_dict(), default=str, allow_nan=False).encode("utf-8")
+                        blob = gzip.compress(raw, compresslevel=6)
+                        conn.execute(
+                            "INSERT OR IGNORE INTO plc_history(archive_time,payload,source_file,imported_at) VALUES(?,?,?,?)",
+                            (ts, blob, f.name, now)
+                        )
+                except Exception:
+                    continue
+            conn.execute("INSERT OR REPLACE INTO app_meta(key,value) VALUES('legacy_csv_migrated','1')")
+            conn.commit()
+    finally:
+        conn.close()
+
+
+@st.cache_data(show_spinner=False)
+def load_history():
+    """Load the single persistent PLC history source used by all pages."""
+    import gzip, json
+    _init_history_db()
+    conn = _db_connect()
+    try:
+        rows = conn.execute("SELECT archive_time, payload FROM plc_history ORDER BY archive_time").fetchall()
+    finally:
+        conn.close()
+
+    if not rows:
         return pd.DataFrame(columns=["ArchiveTime"])
 
-    frames = []
-    for f in fs:
+    records = []
+    for ts, blob in rows:
         try:
-            part = pd.read_csv(f, parse_dates=["ArchiveTime"])
-            if "ArchiveTime" in part.columns:
-                frames.append(part)
+            record = json.loads(gzip.decompress(blob).decode("utf-8"))
+            record["ArchiveTime"] = pd.to_datetime(ts, errors="coerce")
+            records.append(record)
         except Exception:
             continue
-    if not frames:
+    if not records:
         return pd.DataFrame(columns=["ArchiveTime"])
-
-    history = pd.concat(frames, ignore_index=True, sort=False)
+    history = pd.DataFrame.from_records(records)
     history["ArchiveTime"] = pd.to_datetime(history["ArchiveTime"], errors="coerce")
     history = history.dropna(subset=["ArchiveTime"])
-    history = history.drop_duplicates(subset=["ArchiveTime"], keep="last")
-    return history.sort_values("ArchiveTime").reset_index(drop=True)
+    return history.drop_duplicates("ArchiveTime", keep="last").sort_values("ArchiveTime").reset_index(drop=True)
 
 
 def persist_daily_import(incoming, source_name="PLC_Import"):
-    """Persist only new PLC timestamps as a compressed daily archive."""
-    data_dir = ROOT / "data"
-    data_dir.mkdir(parents=True, exist_ok=True)
+    """Transactionally append only new PLC timestamps to SQLite.
 
+    ArchiveTime is the unique key, making repeated uploads idempotent.
+    """
+    import gzip, json
+    _init_history_db()
     incoming = incoming.copy()
+    received = len(incoming)
     incoming["ArchiveTime"] = pd.to_datetime(incoming["ArchiveTime"], errors="coerce")
-    incoming = incoming.dropna(subset=["ArchiveTime"])
-    incoming = incoming.drop_duplicates(subset=["ArchiveTime"], keep="last")
+    invalid = int(incoming["ArchiveTime"].isna().sum())
+    incoming = incoming.dropna(subset=["ArchiveTime"]).drop_duplicates("ArchiveTime", keep="last")
 
-    existing = load_history()
-    known = set(existing["ArchiveTime"].dropna()) if not existing.empty else set()
-    new_rows = incoming[~incoming["ArchiveTime"].isin(known)].copy()
-    if new_rows.empty:
-        return 0, None
+    conn = _db_connect()
+    inserted = 0
+    duplicate = 0
+    now = pd.Timestamp.utcnow().isoformat()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        for _, row in incoming.sort_values("ArchiveTime").iterrows():
+            ts = pd.Timestamp(row["ArchiveTime"]).isoformat()
+            raw = json.dumps(row.to_dict(), default=str, allow_nan=False).encode("utf-8")
+            blob = gzip.compress(raw, compresslevel=6)
+            cur = conn.execute(
+                "INSERT OR IGNORE INTO plc_history(archive_time,payload,source_file,imported_at) VALUES(?,?,?,?)",
+                (ts, blob, Path(source_name).name, now)
+            )
+            if cur.rowcount == 1:
+                inserted += 1
+            else:
+                duplicate += 1
 
-    stem = re.sub(r"[^A-Za-z0-9_-]+", "_", Path(source_name).stem).strip("_") or "PLC_Import"
-    first_dt = new_rows["ArchiveTime"].min().strftime("%Y%m%d")
-    last_dt = new_rows["ArchiveTime"].max().strftime("%Y%m%d")
-    output = data_dir / f"{first_dt}_{last_dt}_{stem}.csv.gz"
-    if output.exists():
-        output = data_dir / f"{first_dt}_{last_dt}_{stem}_{pd.Timestamp.now().strftime('%H%M%S')}.csv.gz"
+        first_ts = incoming["ArchiveTime"].min().isoformat() if not incoming.empty else None
+        last_ts = incoming["ArchiveTime"].max().isoformat() if not incoming.empty else None
+        conn.execute(
+            """INSERT INTO import_log
+               (source_file, imported_at, rows_received, rows_inserted, rows_duplicate,
+                rows_invalid, first_timestamp, last_timestamp)
+               VALUES (?,?,?,?,?,?,?,?)""",
+            (Path(source_name).name, now, received, inserted, duplicate, invalid, first_ts, last_ts)
+        )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+    return inserted, DB_PATH
 
-    new_rows.sort_values("ArchiveTime").to_csv(output, index=False, compression="gzip")
-    return len(new_rows), output
+
+def history_database_stats():
+    """Return database status for the Data Import page."""
+    _init_history_db()
+    conn = _db_connect()
+    try:
+        row = conn.execute("SELECT COUNT(*), MIN(archive_time), MAX(archive_time) FROM plc_history").fetchone()
+        imports = conn.execute("SELECT COUNT(*) FROM import_log").fetchone()[0]
+        return int(row[0] or 0), row[1], row[2], int(imports or 0)
+    finally:
+        conn.close()
 
 @st.cache_data
 
@@ -1904,12 +2017,17 @@ elif page == "Data Import":
                 else:
                     st.success("No new timestamps to append. The uploaded file is already represented in the current history.")
 
-    st.markdown("#### Historical Data Status")
-    if df.empty:
-        st.info("No PLC history is currently stored in /data.")
-    else:
-        h1, h2, h3 = st.columns(3, gap="small")
-        h1.metric("Historical Rows", f"{len(df):,}")
-        h2.metric("First Timestamp", pd.to_datetime(df["ArchiveTime"]).min().strftime("%d %b %Y %H:%M"))
-        h3.metric("Latest Timestamp", pd.to_datetime(df["ArchiveTime"]).max().strftime("%d %b %Y %H:%M"))
-        st.caption("This historical dataset is the same dataset consumed by Engineering Trend and Equipment Health.")
+    st.markdown("#### Historical Database Status")
+    try:
+        db_rows, db_first, db_last, import_count = history_database_stats()
+        h1, h2, h3, h4 = st.columns(4, gap="small")
+        h1.metric("Historical Rows", f"{db_rows:,}")
+        h2.metric("First Timestamp", pd.to_datetime(db_first).strftime("%d %b %Y %H:%M") if db_first else "—")
+        h3.metric("Latest Timestamp", pd.to_datetime(db_last).strftime("%d %b %Y %H:%M") if db_last else "—")
+        h4.metric("Import Batches", f"{import_count:,}")
+        st.caption("SQLite is the single historical source consumed by Dashboard, Equipment Health and Engineering Trend. Re-uploading the same Excel file is safe: existing timestamps are not duplicated.")
+        with st.expander("🗄️ Database details", expanded=False):
+            st.code(str(DB_PATH), language="text")
+            st.caption("Unique ArchiveTime key • transactional import • import log • compressed row payloads")
+    except Exception as exc:
+        st.error(f"Unable to read historical database status: {exc}")
