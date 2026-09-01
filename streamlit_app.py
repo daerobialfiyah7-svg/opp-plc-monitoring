@@ -74,37 +74,83 @@ elif page=="Tag Master":
                        "OPP_Tag_Master_Phase2_2.csv","text/csv")
 
 elif page=="Engineering Trend":
-    st.subheader("Engineering Trend")
-    area=st.selectbox("Area",["All"]+sorted([x for x in master["Area"].unique() if x]))
-    cand=master if area=="All" else master[master["Area"]==area]
-    tag=st.selectbox("PLC Tag",cand["PLC Tag"].tolist())
-    meta=master[master["PLC Tag"]==tag].iloc[0]
+    st.subheader("Engineering Trend — Equipment View")
+    st.caption("Select an equipment code to display all mapped PLC parameters together. Each parameter keeps its own trend and engineering unit.")
 
-    min_d,max_d=df["ArchiveTime"].min().date(),df["ArchiveTime"].max().date()
-    start=st.date_input("Start Date",min_d,min_value=min_d,max_value=max_d)
-    end=st.date_input("End Date",max_d,min_value=min_d,max_value=max_d)
+    area_options=["All"]+sorted([x for x in master["Area"].unique() if x])
+    selected_area=st.selectbox("Area",area_options,key="trend_area")
 
-    d=df[(df["ArchiveTime"].dt.date>=start)&(df["ArchiveTime"].dt.date<=end)][["ArchiveTime",tag]].copy()
-    s=d[tag].dropna()
-
-    st.markdown(f"**{tag}**")
-    st.caption(
-        f"Area: {meta['Area'] or 'Unassigned'} | "
-        f"Equipment: {meta['Equipment'] or 'Unassigned'} | "
-        f"Suggested Parameter: {meta['Suggested Parameter'] or 'Unassigned'} | "
-        f"Unit: {meta['Suggested Unit'] or 'Not configured'}"
-    )
-    st.caption(f"Confidence: {meta['Confidence'] or 'Low'} | Evidence: {meta['Reference Source']} — {meta['Evidence']}")
-
-    if len(s):
-        q1,q2,q3,q4=st.columns(4)
-        q1.metric("Average",f"{s.mean():,.3f}")
-        q2.metric("Minimum",f"{s.min():,.3f}")
-        q3.metric("Maximum",f"{s.max():,.3f}")
-        q4.metric("Samples",f"{len(s):,}")
-        st.line_chart(d.set_index("ArchiveTime")[tag],height=450)
+    area_view=master if selected_area=="All" else master[master["Area"]==selected_area]
+    eq_codes=sorted([x for x in area_view["Equipment Code"].unique() if x])
+    if not eq_codes:
+        st.warning("No equipment code is mapped for this selection yet.")
     else:
-        st.warning("No valid data for selected period.")
+        selected_eq=st.selectbox("Equipment Code",eq_codes,key="trend_equipment")
+        eq_view=area_view[area_view["Equipment Code"]==selected_eq].copy()
+
+        eq_name=eq_view["Equipment"].replace("",np.nan).dropna().iloc[0] if (eq_view["Equipment"].replace("",np.nan).notna().any()) else "Equipment description not yet mapped"
+        st.markdown(f"### {selected_eq}")
+        st.caption(f"{eq_name} • {len(eq_view)} associated PLC tags")
+
+        # Date range
+        min_d,max_d=df["ArchiveTime"].min().date(),df["ArchiveTime"].max().date()
+        c1,c2,c3=st.columns([1,1,2])
+        start=c1.date_input("Start Date",min_d,min_value=min_d,max_value=max_d,key="trend_start")
+        end=c2.date_input("End Date",max_d,min_value=min_d,max_value=max_d,key="trend_end")
+        if start>end:
+            st.error("Start Date cannot be later than End Date.")
+        else:
+            # Only tags actually present in historical data
+            eq_tags=[t for t in eq_view["PLC Tag"].tolist() if t in df.columns]
+            if not eq_tags:
+                st.warning("No historical PLC data found for the mapped tags of this equipment.")
+            else:
+                # Parameter grouping: prefer suggested parameter, otherwise instrument type/tag prefix.
+                rows=[]
+                for _,meta in eq_view.iterrows():
+                    tag=meta["PLC Tag"]
+                    if tag not in df.columns: continue
+                    d=df[(df["ArchiveTime"].dt.date>=start)&(df["ArchiveTime"].dt.date<=end)][["ArchiveTime",tag]].copy()
+                    d[tag]=pd.to_numeric(d[tag],errors="coerce")
+                    s=d[tag].dropna()
+                    if len(s)==0: continue
+                    rows.append((meta, d, s))
+
+                st.markdown("#### Equipment Parameter Summary")
+                summary=[]
+                for meta,d,s in rows:
+                    summary.append({
+                        "PLC Tag":meta["PLC Tag"],
+                        "Parameter":meta["Suggested Parameter"] or meta["Instrument Type"] or "PLC Parameter",
+                        "Unit":meta["Suggested Unit"] or "—",
+                        "Current":s.iloc[-1],
+                        "Average":s.mean(),
+                        "Min":s.min(),
+                        "Max":s.max(),
+                        "Confidence":meta["Confidence"] or "Low"
+                    })
+                if summary:
+                    st.dataframe(pd.DataFrame(summary),use_container_width=True,height=260)
+
+                st.markdown("#### Parameter Trends")
+                # Render one chart per parameter/tag, keeping unlike units separate.
+                for meta,d,s in rows:
+                    tag=meta["PLC Tag"]
+                    label=meta["Suggested Parameter"] or meta["Instrument Type"] or tag
+                    unit=meta["Suggested Unit"] or ""
+                    st.markdown(f"**{tag} — {label}**")
+                    st.caption(
+                        f"Unit: {unit or 'Not configured'} | "
+                        f"Confidence: {meta['Confidence'] or 'Low'} | "
+                        f"Reference: {meta['Reference Source'] or 'Not available'}"
+                    )
+                    chart=d.set_index("ArchiveTime")[tag].dropna()
+                    if len(chart):
+                        st.line_chart(chart,height=230)
+                    else:
+                        st.info("No valid data in selected date range.")
+
+                st.info("Trend panels are intentionally separated by parameter/unit. Do not combine flow, temperature, pressure and vibration on one Y-axis.")
 
 elif page=="Data Import":
     st.subheader("Daily PLC Excel Import — Validation")
