@@ -17,45 +17,63 @@ ROOT = Path(__file__).resolve().parent
 # ============================================================
 st.markdown("""
 <style>
-/* Global */
+/* ============================================================
+   LIGHT INDUSTRIAL / ENGINEERING UI
+   ============================================================ */
 :root {
-    --opp-bg: #07111f;
-    --opp-panel: rgba(15, 28, 48, 0.78);
-    --opp-panel-2: rgba(20, 37, 61, 0.72);
-    --opp-border: rgba(120, 170, 220, 0.20);
-    --opp-text: #edf5ff;
-    --opp-muted: #8fa7c2;
-    --opp-cyan: #42d9ff;
-    --opp-blue: #5b8cff;
-    --opp-green: #39e6a2;
-    --opp-yellow: #ffc857;
-    --opp-red: #ff5d73;
+    --opp-bg: #eef3f7;
+    --opp-panel: rgba(255,255,255,.92);
+    --opp-panel-2: #f7fafc;
+    --opp-border: #d7e1ea;
+    --opp-text: #203044;
+    --opp-muted: #66788b;
+    --opp-cyan: #008eb8;
+    --opp-blue: #2468b3;
+    --opp-green: #15966d;
+    --opp-yellow: #d89a18;
+    --opp-red: #d94b5f;
 }
 
 .stApp {
     background:
-        radial-gradient(circle at 78% 8%, rgba(66,217,255,.10), transparent 28%),
-        radial-gradient(circle at 18% 20%, rgba(91,140,255,.10), transparent 30%),
-        linear-gradient(135deg, #050b14 0%, #081321 48%, #0a1423 100%);
+        radial-gradient(circle at 88% 5%, rgba(0,142,184,.07), transparent 24%),
+        radial-gradient(circle at 10% 18%, rgba(36,104,179,.055), transparent 28%),
+        linear-gradient(135deg, #eef3f7 0%, #f5f8fa 52%, #e9f0f5 100%);
     color: var(--opp-text);
 }
 
-/* Subtle technical grid */
+/* Blueprint / engineering grid */
 .stApp::before {
     content: "";
     position: fixed;
     inset: 0;
     pointer-events: none;
-    opacity: .035;
+    opacity: .20;
     background-image:
-        linear-gradient(rgba(255,255,255,.5) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,.5) 1px, transparent 1px);
-    background-size: 36px 36px;
+        linear-gradient(rgba(55,91,120,.11) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(55,91,120,.11) 1px, transparent 1px);
+    background-size: 38px 38px;
+    z-index: 0;
+}
+
+/* Subtle engineering watermark: gear + process/plant silhouette */
+.stApp::after {
+    content: "⚙     ⚙        ────┐     ┌────      ⚙\\A   ────────┘     └────────\\A       OPP  •  PROCESS  •  ENGINEERING";
+    white-space: pre;
+    position: fixed;
+    right: 2%;
+    bottom: 4%;
+    font-family: monospace;
+    font-size: 30px;
+    line-height: 2.1;
+    letter-spacing: .08em;
+    color: rgba(52,94,125,.055);
+    pointer-events: none;
     z-index: 0;
 }
 
 .block-container {
-    padding-top: 2rem;
+    padding-top: 1.7rem;
     padding-bottom: 3rem;
     max-width: 1600px;
 }
@@ -64,180 +82,236 @@ st.markdown("""
 .opp-hero {
     position: relative;
     overflow: hidden;
-    padding: 26px 30px;
-    margin-bottom: 22px;
-    border: 1px solid var(--opp-border);
-    border-radius: 22px;
+    padding: 24px 30px;
+    margin-bottom: 20px;
+    border: 1px solid #cbd9e5;
+    border-radius: 20px;
     background:
-        linear-gradient(120deg, rgba(20,39,65,.90), rgba(8,20,36,.82));
-    box-shadow: 0 18px 55px rgba(0,0,0,.28);
+        linear-gradient(115deg, rgba(255,255,255,.97), rgba(239,247,251,.96));
+    box-shadow: 0 10px 28px rgba(36,67,91,.10);
 }
+
+.opp-hero::before {
+    content: "⚙";
+    position: absolute;
+    right: 42px;
+    top: -38px;
+    font-size: 170px;
+    color: rgba(0,142,184,.055);
+    transform: rotate(18deg);
+}
+
 .opp-hero::after {
     content: "";
     position: absolute;
-    width: 260px;
-    height: 260px;
-    right: -100px;
-    top: -120px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(66,217,255,.18), transparent 68%);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #008eb8, #2468b3, transparent 82%);
+    opacity: .75;
 }
+
 .opp-kicker {
     color: var(--opp-cyan);
     font-size: 12px;
-    font-weight: 700;
-    letter-spacing: .18em;
+    font-weight: 750;
+    letter-spacing: .16em;
     text-transform: uppercase;
     margin-bottom: 7px;
 }
+
 .opp-hero-title {
-    font-size: clamp(28px, 3vw, 46px);
-    line-height: 1.05;
+    font-size: clamp(28px, 3vw, 42px);
+    line-height: 1.08;
     font-weight: 800;
-    letter-spacing: -.03em;
+    letter-spacing: -.025em;
     margin: 0;
+    color: #1e3045;
 }
+
 .opp-hero-sub {
     color: var(--opp-muted);
-    margin-top: 9px;
+    margin-top: 8px;
     font-size: 14px;
 }
+
 .opp-live {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    margin-top: 17px;
+    margin-top: 15px;
     padding: 7px 12px;
-    border: 1px solid rgba(57,230,162,.25);
+    border: 1px solid rgba(21,150,109,.25);
     border-radius: 999px;
-    background: rgba(57,230,162,.07);
-    color: #a9f8d8;
+    background: rgba(21,150,109,.07);
+    color: #147956;
     font-size: 12px;
     font-weight: 700;
 }
+
 .opp-live-dot {
     width: 7px;
     height: 7px;
     border-radius: 50%;
     background: var(--opp-green);
-    box-shadow: 0 0 14px rgba(57,230,162,.85);
+    box-shadow: 0 0 12px rgba(21,150,109,.45);
 }
 
 /* Sidebar */
 section[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #06101d 0%, #081523 100%);
-    border-right: 1px solid var(--opp-border);
+    background:
+        linear-gradient(180deg, #e8f0f5 0%, #f5f8fa 100%);
+    border-right: 1px solid #ccd9e3;
 }
+
 section[data-testid="stSidebar"] > div {
     padding-top: 1.4rem;
 }
+
 section[data-testid="stSidebar"] [data-testid="stRadio"] label {
-    color: #b9cbe0 !important;
-    font-weight: 600;
+    color: #3b5065 !important;
+    font-weight: 650;
+    font-size: 15px !important;
 }
+
 section[data-testid="stSidebar"] [data-testid="stRadio"] label:hover {
     color: var(--opp-cyan) !important;
 }
 
-/* Metrics */
-[data-testid="stMetric"] {
-    background: linear-gradient(145deg, rgba(20,39,65,.80), rgba(10,23,40,.74));
-    border: 1px solid var(--opp-border);
-    border-radius: 16px;
-    padding: 16px 18px;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.03), 0 12px 30px rgba(0,0,0,.16);
-}
-[data-testid="stMetricLabel"] {
-    color: #8fa7c2 !important;
-    font-size: 12px !important;
-    font-weight: 650 !important;
-}
-[data-testid="stMetricValue"] {
-    color: #f3f8ff !important;
-    font-weight: 800 !important;
-    letter-spacing: -.025em;
+section[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] {
+    gap: 5px;
 }
 
-/* Containers / cards */
+/* Metrics */
+[data-testid="stMetric"] {
+    background: linear-gradient(145deg, rgba(255,255,255,.97), rgba(246,249,251,.96));
+    border: 1px solid var(--opp-border);
+    border-radius: 15px;
+    padding: 15px 18px;
+    box-shadow: 0 7px 20px rgba(42,71,94,.07);
+}
+
+[data-testid="stMetricLabel"] {
+    color: #63778a !important;
+    font-size: 13px !important;
+    font-weight: 650 !important;
+}
+
+[data-testid="stMetricValue"] {
+    color: #24384d !important;
+    font-size: 27px !important;
+    font-weight: 800 !important;
+    letter-spacing: -.02em;
+}
+
+/* Cards / bordered containers */
 div[data-testid="stVerticalBlockBorderWrapper"] {
     border-color: var(--opp-border) !important;
-    border-radius: 18px !important;
-    background: rgba(13,27,46,.48);
+    border-radius: 16px !important;
+    background: rgba(255,255,255,.76);
+    box-shadow: 0 5px 18px rgba(42,71,94,.05);
 }
 
 /* Inputs */
 .stSelectbox > div > div,
 .stTextInput > div > div,
 .stDateInput > div > div {
-    background: rgba(16,31,51,.80) !important;
-    border: 1px solid rgba(120,170,220,.18) !important;
-    border-radius: 12px !important;
+    background: rgba(255,255,255,.96) !important;
+    border: 1px solid #ccd9e3 !important;
+    border-radius: 10px !important;
 }
+
 .stSelectbox label, .stTextInput label, .stDateInput label {
-    color: #9db2ca !important;
+    color: #536a7e !important;
     font-weight: 650 !important;
+    font-size: 14px !important;
 }
 
 /* Buttons */
 .stButton > button, .stDownloadButton > button {
-    border: 1px solid rgba(66,217,255,.28) !important;
-    border-radius: 10px !important;
-    background: linear-gradient(135deg, rgba(66,217,255,.13), rgba(91,140,255,.13)) !important;
-    color: #dff8ff !important;
+    border: 1px solid rgba(0,142,184,.30) !important;
+    border-radius: 9px !important;
+    background: linear-gradient(135deg, #f7fcfe, #edf6fa) !important;
+    color: #21627c !important;
     font-weight: 700 !important;
 }
+
 .stButton > button:hover, .stDownloadButton > button:hover {
-    border-color: rgba(66,217,255,.60) !important;
-    box-shadow: 0 0 22px rgba(66,217,255,.10);
+    border-color: rgba(0,142,184,.65) !important;
+    box-shadow: 0 0 18px rgba(0,142,184,.10);
 }
 
-/* Headings */
+/* Main headings: medium, readable, not oversized */
 h1, h2, h3, h4 {
-    color: #f2f7ff !important;
-    letter-spacing: -.02em;
+    color: #24364a !important;
+    letter-spacing: -.018em;
 }
+
+h1 { font-size: 30px !important; }
+h2 { font-size: 25px !important; }
+h3 { font-size: 21px !important; }
+h4 { font-size: 18px !important; }
+
+.stMarkdown p, .stText, .stCaption, [data-testid="stCaptionContainer"] {
+    color: #607487;
+}
+
 .stCaption, [data-testid="stCaptionContainer"] {
-    color: #8198b2 !important;
+    font-size: 13px !important;
 }
 
 /* Tables */
 [data-testid="stDataFrame"] {
     border: 1px solid var(--opp-border);
-    border-radius: 14px;
+    border-radius: 12px;
     overflow: hidden;
+    background: rgba(255,255,255,.90);
 }
 
 /* Alerts */
 div[data-testid="stAlert"] {
-    border-radius: 13px !important;
-    border: 1px solid rgba(120,170,220,.16) !important;
+    border-radius: 11px !important;
+    border: 1px solid #d7e1ea !important;
 }
 
 /* Dividers */
 hr {
-    border-color: rgba(120,170,220,.14) !important;
+    border-color: #d6e0e8 !important;
 }
 
-/* Tabs / navigation-like elements */
+/* Tabs */
 button[data-baseweb="tab"] {
-    color: #91a7bf !important;
+    color: #5d7184 !important;
+    font-size: 14px !important;
 }
+
 button[data-baseweb="tab"][aria-selected="true"] {
     color: var(--opp-cyan) !important;
 }
 
 /* Plotly charts */
 .js-plotly-plot {
-    border: 1px solid rgba(120,170,220,.12);
-    border-radius: 15px;
+    border: 1px solid #d7e1ea;
+    border-radius: 13px;
     overflow: hidden;
-    background: rgba(7,17,31,.34);
+    background: rgba(255,255,255,.88);
+}
+
+/* Equipment/page titles */
+.opp-equipment-title {
+    font-size: 25px;
+    font-weight: 800;
+    color: #24364a;
 }
 
 /* Mobile */
 @media (max-width: 900px) {
-    .opp-hero { padding: 21px; border-radius: 17px; }
+    .opp-hero { padding: 20px; border-radius: 16px; }
     .block-container { padding-left: 1rem; padding-right: 1rem; }
+    h1 { font-size: 27px !important; }
+    h2 { font-size: 23px !important; }
+    h3 { font-size: 20px !important; }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -682,7 +756,7 @@ elif page == "Equipment Health":
         names = ev["Equipment"].replace("", np.nan).dropna()
         eq_name = names.iloc[0] if len(names) else "Equipment description not yet mapped"
 
-        st.markdown(f"### {selected_eq}")
+        st.markdown(f'<div class="opp-equipment-title">{selected_eq}</div>', unsafe_allow_html=True)
         st.caption(eq_name)
 
         result = calculate_equipment_health(ev, df)
@@ -849,7 +923,7 @@ elif page == "Engineering Trend":
         names = eq_view["Equipment"].replace("", np.nan).dropna()
         eq_name = names.iloc[0] if len(names) else "Equipment description not yet mapped"
 
-        st.markdown(f"### {selected_eq}")
+        st.markdown(f'<div class="opp-equipment-title">{selected_eq}</div>', unsafe_allow_html=True)
         st.caption(f"{eq_name} • {len(eq_view)} associated PLC tags")
 
         if df.empty or "ArchiveTime" not in df.columns:
