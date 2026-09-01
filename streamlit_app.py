@@ -22,6 +22,10 @@ st.markdown("""<style>
 .opp-card-title{font-size:.78rem;color:#667085;font-weight:600;margin-bottom:.35rem}.opp-card-value{font-size:1.25rem;color:#1d2939;font-weight:800;line-height:1.2;white-space:normal}.opp-card-small{font-size:.76rem;color:#667085;margin-top:.35rem}
 .status-normal{border-left:4px solid #12b76a}.status-deteriorating{border-left:4px solid #f5a524}.status-attention{border-left:4px solid #f79009}.status-critical{border-left:4px solid #f04438}.status-healthy{border-left:4px solid #12b76a}
 .opp-section{margin-top:1.15rem;margin-bottom:.65rem;font-size:1.05rem;font-weight:800;color:#1d2939}.opp-note{background:#eff8ff;border:1px solid #b2ddff;border-radius:12px;padding:.85rem 1rem;color:#175cd3;font-size:.86rem}.opp-warning{background:#fffaeb;border:1px solid #fedf89;border-radius:12px;padding:.85rem 1rem;color:#9b6500;font-size:.86rem}
+.priority-kpi{background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:.9rem 1rem;min-height:105px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.priority-kpi>div{font-size:.76rem;font-weight:700;color:#667085}.priority-kpi strong{display:block;font-size:1.65rem;line-height:1.15;color:#1d2939;margin:.3rem 0}.priority-kpi span{font-size:.7rem;color:#98a2b3}.priority-p1{border-top:4px solid #f04438}.priority-p2{border-top:4px solid #f79009}.priority-p3{border-top:4px solid #f5a524}.priority-p4{border-top:4px solid #12b76a}.priority-focus{border-top:4px solid #175cd3}
+.priority-matrix-card{background:linear-gradient(180deg,#fff,#f8fafc);border:1px solid #e4e7ec;border-radius:16px;padding:1rem;min-height:155px;position:relative;box-shadow:0 2px 5px rgba(16,24,40,.05);transition:transform .15s ease,box-shadow .15s ease}.priority-matrix-card:hover{transform:translateY(-2px);box-shadow:0 7px 18px rgba(16,24,40,.09)}.matrix-icon{font-size:1.15rem}.matrix-code{font-size:.72rem;font-weight:800;color:#667085;margin-top:.25rem}.matrix-title{font-size:.88rem;font-weight:700;color:#344054}.matrix-count{font-size:2rem;font-weight:850;color:#1d2939;line-height:1.1;margin-top:.65rem}.matrix-label{font-size:.7rem;color:#98a2b3}.selected-equipment-head{display:flex;align-items:center;justify-content:space-between;background:#f8fafc;border:1px solid #e4e7ec;border-radius:14px;padding:1rem 1.15rem;margin-bottom:.8rem}.selected-code{font-size:1.25rem;font-weight:850;color:#1d2939}.selected-name{font-size:.9rem;color:#667085;margin-left:.65rem}.selected-priority{font-size:.82rem;font-weight:850;padding:.35rem .7rem;border-radius:999px;background:#fff1f0;color:#b42318;border:1px solid #fecdca}.decision-card,.evidence-card{border:1px solid #e4e7ec;border-radius:12px;background:#fff;padding:.9rem 1rem;min-height:95px}.decision-card b,.evidence-card b{color:#344054}.decision-card span,.evidence-card span{font-size:.8rem;color:#667085}.stButton>button{border-radius:10px!important;font-weight:700!important;min-height:42px!important}
+
 div[data-testid="stDataFrame"]{border:1px solid #e4e7ec;border-radius:12px;overflow:hidden}div[data-baseweb="select"]>div{border-radius:10px!important;border-color:#d0d5dd!important;min-height:44px}
 </style>""",unsafe_allow_html=True)
 
@@ -734,33 +738,46 @@ elif page == "Equipment Health":
             st.markdown('<div class="opp-note"><b>Engineering note:</b> Deteriorating / Attention / Critical findings require verification of the signal, process condition and field condition before corrective maintenance is decided.</div>',unsafe_allow_html=True)
 
 elif page == "Maintenance Priority":
-    st.subheader("OPP Maintenance Control Center")
-    st.caption(
-        "Engineering decision support: PLC historical behaviour + validated equipment criticality. "
-        "Screening priority is not an alarm, trip setting, failure prediction or automatic work order."
+    # -------------------------------------------------------------------------
+    # Maintenance Priority — Priority & Risk Matrix
+    # Purpose: answer "WHAT SHOULD WE DO FIRST?" rather than repeating the
+    # diagnostic detail already available in Equipment Health.
+    # -------------------------------------------------------------------------
+    st.markdown('<div class="opp-page-title">🎯 Maintenance Priority</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="opp-page-sub">Prioritise equipment for engineering review, inspection and maintenance planning based on historical condition screening.</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<div class="opp-note"><b>Decision-support only:</b> P1–P4 are screening priorities derived from historical PLC behaviour. They are not alarm/trip limits, failure predictions or automatic work orders. Equipment criticality is only used when validated.</div>',
+        unsafe_allow_html=True,
     )
 
-    # Session-only validated criticality master.
     if "validated_criticality" not in st.session_state:
         st.session_state["validated_criticality"] = pd.DataFrame()
 
-    uploaded_crit = st.file_uploader(
-        "Optional: upload validated Equipment Criticality Master (.csv)",
-        type=["csv"],
-        key="criticality_upload"
-    )
-    if uploaded_crit is not None:
-        crit = pd.read_csv(uploaded_crit).fillna("")
-        if not {"Equipment Code", "Criticality"}.issubset(crit.columns):
-            st.error("Criticality file must contain at least: Equipment Code, Criticality")
-        else:
-            crit["Equipment Code"] = crit["Equipment Code"].apply(normalize_equipment_code)
-            allowed = {"CRITICAL", "VERY HIGH", "HIGH", "MEDIUM", "MODERATE", "LOW"}
-            bad = sorted(set(str(x).strip().upper() for x in crit["Criticality"]) - allowed - {""})
-            if bad:
-                st.warning(f"Unrecognized criticality values: {', '.join(bad)}. They will remain unvalidated.")
-            st.session_state["validated_criticality"] = crit
-            st.success("Validated criticality loaded for this session.")
+    with st.expander("⚙️ Criticality data — optional validated master", expanded=False):
+        st.caption("Use an approved reliability/engineering criticality assessment. The application will not infer criticality from equipment type.")
+        uploaded_crit = st.file_uploader(
+            "Upload Equipment Criticality Master (.csv)",
+            type=["csv"],
+            key="criticality_upload"
+        )
+        if uploaded_crit is not None:
+            try:
+                crit = pd.read_csv(uploaded_crit).fillna("")
+                if not {"Equipment Code", "Criticality"}.issubset(crit.columns):
+                    st.error("Criticality file must contain at least: Equipment Code, Criticality")
+                else:
+                    crit["Equipment Code"] = crit["Equipment Code"].apply(normalize_equipment_code)
+                    allowed = {"CRITICAL", "VERY HIGH", "HIGH", "MEDIUM", "MODERATE", "LOW"}
+                    bad = sorted(set(str(x).strip().upper() for x in crit["Criticality"]) - allowed - {""})
+                    if bad:
+                        st.warning(f"Unrecognized criticality values: {', '.join(bad)}. They remain unvalidated.")
+                    st.session_state["validated_criticality"] = crit
+                    st.success(f"Validated criticality loaded: {len(crit):,} equipment record(s).")
+            except Exception as exc:
+                st.error(f"Unable to read criticality file: {exc}")
 
     criticality_df = st.session_state.get("validated_criticality", pd.DataFrame())
     screening = build_equipment_screening(master, df, criticality_df)
@@ -768,153 +785,181 @@ elif page == "Maintenance Priority":
     if screening.empty:
         st.warning("No equipment has sufficient historical numeric data for screening.")
     else:
-        # KPI strip
+        # ---- KPI strip: compact and action-oriented -------------------------
         p1n = int((screening["Screening Priority"] == "P1").sum())
         p2n = int((screening["Screening Priority"] == "P2").sum())
         p3n = int((screening["Screening Priority"] == "P3").sum())
         p4n = int((screening["Screening Priority"] == "P4").sum())
         abnormal = int((screening["Condition"] != "HEALTHY").sum())
 
+        st.markdown("### 📌 Priority Snapshot")
         k1, k2, k3, k4, k5 = st.columns(5)
-        k1.metric("P1 — Immediate Review", p1n)
-        k2.metric("P2 — Plan Inspection", p2n)
-        k3.metric("P3 — Monitor", p3n)
-        k4.metric("P4 — Routine", p4n)
-        k5.metric("Equipment Requiring Attention", abnormal)
+        k1.markdown(f'<div class="priority-kpi priority-p1"><div>🔴 P1 · Immediate Review</div><strong>{p1n:,}</strong><span>highest screening urgency</span></div>', unsafe_allow_html=True)
+        k2.markdown(f'<div class="priority-kpi priority-p2"><div>🟠 P2 · Plan Inspection</div><strong>{p2n:,}</strong><span>engineering follow-up</span></div>', unsafe_allow_html=True)
+        k3.markdown(f'<div class="priority-kpi priority-p3"><div>🟡 P3 · Monitor</div><strong>{p3n:,}</strong><span>watch deterioration</span></div>', unsafe_allow_html=True)
+        k4.markdown(f'<div class="priority-kpi priority-p4"><div>🟢 P4 · Routine</div><strong>{p4n:,}</strong><span>no abnormal finding</span></div>', unsafe_allow_html=True)
+        k5.markdown(f'<div class="priority-kpi priority-focus"><div>🛠️ Requires Attention</div><strong>{abnormal:,}</strong><span>non-healthy equipment</span></div>', unsafe_allow_html=True)
 
-        st.markdown("#### Maintenance Screening Ranking")
-
-        f1, f2, f3 = st.columns(3)
+        # ---- Filters ---------------------------------------------------------
+        st.markdown("### 🔎 Focus the Worklist")
+        f1, f2, f3, f4 = st.columns([1.1, 1, 1, 1.4])
         area_filter = f1.selectbox(
             "Area",
-            ["All"] + sorted([x for x in master["Area"].unique() if str(x).strip()]),
-            key="priority_area"
+            ["All Areas"] + sorted([str(x) for x in master["Area"].unique() if str(x).strip()]),
+            key="priority_area_v2"
         )
         priority_filter = f2.selectbox(
-            "Screening Priority",
+            "Priority",
             ["All", "P1", "P2", "P3", "P4"],
-            key="priority_level"
+            key="priority_level_v2"
         )
         condition_filter = f3.selectbox(
             "Condition",
             ["All", "CRITICAL", "ATTENTION", "DETERIORATING", "HEALTHY"],
-            key="priority_condition"
+            key="priority_condition_v2"
+        )
+        sort_filter = f4.selectbox(
+            "Sort worklist by",
+            ["Priority → Health", "Lowest Health first", "Largest Shift first"],
+            key="priority_sort_v2"
         )
 
         view = screening.copy()
-
-        if area_filter != "All":
+        if area_filter != "All Areas":
             area_eq = set(master.loc[master["Area"] == area_filter, "Equipment Code"].astype(str))
             view = view[view["Equipment Code"].isin(area_eq)]
-
         if priority_filter != "All":
             view = view[view["Screening Priority"] == priority_filter]
-
         if condition_filter != "All":
             view = view[view["Condition"] == condition_filter]
 
         order = {"P1": 1, "P2": 2, "P3": 3, "P4": 4}
-        view["_order"] = view["Screening Priority"].map(order)
-        view = view.sort_values(
-            ["_order", "Health", "Top Shift %"],
-            ascending=[True, True, False]
-        ).drop(columns="_order")
+        view["_order"] = view["Screening Priority"].map(order).fillna(9)
+        if sort_filter == "Lowest Health first":
+            view = view.sort_values(["Health", "_order"], ascending=[True, True])
+        elif sort_filter == "Largest Shift first":
+            view = view.sort_values(["Top Shift %", "_order"], ascending=[False, True])
+        else:
+            view = view.sort_values(["_order", "Health", "Top Shift %"], ascending=[True, True, False])
+        view = view.drop(columns="_order")
 
-        table_cols = [
-            "Equipment Code", "Equipment", "Health", "Condition",
-            "Screening Priority", "Risk", "Criticality", "Parameters",
-            "Deteriorating", "Attention", "Critical",
-            "Top Parameter", "Top Finding", "Top Trend", "Top Shift %"
-        ]
-        st.dataframe(
-            view[table_cols],
-            use_container_width=True,
-            hide_index=True,
-            height=470
-        )
+        # ---- Priority matrix -------------------------------------------------
+        st.markdown("### 🧭 Priority Matrix")
+        st.caption("A visual work-prioritisation view. Higher urgency is driven by screening condition; validated criticality is displayed separately and never guessed by the system.")
 
-        st.markdown("#### Selected Equipment")
-        choices = view["Equipment Code"].tolist()
+        matrix = pd.DataFrame({
+            "Priority": ["P1", "P2", "P3", "P4"],
+            "Meaning": ["Immediate Review", "Plan Inspection", "Monitor", "Routine"],
+            "Equipment": [p1n, p2n, p3n, p4n],
+        })
+        mc = st.columns(4)
+        for i, row in matrix.iterrows():
+            p = row["Priority"]
+            cls = {"P1":"priority-p1","P2":"priority-p2","P3":"priority-p3","P4":"priority-p4"}[p]
+            icon = {"P1":"🔴","P2":"🟠","P3":"🟡","P4":"🟢"}[p]
+            mc[i].markdown(
+                f'<div class="priority-matrix-card {cls}"><div class="matrix-icon">{icon}</div><div class="matrix-code">{p}</div><div class="matrix-title">{row["Meaning"]}</div><div class="matrix-count">{int(row["Equipment"]):,}</div><div class="matrix-label">equipment</div></div>',
+                unsafe_allow_html=True,
+            )
 
-        if choices:
+        # ---- Worklist --------------------------------------------------------
+        st.markdown("### 🧰 Maintenance Worklist")
+        st.caption(f"Showing {len(view):,} equipment item(s). Select an equipment below to open its engineering decision card.")
+        if view.empty:
+            st.info("No equipment matches the current filters.")
+        else:
+            display_cols = [
+                "Equipment Code", "Equipment", "Health", "Condition",
+                "Screening Priority", "Risk", "Criticality", "Parameters",
+                "Deteriorating", "Attention", "Critical", "Top Parameter",
+                "Top Finding", "Top Trend", "Top Shift %"
+            ]
+            display = view[[c for c in display_cols if c in view.columns]].copy()
+            display.insert(0, "", range(1, len(display) + 1))
+            st.dataframe(display, use_container_width=True, hide_index=True, height=420)
+
+            # Streamlit dataframes are intentionally kept read-only here for
+            # reliability across Streamlit versions. The explicit selector
+            # below provides deterministic interaction and avoids fragile
+            # dataframe-selection APIs.
+            codes = view["Equipment Code"].astype(str).tolist()
+            labels = {}
+            for _, rr in view.iterrows():
+                name = str(rr.get("Equipment", "") or "").strip()
+                labels[str(rr["Equipment Code"])] = f"{rr['Equipment Code']}  ·  {name if name else 'Equipment description not yet mapped'}"
             selected = st.selectbox(
-                "Equipment Code",
-                choices,
-                key="priority_equipment"
+                "👆 Select equipment for engineering review",
+                codes,
+                format_func=lambda x: labels.get(x, x),
+                key="priority_equipment_v2"
             )
             r = view[view["Equipment Code"] == selected].iloc[0]
 
-            st.markdown(f"### {r['Equipment Code']} — {r['Equipment']}")
-
-            a, b, c, d, e = st.columns(5)
-            a.metric("Equipment Health", f"{r['Health']}/100")
-            b.metric("Condition", r["Condition"])
-            c.metric("Priority", r["Screening Priority"])
-            d.metric("Criticality", r["Criticality"])
-            e.metric("Risk", r["Risk"])
-
-            if r["Screening Priority"] == "P1":
-                st.error(
-                    f"**PRIMARY FINDING:** {r['Top Tag']} — {r['Top Parameter']} → "
-                    f"{r['Top Finding']} | Trend {r['Top Trend']} ({r['Top Shift %']:+.1f}%)."
-                )
-            elif r["Screening Priority"] == "P2":
-                st.warning(
-                    f"**PRIMARY FINDING:** {r['Top Tag']} — {r['Top Parameter']} → "
-                    f"{r['Top Finding']} | Trend {r['Top Trend']} ({r['Top Shift %']:+.1f}%)."
-                )
-            elif r["Screening Priority"] == "P3":
-                st.info(
-                    f"**PRIMARY FINDING:** {r['Top Tag']} — {r['Top Parameter']} → "
-                    f"{r['Top Finding']} | Trend {r['Top Trend']} ({r['Top Shift %']:+.1f}%)."
-                )
-            else:
-                st.success("No abnormal parameter currently identified by the historical screening engine.")
-
-            st.markdown("#### Engineering Maintenance Decision")
-            st.info(f"**Recommended decision:** {r['Maintenance Decision']}")
-
-            if r["Screening Priority"] != "P4":
-                st.markdown("**Suggested engineering check**")
-                st.write(r["Top Action"])
-
-                # Direct navigation target for the engineer.
-                b1, b2 = st.columns(2)
-                if b1.button(
-                    f"Open Engineering Trend — {r['Top Tag']}",
-                    key=f"priority_open_trend_{selected}"
-                ):
-                    st.session_state["trend_equipment_from_priority"] = selected
-                    st.session_state["trend_tag_from_priority"] = r["Top Tag"]
-                    st.info("Open **Engineering Trend** from the navigation panel. The selected equipment/tag has been retained for the next engineering review.")
-                if b2.button(
-                    "Open Engineering Action Center",
-                    key=f"priority_open_action_{selected}"
-                ):
-                    fdf = build_action_findings(master[master["Equipment Code"] == selected], df, criticality_df)
-                    if not fdf.empty:
-                        st.session_state["action_selected_finding"] = str(fdf.iloc[0]["Finding ID"])
-                        st.info("Finding transferred to Engineering Action Center. Use the navigation panel to continue the workflow.")
-                    else:
-                        st.info("No abnormal finding is currently available for this equipment.")
-
-            st.caption(
-                "Decision logic uses historical P05–P95 behaviour, recent-vs-prior shift, "
-                "sustained outside-baseline fraction, mapping confidence and—when supplied—"
-                "validated equipment criticality."
+            # ---- Selected equipment decision card ---------------------------
+            st.markdown("### 🧩 Selected Equipment")
+            st.markdown(
+                f'<div class="selected-equipment-head"><div><span class="selected-code">{r["Equipment Code"]}</span><span class="selected-name">{r["Equipment"] if str(r["Equipment"]).strip() else "Equipment description not yet mapped"}</span></div><div class="selected-priority">{r["Screening Priority"]}</div></div>',
+                unsafe_allow_html=True,
             )
 
-        st.markdown("#### Equipment Criticality Master")
-        st.write(
-            "Download the template, fill criticality from the approved engineering/reliability assessment, "
-            "then upload it above. The application will not infer criticality from equipment type."
-        )
-        template = criticality_template(master)
-        st.download_button(
-            "Download Criticality Master Template",
-            template.to_csv(index=False).encode("utf-8"),
-            "equipment_criticality_master_template.csv",
-            "text/csv"
+            a, b, c, d, e = st.columns(5)
+            a.metric("Health Score", f"{r['Health']}/100")
+            b.metric("Condition", str(r["Condition"]))
+            c.metric("Priority", str(r["Screening Priority"]))
+            d.metric("Criticality", str(r["Criticality"]))
+            e.metric("Risk", str(r["Risk"]))
+
+            finding = f"{r['Top Tag']} — {r['Top Parameter']} → {r['Top Finding']} | Trend {r['Top Trend']} ({r['Top Shift %']:+.1f}%)."
+            if r["Screening Priority"] == "P1":
+                st.error(f"🔴 **Immediate engineering review:** {finding}")
+            elif r["Screening Priority"] == "P2":
+                st.warning(f"🟠 **Plan engineering inspection:** {finding}")
+            elif r["Screening Priority"] == "P3":
+                st.info(f"🟡 **Monitor deterioration:** {finding}")
+            else:
+                st.success("🟢 **Routine:** no abnormal parameter currently identified by the historical screening engine.")
+
+            left, right = st.columns([1.1, 1])
+            with left:
+                st.markdown("#### 🔧 Recommended Maintenance Decision")
+                st.markdown(f'<div class="decision-card"><b>{r["Maintenance Decision"]}</b><br><span>Suggested check: {r["Top Action"]}</span></div>', unsafe_allow_html=True)
+            with right:
+                st.markdown("#### 📊 Engineering Evidence")
+                st.markdown(
+                    f'<div class="evidence-card"><b>{r["Top Parameter"]}</b><br>Trend: <b>{r["Top Trend"]}</b> · Shift: <b>{r["Top Shift %"]:+.1f}%</b><br>Parameters: <b>{int(r["Parameters"])}</b> · Abnormal: <b>{int(r["Deteriorating"] + r["Attention"] + r["Critical"])}</b></div>',
+                    unsafe_allow_html=True,
+                )
+
+            b1, b2, b3 = st.columns(3)
+            if b1.button("📈 Open Problem Trend", key=f"priority_open_trend_v2_{selected}", use_container_width=True):
+                st.session_state["trend_equipment_from_priority"] = selected
+                st.session_state["trend_tag_from_priority"] = r["Top Tag"]
+                st.success(f"Trend prepared for {r['Top Tag']}. Open **Engineering Trend** from Navigation.")
+            if b2.button("🛠️ Send to Action Center", key=f"priority_open_action_v2_{selected}", use_container_width=True):
+                fdf = build_action_findings(master[master["Equipment Code"] == selected], df, criticality_df)
+                if not fdf.empty:
+                    st.session_state["action_selected_finding"] = str(fdf.iloc[0]["Finding ID"])
+                    st.success("Finding prepared for the Engineering Action Center. Open it from Navigation.")
+                else:
+                    st.info("No abnormal finding is currently available for this equipment.")
+            if b3.button("🔍 Open Equipment Health", key=f"priority_open_health_v2_{selected}", use_container_width=True):
+                st.session_state["health_selected_eq"] = selected
+                st.success(f"Equipment Health prepared for {selected}. Open **Equipment Health** from Navigation.")
+
+        # ---- Criticality master tools ---------------------------------------
+        with st.expander("📋 Equipment Criticality Master", expanded=False):
+            st.write("Download this template, complete it from the approved engineering/reliability assessment, then upload the validated CSV above.")
+            template = criticality_template(master)
+            st.download_button(
+                "⬇️ Download Criticality Master Template",
+                template.to_csv(index=False).encode("utf-8"),
+                "equipment_criticality_master_template.csv",
+                "text/csv",
+                key="criticality_template_download_v2"
+            )
+
+        st.caption(
+            "Method: historical P05–P95 behaviour + recent-vs-prior shift + sustained outside-baseline fraction + mapping confidence + validated equipment criticality when supplied. Screening is an engineering decision-support indicator, not an alarm/trip or failure prediction."
         )
 
 elif page == "Action Center":
