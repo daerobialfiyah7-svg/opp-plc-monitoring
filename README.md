@@ -1,4 +1,5 @@
-# OPP Engineering Monitoring — Phase 2
+# OPP Engineering Monitoring — Phase 2.1
 
-Tag Master and engineering trend prototype based on the three real PLC exports.
-The Area inference is intentionally conservative and requires engineering review.
+Reference-enriched PLC Tag Master using the supplied OPP Equipment List, Instrument List, and Instrument Cable Schedule.
+
+Mapping evidence is shown with confidence; final engineering approval remains required.
