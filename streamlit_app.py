@@ -302,11 +302,56 @@ st.markdown("""<style>
 @st.cache_data
 
 def load_history():
-    fs = sorted((ROOT / "data").glob("*.csv.gz"))
+    """Load the persistent PLC history used by all analytical pages."""
+    data_dir = ROOT / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    fs = sorted(data_dir.glob("*.csv.gz"))
     if not fs:
         return pd.DataFrame(columns=["ArchiveTime"])
-    frames = [pd.read_csv(f, parse_dates=["ArchiveTime"]) for f in fs]
-    return pd.concat(frames, ignore_index=True).sort_values("ArchiveTime")
+
+    frames = []
+    for f in fs:
+        try:
+            part = pd.read_csv(f, parse_dates=["ArchiveTime"])
+            if "ArchiveTime" in part.columns:
+                frames.append(part)
+        except Exception:
+            continue
+    if not frames:
+        return pd.DataFrame(columns=["ArchiveTime"])
+
+    history = pd.concat(frames, ignore_index=True, sort=False)
+    history["ArchiveTime"] = pd.to_datetime(history["ArchiveTime"], errors="coerce")
+    history = history.dropna(subset=["ArchiveTime"])
+    history = history.drop_duplicates(subset=["ArchiveTime"], keep="last")
+    return history.sort_values("ArchiveTime").reset_index(drop=True)
+
+
+def persist_daily_import(incoming, source_name="PLC_Import"):
+    """Persist only new PLC timestamps as a compressed daily archive."""
+    data_dir = ROOT / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    incoming = incoming.copy()
+    incoming["ArchiveTime"] = pd.to_datetime(incoming["ArchiveTime"], errors="coerce")
+    incoming = incoming.dropna(subset=["ArchiveTime"])
+    incoming = incoming.drop_duplicates(subset=["ArchiveTime"], keep="last")
+
+    existing = load_history()
+    known = set(existing["ArchiveTime"].dropna()) if not existing.empty else set()
+    new_rows = incoming[~incoming["ArchiveTime"].isin(known)].copy()
+    if new_rows.empty:
+        return 0, None
+
+    stem = re.sub(r"[^A-Za-z0-9_-]+", "_", Path(source_name).stem).strip("_") or "PLC_Import"
+    first_dt = new_rows["ArchiveTime"].min().strftime("%Y%m%d")
+    last_dt = new_rows["ArchiveTime"].max().strftime("%Y%m%d")
+    output = data_dir / f"{first_dt}_{last_dt}_{stem}.csv.gz"
+    if output.exists():
+        output = data_dir / f"{first_dt}_{last_dt}_{stem}_{pd.Timestamp.now().strftime('%H%M%S')}.csv.gz"
+
+    new_rows.sort_values("ArchiveTime").to_csv(output, index=False, compression="gzip")
+    return len(new_rows), output
 
 @st.cache_data
 
@@ -1805,18 +1850,66 @@ elif page == "Engineering Trend":
                 st.info("Trend panels are intentionally separated by parameter/unit. Do not combine flow, temperature, pressure and vibration on one Y-axis.")
 
 elif page == "Data Import":
-    st.subheader("Daily PLC Excel Import — Validation")
-    uploaded = st.file_uploader("Upload daily PLC export (.xlsx)", type=["xlsx"])
+    st.markdown('<div class="opp-page-title">⇧ Daily PLC Data Import</div>', unsafe_allow_html=True)
+    st.markdown('<div class="opp-page-sub">Upload a daily PLC Excel export, validate it, then append only new timestamps to the historical data used by Dashboard, Equipment Health and Engineering Trend.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="opp-note"><b>Import workflow:</b> Upload → Validate → Append New Rows → Refresh history.</div>', unsafe_allow_html=True)
+
+    uploaded = st.file_uploader("Upload daily PLC export (.xlsx)", type=["xlsx"], key="daily_plc_import_v9")
     if uploaded:
-        incoming = pd.read_excel(uploaded)
-        if "ArchiveTime" not in incoming.columns:
-            st.error("ArchiveTime not found.")
-        else:
-            incoming["ArchiveTime"] = pd.to_datetime(incoming["ArchiveTime"], errors="coerce")
-            known = set(df["ArchiveTime"]) if not df.empty else set()
-            q1, q2, q3 = st.columns(3)
-            q1.metric("Rows", f"{len(incoming):,}")
-            q2.metric("New timestamps", f"{(~incoming['ArchiveTime'].isin(known)).sum():,}")
-            q3.metric("Invalid timestamps", f"{incoming['ArchiveTime'].isna().sum():,}")
-            st.dataframe(incoming.head(20), use_container_width=True)
-            st.info("Permanent database append will be implemented after mapping validation.")
+        try:
+            incoming = pd.read_excel(uploaded)
+        except Exception as exc:
+            st.error(f"Unable to read Excel file: {exc}")
+            incoming = pd.DataFrame()
+
+        if not incoming.empty:
+            if "ArchiveTime" not in incoming.columns:
+                st.error("ArchiveTime not found. The Excel export must contain an 'ArchiveTime' column.")
+            else:
+                incoming["ArchiveTime"] = pd.to_datetime(incoming["ArchiveTime"], errors="coerce")
+                invalid_count = int(incoming["ArchiveTime"].isna().sum())
+                valid = incoming.dropna(subset=["ArchiveTime"]).copy()
+                before_dedup = len(valid)
+                valid = valid.drop_duplicates(subset=["ArchiveTime"], keep="last")
+                duplicate_count = before_dedup - len(valid)
+
+                known = set(df["ArchiveTime"].dropna()) if not df.empty else set()
+                new_mask = ~valid["ArchiveTime"].isin(known)
+                new_count = int(new_mask.sum())
+
+                q1, q2, q3, q4 = st.columns(4, gap="small")
+                q1.metric("Rows", f"{len(incoming):,}")
+                q2.metric("New timestamps", f"{new_count:,}")
+                q3.metric("Already in history", f"{len(valid) - new_count:,}")
+                q4.metric("Invalid timestamps", f"{invalid_count:,}")
+
+                if duplicate_count:
+                    st.caption(f"{duplicate_count:,} duplicate timestamp row(s) inside the uploaded file were collapsed before import.")
+
+                st.markdown("#### Import Preview")
+                st.dataframe(valid.head(20), use_container_width=True, height=360)
+
+                if new_count > 0:
+                    st.warning(f"{new_count:,} new timestamp row(s) are ready to be appended to the PLC history.")
+                    if st.button("✅ Append New Data to History", type="primary", use_container_width=True, key="append_daily_plc_v9"):
+                        written, output = persist_daily_import(valid, uploaded.name)
+                        if written:
+                            # load_history() is cached, so clear it before rerun.
+                            load_history.clear()
+                            st.success(f"Successfully appended {written:,} new rows from {uploaded.name}.")
+                            st.caption(f"Archive created: {output.name}")
+                            st.rerun()
+                        else:
+                            st.info("No new timestamps were appended; the uploaded data is already in history.")
+                else:
+                    st.success("No new timestamps to append. The uploaded file is already represented in the current history.")
+
+    st.markdown("#### Historical Data Status")
+    if df.empty:
+        st.info("No PLC history is currently stored in /data.")
+    else:
+        h1, h2, h3 = st.columns(3, gap="small")
+        h1.metric("Historical Rows", f"{len(df):,}")
+        h2.metric("First Timestamp", pd.to_datetime(df["ArchiveTime"]).min().strftime("%d %b %Y %H:%M"))
+        h3.metric("Latest Timestamp", pd.to_datetime(df["ArchiveTime"]).max().strftime("%d %b %Y %H:%M"))
+        st.caption("This historical dataset is the same dataset consumed by Engineering Trend and Equipment Health.")
