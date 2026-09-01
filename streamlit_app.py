@@ -120,6 +120,7 @@ st.markdown("""<style>
 }
 .condition-card .count{margin-top:.32rem}
 .condition-card .pct{margin-top:.25rem;min-height:1.8rem}
+.dashboard-panel-wrap .stButton{margin-top:.28rem!important}
 .dashboard-panel-wrap .stButton>button{
     border:1px solid #d9e0e8!important;
     background:#fff!important;
@@ -168,15 +169,18 @@ st.markdown("""<style>
 .condition-card.condition-critical{background:linear-gradient(180deg,#fff5f5,#ffffff)!important}
 [data-testid="stVerticalBlockBorderWrapper"]{background:#f8fafc!important}
 .dashboard-panel-body{background:#f8fafc}
-.priority-summary-card{border:1px solid #dfe5ee;border-radius:10px;min-height:102px;padding:.72rem .78rem;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 2px 5px rgba(16,24,40,.045)}
-.priority-summary-card .psc-top{display:flex;align-items:center;gap:.38rem;font-size:.73rem;font-weight:800}
-.priority-summary-card .psc-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:0 0 10px}
-.priority-summary-card .psc-count{font-size:1.7rem;font-weight:850;line-height:1;margin-top:.25rem;color:#1d2939}
-.priority-summary-card .psc-desc{font-size:.66rem;line-height:1.25;margin-top:.25rem;color:#667085}
-.priority-summary-card.p1{background:linear-gradient(180deg,#fff3f3,#fffafa);border-color:#fecaca}.priority-summary-card.p1 .psc-top{color:#d92d20}.priority-summary-card.p1 .psc-dot{background:#f04438}
-.priority-summary-card.p2{background:linear-gradient(180deg,#fff7ed,#fffdf9);border-color:#fed7aa}.priority-summary-card.p2 .psc-top{color:#c4320a}.priority-summary-card.p2 .psc-dot{background:#f79009}
-.priority-summary-card.p3{background:linear-gradient(180deg,#fffbea,#fffef9);border-color:#fde68a}.priority-summary-card.p3 .psc-top{color:#b54708}.priority-summary-card.p3 .psc-dot{background:#f5b82e}
-.priority-summary-card.p4{background:linear-gradient(180deg,#effdf5,#fbfffd);border-color:#a7f3d0}.priority-summary-card.p4 .psc-top{color:#079455}.priority-summary-card.p4 .psc-dot{background:#12b76a}
+.priority-summary-card{border:1px solid rgba(255,255,255,.18);border-radius:10px;min-height:118px;padding:.82rem .85rem;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 4px 10px rgba(16,24,40,.12);color:#fff!important}
+.priority-summary-card .psc-top{display:flex;align-items:center;gap:.42rem;font-size:.76rem;font-weight:800;color:#fff!important}
+.priority-summary-card .psc-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:0 0 10px;background:#fff!important;box-shadow:0 0 0 3px rgba(255,255,255,.18)}
+.priority-summary-card .psc-count{font-size:1.85rem;font-weight:850;line-height:1;margin-top:.3rem;color:#fff!important}
+.priority-summary-card .psc-desc{font-size:.68rem;line-height:1.25;margin-top:.28rem;color:rgba(255,255,255,.9)!important}
+.priority-summary-card.p1{background:linear-gradient(135deg,#c6283d,#ef4057)!important;border-color:#ef4057}.priority-summary-card.p1 .psc-dot{background:#fff!important}
+.priority-summary-card.p2{background:linear-gradient(135deg,#d96508,#f79009)!important;border-color:#f79009}.priority-summary-card.p2 .psc-dot{background:#fff!important}
+.priority-summary-card.p3{background:linear-gradient(135deg,#c48a08,#eab52b)!important;border-color:#eab52b}.priority-summary-card.p3 .psc-dot{background:#fff!important}
+.priority-summary-card.p4{background:linear-gradient(135deg,#078b55,#12b76a)!important;border-color:#12b76a}.priority-summary-card.p4 .psc-dot{background:#fff!important}
+.priority-summary-card{margin-top:.35rem}
+.priority-summary-card + .priority-summary-card{margin-left:.05rem}
+.dashboard-panel-body .priority-summary-card + .priority-summary-card{}
 .dq-card{background:#f8fafc!important}.dq-card.dq-high-bg{background:#f0fdf4!important;border-color:#bbf7d0!important}.dq-card.dq-medium-bg{background:#fff7ed!important;border-color:#fed7aa!important}.dq-card.dq-low-bg{background:#fff5f5!important;border-color:#fecaca!important}
 .area-card{background:#f8fafc!important}
 .dashboard-action-kpi,.dashboard-action-kpi *,.dashboard-action-kpi .opp-card-title,.dashboard-action-kpi .opp-card-value,.dashboard-action-kpi .opp-card-small{color:#fff!important}
