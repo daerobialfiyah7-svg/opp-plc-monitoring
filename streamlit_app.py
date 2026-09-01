@@ -16,35 +16,118 @@ def load_history():
 def load_master():
     return pd.read_csv(ROOT/"config"/"tag_master.csv").fillna("")
 
-def normalize_equipment_code(value):
-    """Return a canonical equipment identity while preserving non-matching codes."""
+def _compact_code(value):
+    """Uppercase alphanumeric representation used only for matching."""
     if pd.isna(value):
         return ""
-    raw = str(value).strip().upper()
-    if not raw:
-        return ""
+    return "".join(ch for ch in str(value).strip().upper() if ch.isalnum())
 
-    # Remove separators so 130ML0001, 130-ML-001 and 130 ML 01
-    # can be compared as the same physical equipment.
-    compact = "".join(ch for ch in raw if ch.isalnum())
 
-    # OPP equipment convention: 3-digit area + alphabetic equipment type
-    # + numeric equipment number. Only normalize when this pattern is clear.
+def _parse_equipment_code(value):
+    """Parse an equipment code such as 130ML0001 / 130-ML-01."""
+    compact = _compact_code(value)
+    if not compact:
+        return None
     import re
     m = re.fullmatch(r"(\d{3})([A-Z]{2,5})(\d{1,4})", compact)
     if not m:
-        return raw
-
+        return None
     area, family, number = m.groups()
-    return f"{area}-{family}-{int(number):02d}"
+    return area, family, int(number)
+
+
+def normalize_equipment_code(value, evidence_values=None):
+    """Return one canonical physical-equipment identity.
+
+    Rules are deliberately conservative:
+    - separators and leading zeroes are ignored (130ML0001 == 130-ML-01)
+    - an erroneous 00 equipment number is promoted to 01 only when the
+      PLC/instrument tag provides matching 01 evidence
+    - otherwise the original value is retained rather than guessing
+    """
+    parsed = _parse_equipment_code(value)
+    if not parsed:
+        return str(value).strip().upper() if not pd.isna(value) else ""
+
+    area, family, number = parsed
+
+    # The supplied OPP convention uses 01, 02, ... for physical equipment.
+    # If the source contains an artificial -00, inspect its own PLC/instrument
+    # evidence before merging it with -01.
+    if number == 0 and evidence_values:
+        import re
+        for ev in evidence_values:
+            compact_ev = _compact_code(ev)
+            if not compact_ev:
+                continue
+            marker = f"{area}{family}"
+            pos = compact_ev.find(marker)
+            if pos >= 0:
+                tail = compact_ev[pos + len(marker):]
+                m = re.match(r"(\d{1,4})", tail)
+                if m and int(m.group(1)) > 0:
+                    number = int(m.group(1))
+                    break
+
+    return f"{area}-{family}-{number:02d}"
+
+
+def canonicalize_equipment_master(master):
+    """Normalize every equipment identity and merge source-code variants.
+
+    The original source code is preserved in `Original Equipment Code`.
+    `Equipment Code` becomes the canonical ID used by all dashboard pages.
+    """
+    master = master.copy()
+    if "Equipment Code" not in master.columns:
+        master["Equipment Code"] = ""
+    if "PLC Tag" not in master.columns:
+        master["PLC Tag"] = ""
+    if "Instrument Tag" not in master.columns:
+        master["Instrument Tag"] = ""
+
+    master["Original Equipment Code"] = master["Equipment Code"].astype(str)
+
+    def row_normalize(row):
+        evidence = [row.get("PLC Tag", ""), row.get("Instrument Tag", "")]
+        # Other source fields may also contain the physical equipment code.
+        evidence += [row.get("Equipment", "")]
+        return normalize_equipment_code(row.get("Equipment Code", ""), evidence)
+
+    master["Equipment Code"] = master.apply(row_normalize, axis=1)
+
+    # Second pass: if an artificial -00 remains, merge it into an existing
+    # non-zero sibling only when the source evidence contains that sibling.
+    # This prevents unrelated equipment from being silently combined.
+    existing = set(x for x in master["Equipment Code"].astype(str) if x)
+    import re
+    replacements = {}
+    for code in existing:
+        m = re.fullmatch(r"(\d{3})-([A-Z]{2,5})-00", code)
+        if not m:
+            continue
+        sibling01 = f"{m.group(1)}-{m.group(2)}-01"
+        if sibling01 in existing:
+            replacements[code] = sibling01
+    if replacements:
+        master["Equipment Code"] = master["Equipment Code"].replace(replacements)
+
+    # Useful audit fields for engineering review.
+    master["Equipment Mapping Key"] = master["Equipment Code"]
+    master["Source Code Variant"] = np.where(
+        master["Original Equipment Code"].str.upper().str.replace("-", "", regex=False)
+        == master["Equipment Code"].str.replace("-", "", regex=False),
+        "Canonical",
+        "Normalized / merged"
+    )
+    return master
 
 df=load_history()
 master=load_master()
 
-# Canonicalize equipment identity so equivalent PLC/equipment codes are grouped
-# under one physical equipment code throughout Health, Trend and Dashboard.
-master["Original Equipment Code"] = master["Equipment Code"].astype(str)
-master["Equipment Code"] = master["Equipment Code"].apply(normalize_equipment_code)
+# Canonical equipment identity: all source-code variants point to one
+# physical equipment record while the original code is retained for audit.
+master=canonicalize_equipment_master(master)
 
 # Defensive schema
 required=["Area","Equipment Code","Equipment","Instrument Tag","Suggested Parameter","Suggested Unit",
