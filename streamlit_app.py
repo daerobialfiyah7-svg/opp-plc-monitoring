@@ -7,6 +7,24 @@ import re
 st.set_page_config(page_title="OPP Engineering Monitoring", page_icon="⚙️", layout="wide")
 ROOT = Path(__file__).resolve().parent
 
+# --- Professional UI theme ---
+st.markdown("""<style>
+.main .block-container{padding-top:1.15rem;padding-bottom:3rem;max-width:1500px}
+[data-testid="stSidebar"]{background:#f4f7fb;border-right:1px solid #e4e7ec}
+[data-testid="stSidebar"] .stRadio>label{font-size:.82rem!important;font-weight:800!important;color:#344054!important}
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"]{gap:.18rem}
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label{padding:.58rem .65rem!important;border-radius:.55rem;font-size:.92rem!important}
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label:hover{background:#e8f1ff}
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label:has(input:checked){background:#dcecff;color:#1256ad!important;font-weight:700!important}
+.opp-brand{padding:.35rem .35rem 1.1rem;border-bottom:1px solid #e4e7ec;margin-bottom:1rem}.opp-brand-title{font-size:1.35rem;font-weight:800;color:#182230}.opp-brand-sub{color:#667085;font-size:.76rem;margin-top:.2rem}
+.opp-page-title{font-size:1.75rem;font-weight:800;color:#1d2939;margin-bottom:.15rem}.opp-page-sub{color:#667085;font-size:.88rem;margin-bottom:1rem}
+.opp-card{background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:1rem 1.05rem;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.opp-card-title{font-size:.78rem;color:#667085;font-weight:600;margin-bottom:.35rem}.opp-card-value{font-size:1.25rem;color:#1d2939;font-weight:800;line-height:1.2;white-space:normal}.opp-card-small{font-size:.76rem;color:#667085;margin-top:.35rem}
+.status-normal{border-left:4px solid #12b76a}.status-deteriorating{border-left:4px solid #f5a524}.status-attention{border-left:4px solid #f79009}.status-critical{border-left:4px solid #f04438}.status-healthy{border-left:4px solid #12b76a}
+.opp-section{margin-top:1.15rem;margin-bottom:.65rem;font-size:1.05rem;font-weight:800;color:#1d2939}.opp-note{background:#eff8ff;border:1px solid #b2ddff;border-radius:12px;padding:.85rem 1rem;color:#175cd3;font-size:.86rem}.opp-warning{background:#fffaeb;border:1px solid #fedf89;border-radius:12px;padding:.85rem 1rem;color:#9b6500;font-size:.86rem}
+div[data-testid="stDataFrame"]{border:1px solid #e4e7ec;border-radius:12px;overflow:hidden}div[data-baseweb="select"]>div{border-radius:10px!important;border-color:#d0d5dd!important;min-height:44px}
+</style>""",unsafe_allow_html=True)
+
 @st.cache_data
 
 def load_history():
@@ -560,11 +578,15 @@ for col in required:
 # This removes duplicate Area options such as 130 / 130.0 / Area 130.
 master["Area"] = master["Area"].apply(normalize_area_label)
 
-st.sidebar.header("Navigation")
-page = st.sidebar.radio("Go to", ["Dashboard", "Equipment Health", "Maintenance Priority", "Action Center", "Tag Master", "Engineering Trend", "Data Import"])
+st.sidebar.markdown("""<div class="opp-brand"><div class="opp-brand-title">⚙️ OPP</div><div class="opp-brand-sub">Engineering Monitoring</div></div>""",unsafe_allow_html=True)
+nav_options={"⌂  Dashboard":"Dashboard","〽  Equipment Health":"Equipment Health","⚠  Maintenance Priority":"Maintenance Priority","✓  Action Center":"Action Center","⌑  Tag Master":"Tag Master","↗  Engineering Trend":"Engineering Trend","⇧  Data Import":"Data Import"}
+selected_nav=st.sidebar.radio("NAVIGATION",list(nav_options.keys()),key="main_navigation")
+page=nav_options[selected_nav]
+st.sidebar.markdown("---")
+st.sidebar.caption("Decision Support • OPP Engineering")
 
-st.title("⚙️ OPP Engineering Monitoring")
-st.caption("Phase 8 — Equipment Health + Maintenance Decision + Engineering Action Center")
+st.markdown('<div class="opp-page-title">OPP Engineering Monitoring</div>',unsafe_allow_html=True)
+st.markdown('<div class="opp-page-sub">Engineering decision support for process monitoring, equipment health, abnormality screening and maintenance follow-up.</div>',unsafe_allow_html=True)
 
 high = int((master["Confidence"] == "High").sum())
 medium = int((master["Confidence"] == "Medium").sum())
@@ -622,119 +644,94 @@ if page == "Dashboard":
         cols[i % 4].metric(str(area), f"{n} tags")
 
 elif page == "Equipment Health":
-    st.subheader("Equipment Health — Engineering Decision Support 2.0")
-    st.caption("Historical-behaviour screening. NOT an alarm/protection limit and does not replace OEM limits, operating philosophy, inspection standards, or engineer judgement.")
+    st.markdown('<div class="opp-page-title">Equipment Health</div>',unsafe_allow_html=True)
+    st.markdown('<div class="opp-page-sub">Historical-behaviour screening for equipment condition and parameter deviations.</div>',unsafe_allow_html=True)
+    st.info("Historical screening only — not an alarm/protection limit. Always validate against OEM limits, operating philosophy, inspection standards and engineering judgement.")
 
-    area_options = ["All"] + sorted([x for x in master["Area"].unique() if str(x).strip()])
-    selected_area = st.selectbox("Area", area_options, key="health_area")
-    area_view = master if selected_area == "All" else master[master["Area"] == selected_area]
-    eq_codes = sorted([str(x) for x in area_view["Equipment Code"].unique() if str(x)])
+    area_options=["All Areas"]+sorted([x for x in master["Area"].unique() if str(x).strip()])
+    selected_area=st.selectbox("Area",area_options,key="health_area")
+    area_view=master if selected_area=="All Areas" else master[master["Area"]==selected_area]
+    eq_codes=sorted([str(x) for x in area_view["Equipment Code"].unique() if str(x)])
     if not eq_codes:
         st.warning("No canonical equipment code is available for this area.")
     else:
-        selected_eq = st.selectbox("Equipment Code", eq_codes, key="health_equipment")
-        ev = area_view[area_view["Equipment Code"] == selected_eq].copy()
-        names = ev["Equipment"].replace("", np.nan).dropna()
-        eq_name = names.iloc[0] if len(names) else "Equipment description not yet mapped"
-        st.markdown(f"### {selected_eq}")
-        st.caption(eq_name)
+        eq_labels={}
+        for code in eq_codes:
+            rr=area_view[area_view["Equipment Code"]==code]["Equipment"].replace("",np.nan).dropna()
+            eq_labels[code]=f"{code} — {rr.iloc[0] if len(rr) else 'Equipment description not yet mapped'}"
+        default_eq=st.session_state.get("health_selected_eq",eq_codes[0])
+        if default_eq not in eq_codes: default_eq=eq_codes[0]
+        selected_eq=st.selectbox("Equipment",eq_codes,index=eq_codes.index(default_eq),format_func=lambda x:eq_labels.get(x,x),key="health_selected_eq")
+        ev=area_view[area_view["Equipment Code"]==selected_eq].copy()
+        names=ev["Equipment"].replace("",np.nan).dropna()
+        eq_name=names.iloc[0] if len(names) else "Equipment description not yet mapped"
 
-        rows = []
-        seen = set()
-        for _, meta in ev.iterrows():
-            tag = str(meta.get("PLC Tag", "")).strip()
-            if not tag or tag in seen:
-                continue
-            seen.add(tag)
-            stats = baseline_condition(_numeric_series(df, tag))
-            if stats is None:
-                continue
-            parameter, unit, parameter_source = infer_parameter(tag, meta.get("Suggested Parameter", ""), meta.get("Suggested Unit", ""), meta.get("Instrument Type", ""))
-            confidence = str(meta.get("Confidence", "") or "Low")
-            rows.append({"PLC Tag": tag, "Parameter": parameter, "Unit": unit, "Parameter Source": parameter_source,
-                         **stats, "Confidence": confidence, "Action": parameter_action(parameter, tag)})
-
+        rows=[];seen=set()
+        for _,meta in ev.iterrows():
+            tag=str(meta.get("PLC Tag","")).strip()
+            if not tag or tag in seen: continue
+            seen.add(tag); stats=baseline_condition(_numeric_series(df,tag))
+            if stats is None: continue
+            parameter,unit,source=infer_parameter(tag,meta.get("Suggested Parameter",""),meta.get("Suggested Unit",""),meta.get("Instrument Type",""))
+            rows.append({"PLC Tag":tag,"Parameter":parameter,"Unit":unit,"Parameter Source":source,**stats,"Confidence":str(meta.get("Confidence","") or "Low"),"Action":parameter_action(parameter,tag)})
         if not rows:
             st.warning("No sufficient historical numeric data is available for this equipment.")
         else:
-            health = pd.DataFrame(rows)
-            severity = {"Normal": 0, "Deteriorating": 12, "Attention": 25, "Critical": 50}
-            conf_weight = {"High": 1.0, "Medium": .85, "Low": .65}
-            health["Penalty"] = [min(60, (severity.get(r.Condition, 0) + min(r["Outside Fraction"] * 12, 8)) * conf_weight.get(r.Confidence, .65)) for _, r in health.iterrows()]
-            raw_score = 100 - float(health["Penalty"].mean())
-            critical = int((health.Condition == "Critical").sum())
-            attention = int((health.Condition == "Attention").sum())
-            deteriorating = int((health.Condition == "Deteriorating").sum())
-            # Keep the numerical score consistent with the qualitative status.
-            if critical:
-                overall, risk, priority, icon, cap = "CRITICAL", "HIGH", "P1", "🔴", 69
-            elif attention:
-                overall, risk, priority, icon, cap = "ATTENTION", "MEDIUM", "P2", "🟠", 89
-            elif deteriorating:
-                overall, risk, priority, icon, cap = "DETERIORATING", "MEDIUM-LOW", "P3", "🟡", 94
-            else:
-                overall, risk, priority, icon, cap = "HEALTHY", "LOW", "P4", "🟢", 100
-            score = int(round(max(0, min(cap, raw_score))))
+            health=pd.DataFrame(rows)
+            critical=int((health.Condition=="Critical").sum());attention=int((health.Condition=="Attention").sum());deteriorating=int((health.Condition=="Deteriorating").sum())
+            normal=int((health.Condition=="Normal").sum())
+            severity={"Normal":0,"Deteriorating":12,"Attention":25,"Critical":50};conf_weight={"High":1.0,"Medium":.85,"Low":.65}
+            health["Penalty"]=[min(60,(severity.get(r.Condition,0)+min(r["Outside Fraction"]*12,8))*conf_weight.get(r.Confidence,.65)) for _,r in health.iterrows()]
+            raw_score=100-float(health["Penalty"].mean())
+            if critical: overall,risk,priority,icon,cap="CRITICAL","HIGH","P1","🔴",69
+            elif attention: overall,risk,priority,icon,cap="ATTENTION","MEDIUM","P2","🟠",89
+            elif deteriorating: overall,risk,priority,icon,cap="DETERIORATING","MEDIUM-LOW","P3","🟡",94
+            else: overall,risk,priority,icon,cap="HEALTHY","LOW","P4","🟢",100
+            score=int(round(max(0,min(cap,raw_score))))
 
-            c1, c2, c3, c4, c5 = st.columns(5)
-            c1.metric("Equipment Health", f"{icon} {overall}")
-            c2.metric("Screening Score", f"{score}/100")
-            c3.metric("Parameters", f"{len(health):,}")
-            c4.metric("Risk", risk)
-            c5.metric("Maintenance Priority", priority)
+            st.markdown(f"### {selected_eq}")
+            st.caption(eq_name)
+            c1,c2,c3,c4,c5=st.columns(5)
+            cards=[("Equipment Health",f"{icon} {overall}",f"Screening score {score}/100",'status-'+overall.lower()),("Screening Score",f"{score} / 100","Historical screening indicator","status-healthy"),("Parameters",f"{len(health):,}","Total monitored parameters","status-healthy"),("Risk Level",risk,"Engineering review level","status-attention" if risk!="LOW" else "status-healthy"),("Maintenance Priority",priority,f"Based on {overall.lower()} condition","status-critical" if priority=="P1" else "status-attention" if priority=="P2" else "status-deteriorating" if priority=="P3" else "status-healthy")]
+            for col,(title,value,small,cls) in zip([c1,c2,c3,c4,c5],cards):
+                col.markdown(f'<div class="opp-card {cls}"><div class="opp-card-title">{title}</div><div class="opp-card-value">{value}</div><div class="opp-card-small">{small}</div></div>',unsafe_allow_html=True)
 
-            st.markdown("#### Condition Distribution")
-            d1, d2, d3, d4 = st.columns(4)
-            d1.metric("Normal", int((health.Condition == "Normal").sum()))
-            d2.metric("Deteriorating", deteriorating)
-            d3.metric("Attention", attention)
-            d4.metric("Critical", critical)
+            st.markdown('<div class="opp-section">Condition Distribution</div>',unsafe_allow_html=True)
+            d1,d2,d3,d4=st.columns(4)
+            dist=[("✓  Normal",normal,"status-normal"),("↗  Deteriorating",deteriorating,"status-deteriorating"),("!  Attention",attention,"status-attention"),("×  Critical",critical,"status-critical")]
+            total=max(len(health),1)
+            for col,(label,n,cls) in zip([d1,d2,d3,d4],dist):
+                col.markdown(f'<div class="opp-card {cls} status-card"><div class="opp-card-title">{label}</div><div class="opp-card-value">{n:,}</div><div class="opp-card-small">{n/total*100:.0f}% of parameters</div></div>',unsafe_allow_html=True)
 
-            st.markdown("#### Parameter Condition")
-            display_cols = ["PLC Tag", "Parameter", "Unit", "Current", "Baseline Low", "Baseline High", "Direction", "Shift %", "Outside Fraction", "Condition", "Confidence"]
-            st.dataframe(health[display_cols], use_container_width=True, height=440)
+            st.markdown('<div class="opp-section">Parameter Condition</div>',unsafe_allow_html=True)
+            display_cols=["PLC Tag","Parameter","Unit","Current","Baseline Low","Baseline High","Direction","Shift %","Outside Fraction","Condition","Confidence"]
+            st.dataframe(health[display_cols],use_container_width=True,height=360,hide_index=True)
 
-            flagged = health[health.Condition != "Normal"].copy()
-            st.markdown("#### Engineering Findings & Maintenance Focus")
+            flagged=health[health.Condition!="Normal"].copy()
+            st.markdown('<div class="opp-section">Engineering Findings</div>',unsafe_allow_html=True)
             if flagged.empty:
                 st.success("No parameter currently shows a significant historical-behaviour deviation.")
             else:
-                order = {"Critical": 0, "Attention": 1, "Deteriorating": 2}
-                flagged["_order"] = flagged.Condition.map(order)
-                flagged = flagged.sort_values(["_order", "Deviation Sigma"], ascending=[True, False])
-                for idx, r in flagged.iterrows():
-                    st.warning(f"**{r['PLC Tag']} — {r['Parameter']}** → **{r['Condition']}** | Current {r['Current']:.3f} {r['Unit']} | Historical P05–P95 {r['Baseline Low']:.3f}–{r['Baseline High']:.3f} {r['Unit']} | Trend {r['Direction']} ({r['Shift %']:+.1f}%).")
-                    st.caption(f"Parameter identification: {r['Parameter Source']} • Suggested engineering check: {r['Action']}")
-                    if st.button(f"Open Engineering Trend — {r['PLC Tag']}", key=f"open_trend_{selected_eq}_{r['PLC Tag']}"):
-                        st.session_state["health_open_tag"] = r["PLC Tag"]
-
-            open_tag = st.session_state.get("health_open_tag")
-            if open_tag and open_tag in health["PLC Tag"].values:
-                r = health[health["PLC Tag"] == open_tag].iloc[0]
-                st.markdown("#### Selected Finding — Engineering Trend")
-                st.markdown(f"**{open_tag} — {r['Parameter']}** | {r['Condition']} | {r['Direction']} ({r['Shift %']:+.1f}%)")
-                trend = df[["ArchiveTime", open_tag]].copy() if open_tag in df.columns else pd.DataFrame()
+                order={"Critical":0,"Attention":1,"Deteriorating":2};flagged["_order"]=flagged.Condition.map(order);flagged=flagged.sort_values(["_order","Deviation Sigma"],[True,False])
+                options=flagged["PLC Tag"].tolist()
+                selected_tag=st.selectbox("Problem parameter",options,format_func=lambda x:f"{x} — {flagged.loc[flagged['PLC Tag']==x,'Parameter'].iloc[0]}",key=f"problem_tag_{selected_eq}")
+                r=flagged[flagged["PLC Tag"]==selected_tag].iloc[0]
+                if r["Condition"]=="Critical": st.error(f"**{selected_tag} — {r['Parameter']}** → Critical | Current {r['Current']:.3f} {r['Unit']} | Trend {r['Direction']} ({r['Shift %']:+.1f}%)")
+                elif r["Condition"]=="Attention": st.warning(f"**{selected_tag} — {r['Parameter']}** → Attention | Current {r['Current']:.3f} {r['Unit']} | Trend {r['Direction']} ({r['Shift %']:+.1f}%)")
+                else: st.info(f"**{selected_tag} — {r['Parameter']}** → Deteriorating | Current {r['Current']:.3f} {r['Unit']} | Trend {r['Direction']} ({r['Shift %']:+.1f}%)")
+                st.markdown(f'<div class="opp-note"><b>Engineering recommendation:</b> {r["Action"]}</div>',unsafe_allow_html=True)
+                trend=df[["ArchiveTime",selected_tag]].copy() if selected_tag in df.columns else pd.DataFrame()
                 if not trend.empty:
-                    trend[open_tag] = pd.to_numeric(trend[open_tag], errors="coerce")
-                    trend = trend.dropna().set_index("ArchiveTime")[open_tag]
+                    trend[selected_tag]=pd.to_numeric(trend[selected_tag],errors="coerce");trend=trend.dropna().set_index("ArchiveTime")[selected_tag]
                     if len(trend):
-                        st.line_chart(trend, height=300)
-                        t1, t2, t3 = st.columns(3)
-                        t1.metric("Current", f"{r['Current']:.3f} {r['Unit']}")
-                        t2.metric("Historical P05–P95", f"{r['Baseline Low']:.3f}–{r['Baseline High']:.3f}")
-                        t3.metric("Recent Shift", f"{r['Shift %']:+.1f}%")
-                        st.info(f"Engineering interpretation: {r['Condition']} condition based on historical behaviour. {r['Action']}")
+                        st.markdown('<div class="opp-section">Problem Trend</div>',unsafe_allow_html=True)
+                        st.line_chart(trend,height=300)
+                        t1,t2,t3=st.columns(3);t1.metric("Current",f"{r['Current']:.3f} {r['Unit']}");t2.metric("Historical P05–P95",f"{r['Baseline Low']:.3f}–{r['Baseline High']:.3f}");t3.metric("Recent Shift",f"{r['Shift %']:+.1f}%")
+                if st.button("↗  Open in Engineering Trend",key=f"health_trend_{selected_eq}_{selected_tag}"):
+                    st.session_state["trend_equipment_from_priority"]=selected_eq;st.session_state["trend_tag_from_priority"]=selected_tag
+                    st.info("Selected equipment and tag are retained. Open Engineering Trend from the navigation panel.")
 
-            st.markdown("#### Engineering Decision")
-            if overall == "CRITICAL":
-                st.error(f"Priority {priority}: {critical} parameter(s) show strong deviation. Validate the signal and field condition promptly before deciding on corrective maintenance.")
-            elif overall == "ATTENTION":
-                st.warning(f"Priority {priority}: {attention} parameter(s) require engineering review. Check trend, process state and recent maintenance history; plan inspection if deviation persists.")
-            elif overall == "DETERIORATING":
-                st.info(f"Priority {priority}: {deteriorating} parameter(s) show a meaningful directional change. Increase monitoring frequency and verify field condition.")
-            else:
-                st.success("Equipment behaviour is consistent with its historical operating envelope based on available PLC data.")
-            st.caption("Method: historical P05–P95 envelope + recent-vs-prior shift + sustained outside-baseline fraction + mapping-confidence weighting. Score is a screening indicator, not an alarm/trip setting or failure prediction.")
+            st.markdown('<div class="opp-note"><b>Engineering note:</b> Deteriorating / Attention / Critical findings require verification of the signal, process condition and field condition before corrective maintenance is decided.</div>',unsafe_allow_html=True)
 
 elif page == "Maintenance Priority":
     st.subheader("OPP Maintenance Control Center")
