@@ -20,6 +20,20 @@ def load_master():
 
 df=load_data()
 master=load_master()
+
+# Backward-compatible schema normalization: older Tag Master files may not
+# contain the Phase 2.1 reference columns.
+if "Confidence" not in master.columns:
+    master["Confidence"] = "Low"
+if "Mapping Status" not in master.columns:
+    master["Mapping Status"] = "Needs Review"
+if "Reference Source" not in master.columns:
+    master["Reference Source"] = "Legacy Tag Master"
+
+# Normalize common column-name variants and missing values.
+master.columns = [str(c).strip() for c in master.columns]
+master["Confidence"] = master["Confidence"].fillna("Low").astype(str).str.strip().str.title()
+master["Mapping Status"] = master["Mapping Status"].fillna("Needs Review").astype(str).str.strip()
 params=[c for c in df.columns if c!="ArchiveTime"]
 
 st.markdown("""
