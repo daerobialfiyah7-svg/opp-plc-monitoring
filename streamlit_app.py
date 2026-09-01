@@ -158,6 +158,28 @@ st.markdown("""<style>
 @media(max-width:900px){
     .dashboard-row-wrap{grid-template-columns:1fr}
 }
+
+/* ===== Dashboard v5 polish ===== */
+.dashboard-intro{margin-bottom:.72rem!important}
+.condition-card .label.status-healthy,.condition-card .label.status-deteriorating,.condition-card .label.status-attention,.condition-card .label.status-critical{border-left:0!important;padding-left:0!important;display:block;margin-left:0}
+.condition-card.condition-healthy{background:linear-gradient(180deg,#f3fff8,#ffffff)!important}
+.condition-card.condition-deteriorating{background:linear-gradient(180deg,#fffaf0,#ffffff)!important}
+.condition-card.condition-attention{background:linear-gradient(180deg,#fff7ed,#ffffff)!important}
+.condition-card.condition-critical{background:linear-gradient(180deg,#fff5f5,#ffffff)!important}
+[data-testid="stVerticalBlockBorderWrapper"]{background:#f8fafc!important}
+.dashboard-panel-body{background:#f8fafc}
+.priority-summary-card{border:1px solid #dfe5ee;border-radius:10px;min-height:102px;padding:.72rem .78rem;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 2px 5px rgba(16,24,40,.045)}
+.priority-summary-card .psc-top{display:flex;align-items:center;gap:.38rem;font-size:.73rem;font-weight:800}
+.priority-summary-card .psc-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:0 0 10px}
+.priority-summary-card .psc-count{font-size:1.7rem;font-weight:850;line-height:1;margin-top:.25rem;color:#1d2939}
+.priority-summary-card .psc-desc{font-size:.66rem;line-height:1.25;margin-top:.25rem;color:#667085}
+.priority-summary-card.p1{background:linear-gradient(180deg,#fff3f3,#fffafa);border-color:#fecaca}.priority-summary-card.p1 .psc-top{color:#d92d20}.priority-summary-card.p1 .psc-dot{background:#f04438}
+.priority-summary-card.p2{background:linear-gradient(180deg,#fff7ed,#fffdf9);border-color:#fed7aa}.priority-summary-card.p2 .psc-top{color:#c4320a}.priority-summary-card.p2 .psc-dot{background:#f79009}
+.priority-summary-card.p3{background:linear-gradient(180deg,#fffbea,#fffef9);border-color:#fde68a}.priority-summary-card.p3 .psc-top{color:#b54708}.priority-summary-card.p3 .psc-dot{background:#f5b82e}
+.priority-summary-card.p4{background:linear-gradient(180deg,#effdf5,#fbfffd);border-color:#a7f3d0}.priority-summary-card.p4 .psc-top{color:#079455}.priority-summary-card.p4 .psc-dot{background:#12b76a}
+.dq-card{background:#f8fafc!important}.dq-card.dq-high-bg{background:#f0fdf4!important;border-color:#bbf7d0!important}.dq-card.dq-medium-bg{background:#fff7ed!important;border-color:#fed7aa!important}.dq-card.dq-low-bg{background:#fff5f5!important;border-color:#fecaca!important}
+.area-card{background:#f8fafc!important}
+.dashboard-action-kpi,.dashboard-action-kpi *,.dashboard-action-kpi .opp-card-title,.dashboard-action-kpi .opp-card-value,.dashboard-action-kpi .opp-card-small{color:#fff!important}
 </style>""",unsafe_allow_html=True)
 
 @st.cache_data
@@ -738,8 +760,7 @@ low = int((master["Confidence"] == "Low").sum())
 if page == "Dashboard":
     # Executive dashboard: visual overview only. Detailed screening lives in
     # Equipment Health / Maintenance Priority / Action Center.
-    st.markdown('<div class="opp-page-title">OPP Engineering Monitoring</div>', unsafe_allow_html=True)
-    st.markdown('<div class="opp-page-sub">Plant condition overview and engineering decision support — identify the signal, then drill down only when needed.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="opp-page-sub dashboard-intro">Plant condition overview and engineering decision support — identify the signal, then drill down only when needed.</div>', unsafe_allow_html=True)
 
     screening = build_equipment_screening(master, df)
     findings = build_action_findings(master, df)
@@ -870,11 +891,20 @@ if page == "Dashboard":
                     unsafe_allow_html=True,
                 )
                 q1,q2,q3,q4=st.columns(4, gap="small")
-                for col,label,n,icon in [
-                    (q1,"P1",p1n,"🔴"),(q2,"P2",p2n,"🟠"),
-                    (q3,"P3",p3n,"🟡"),(q4,"P4",p4n,"🟢")
-                ]:
-                    col.metric(f"{icon} {label}", f"{n:,}")
+                priority_cards = [
+                    (q1,"P1",p1n,"Immediate Review","p1"),
+                    (q2,"P2",p2n,"Planned Inspection","p2"),
+                    (q3,"P3",p3n,"Monitoring","p3"),
+                    (q4,"P4",p4n,"Routine","p4"),
+                ]
+                for col,label,n,desc,cls in priority_cards:
+                    col.markdown(
+                        f'<div class="priority-summary-card {cls}">'
+                        f'<div class="psc-top"><span class="psc-dot"></span>{label}</div>'
+                        f'<div class="psc-count">{n:,}</div>'
+                        f'<div class="psc-desc">{desc}</div></div>',
+                        unsafe_allow_html=True,
+                    )
                 st.button("🎯 Open Maintenance Priority", key="dash_open_priority", use_container_width=True,
                           on_click=_navigate_dashboard, args=("⚠  Maintenance Priority", None))
                 st.markdown('</div>', unsafe_allow_html=True)
@@ -885,9 +915,9 @@ if page == "Dashboard":
                 st.markdown('<div class="dashboard-panel-body">', unsafe_allow_html=True)
                 dq1,dq2,dq3,dq4=st.columns(4, gap="small")
                 dq1.markdown(f'<div class="dq-card"><div class="dq-label">PLC Tags</div><div class="dq-value">{len(master):,}</div></div>', unsafe_allow_html=True)
-                dq2.markdown(f'<div class="dq-card"><div class="dq-label">High</div><div class="dq-value dq-high">{high:,}</div></div>', unsafe_allow_html=True)
-                dq3.markdown(f'<div class="dq-card"><div class="dq-label">Medium</div><div class="dq-value dq-medium">{medium:,}</div></div>', unsafe_allow_html=True)
-                dq4.markdown(f'<div class="dq-card"><div class="dq-label">Low</div><div class="dq-value dq-low">{low:,}</div></div>', unsafe_allow_html=True)
+                dq2.markdown(f'<div class="dq-card dq-high-bg"><div class="dq-label">High</div><div class="dq-value dq-high">{high:,}</div></div>', unsafe_allow_html=True)
+                dq3.markdown(f'<div class="dq-card dq-medium-bg"><div class="dq-label">Medium</div><div class="dq-value dq-medium">{medium:,}</div></div>', unsafe_allow_html=True)
+                dq4.markdown(f'<div class="dq-card dq-low-bg"><div class="dq-label">Low</div><div class="dq-value dq-low">{low:,}</div></div>', unsafe_allow_html=True)
                 st.caption("Confidence describes mapping evidence, not equipment condition.")
                 st.markdown('</div>', unsafe_allow_html=True)
 
