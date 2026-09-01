@@ -72,6 +72,19 @@ def normalize_equipment_code(value, evidence_values=None):
     return f"{area}-{family}-{number:02d}"
 
 
+def normalize_area_label(value):
+    """Normalize Area labels for display/filtering without changing equipment identity."""
+    if pd.isna(value):
+        return ""
+    text = str(value).strip()
+    if not text:
+        return ""
+    m = re.fullmatch(r"(?:AREA\s*)?(\d+)(?:\.0+)?", text, flags=re.I)
+    if m:
+        return f"Area {m.group(1)}"
+    return text
+
+
 def canonicalize_equipment_master(master, equipment_reference=None):
     master = master.copy()
     for c in ["Equipment Code", "PLC Tag", "Instrument Tag", "Equipment"]:
@@ -543,6 +556,10 @@ for col in required:
     if col not in master.columns:
         master[col] = ""
 
+# Normalize only after all reference/equipment mapping is complete.
+# This removes duplicate Area options such as 130 / 130.0 / Area 130.
+master["Area"] = master["Area"].apply(normalize_area_label)
+
 st.sidebar.header("Navigation")
 page = st.sidebar.radio("Go to", ["Dashboard", "Equipment Health", "Maintenance Priority", "Action Center", "Tag Master", "Engineering Trend", "Data Import"])
 
@@ -608,7 +625,7 @@ elif page == "Equipment Health":
     st.subheader("Equipment Health — Engineering Decision Support 2.0")
     st.caption("Historical-behaviour screening. NOT an alarm/protection limit and does not replace OEM limits, operating philosophy, inspection standards, or engineer judgement.")
 
-    area_options = ["All"] + sorted([str(x) for x in master["Area"].unique() if str(x)])
+    area_options = ["All"] + sorted([x for x in master["Area"].unique() if str(x).strip()])
     selected_area = st.selectbox("Area", area_options, key="health_area")
     area_view = master if selected_area == "All" else master[master["Area"] == selected_area]
     eq_codes = sorted([str(x) for x in area_view["Equipment Code"].unique() if str(x)])
@@ -773,7 +790,7 @@ elif page == "Maintenance Priority":
         f1, f2, f3 = st.columns(3)
         area_filter = f1.selectbox(
             "Area",
-            ["All"] + sorted([str(x) for x in master["Area"].unique() if str(x)]),
+            ["All"] + sorted([x for x in master["Area"].unique() if str(x).strip()]),
             key="priority_area"
         )
         priority_filter = f2.selectbox(
@@ -977,7 +994,7 @@ elif page == "Tag Master":
     st.subheader("PLC Tag Master")
     st.caption("Source engineering mapping is preserved. Derived parameter/unit labels are used only for display when the source mapping is blank.")
     q = st.text_input("Search tag / equipment / parameter")
-    area = st.selectbox("Area", ["All"] + sorted([x for x in master["Area"].unique() if x]))
+    area = st.selectbox("Area", ["All"] + sorted([x for x in master["Area"].unique() if str(x).strip()]))
     conf = st.selectbox("Confidence", ["All", "High", "Medium", "Low"])
     view = master.copy()
     if q:
@@ -993,7 +1010,7 @@ elif page == "Tag Master":
 elif page == "Engineering Trend":
     st.subheader("Engineering Trend — Equipment View")
     st.caption("Select an equipment code to display all mapped PLC parameters together. Equipment identity is canonicalized so code variants are grouped under one physical equipment.")
-    area_options = ["All"] + sorted([x for x in master["Area"].unique() if x])
+    area_options = ["All"] + sorted([x for x in master["Area"].unique() if str(x).strip()])
     selected_area = st.selectbox("Area", area_options, key="trend_area")
     area_view = master if selected_area == "All" else master[master["Area"] == selected_area]
     eq_codes = sorted([x for x in area_view["Equipment Code"].unique() if x])
