@@ -10,36 +10,60 @@ ROOT = Path(__file__).resolve().parent
 # --- Professional UI theme ---
 st.markdown("""<style>
 .main .block-container{padding-top:1.15rem;padding-bottom:3rem;max-width:1500px}
-[data-testid="stSidebar"]{background:#f4f7fb;border-right:1px solid #e4e7ec}
+[data-testid="stSidebar"]{background:#f4f7fb;border-right:1px solid #dfe5ee}
 [data-testid="stSidebar"] .stRadio>label{font-size:.82rem!important;font-weight:800!important;color:#344054!important}
 [data-testid="stSidebar"] .stRadio div[role="radiogroup"]{gap:.18rem}
 [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label{padding:.58rem .65rem!important;border-radius:.55rem;font-size:.92rem!important}
 [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label:hover{background:#e8f1ff}
 [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label:has(input:checked){background:#dcecff;color:#1256ad!important;font-weight:700!important}
-.opp-brand{padding:.35rem .35rem 1.1rem;border-bottom:1px solid #e4e7ec;margin-bottom:1rem}.opp-brand-title{font-size:1.35rem;font-weight:800;color:#182230}.opp-brand-sub{color:#667085;font-size:.76rem;margin-top:.2rem}
+.opp-brand{padding:.35rem .35rem 1.1rem;border-bottom:1px solid #dfe5ee;margin-bottom:1rem}.opp-brand-title{font-size:1.35rem;font-weight:800;color:#182230}.opp-brand-sub{color:#667085;font-size:.76rem;margin-top:.2rem}
 .opp-page-title{font-size:1.75rem;font-weight:800;color:#1d2939;margin-bottom:.15rem}.opp-page-sub{color:#667085;font-size:.88rem;margin-bottom:1rem}
-.opp-card{background:#fff;border:1px solid #e1e7f0;border-radius:10px;padding:1rem 1.05rem;box-shadow:0 2px 8px rgba(18,44,88,.06)}
-.dashboard-kpi{color:#fff;border:0!important;border-radius:4px!important;min-height:86px;padding:1rem 1.1rem!important;box-shadow:0 3px 8px rgba(18,44,88,.12)!important;text-align:center}
-.dashboard-kpi .opp-card-title{color:rgba(255,255,255,.92)!important;font-size:.78rem!important;text-transform:none!important}
-.dashboard-kpi .opp-card-value{color:#fff!important;font-size:1.8rem!important;line-height:1.05!important}
-.dashboard-kpi .opp-card-small{color:rgba(255,255,255,.9)!important}
-.kpi-blue{background:linear-gradient(135deg,#10169a,#1838c7)!important}.kpi-cyan{background:linear-gradient(135deg,#0795df,#13b7e8)!important}.kpi-purple{background:linear-gradient(135deg,#4933a8,#6d4ed6)!important}.kpi-orange{background:linear-gradient(135deg,#ef7d18,#f5a623)!important}.kpi-red{background:linear-gradient(135deg,#d7354a,#f0445e)!important}
-.dashboard-panel{background:#f7f9fc;border:1px solid #e4e8ef;border-radius:6px;padding:.8rem .9rem;margin-bottom:.75rem}
-.dashboard-panel-head{background:#eef1f5;border-radius:4px;padding:.55rem .7rem;margin:-.8rem -.9rem .8rem;font-weight:800;color:#344054;font-size:.82rem}
-.condition-card{background:#fff;border:1px solid #e2e6ee;border-radius:8px;padding:.8rem .9rem;min-height:105px;box-shadow:0 2px 6px rgba(16,24,40,.04)}
-.condition-card .count{font-size:1.65rem;font-weight:850;color:#1d2939;line-height:1.1}.condition-card .label{font-size:.72rem;font-weight:800;color:#667085}.condition-card .pct{font-size:.72rem;color:#98a2b3;margin-top:.25rem}
+.dashboard-kpi{color:#fff!important;border:0!important;border-radius:5px!important;min-height:96px;padding:.95rem 1rem!important;box-shadow:0 3px 8px rgba(18,44,88,.14)!important;text-align:center;display:flex;flex-direction:column;justify-content:center}
+.dashboard-kpi .opp-card-title,.dashboard-kpi .opp-card-value,.dashboard-kpi .opp-card-small{color:#fff!important}
+.dashboard-kpi .opp-card-title{font-size:.76rem!important;font-weight:750!important;line-height:1.2;margin-bottom:.35rem}
+.dashboard-kpi .opp-card-value{font-size:1.75rem!important;line-height:1.05!important;font-weight:850!important}
+.dashboard-kpi .opp-card-small{font-size:.68rem!important;margin-top:.35rem;font-weight:600}
+.dashboard-action-kpi,.dashboard-action-kpi *{color:#fff!important}
+.dashboard-action-kpi{background:linear-gradient(135deg,#4c36ae,#704bd7)!important;border-radius:8px!important}
+.kpi-blue{background:linear-gradient(135deg,#1720a5,#2146cf)!important}.kpi-cyan{background:linear-gradient(135deg,#078fd2,#17b6df)!important}.kpi-purple{background:linear-gradient(135deg,#4c36ae,#704bd7)!important}.kpi-orange{background:linear-gradient(135deg,#ef7d18,#f5a623)!important}.kpi-red{background:linear-gradient(135deg,#d9364f,#f0445e)!important}
+.kpi-purple .opp-card-title,.kpi-purple .opp-card-value,.kpi-purple .opp-card-small{color:#fff!important}
+.dashboard-row{margin-bottom:.85rem}
+/* Keep paired dashboard columns visually locked to the same grid. */
+[data-testid="stHorizontalBlock"]{align-items:stretch}
+[data-testid="stHorizontalBlock"] > [data-testid="column"]{display:flex;flex-direction:column}
+[data-testid="stHorizontalBlock"] > [data-testid="column"] > div{width:100%}
+.dashboard-panel{background:#f8fafc;border:1px solid #dfe5ee;border-radius:8px;padding:.78rem .85rem;margin:0;box-sizing:border-box;overflow:hidden;position:relative}
+.dashboard-panel.tall{min-height:365px;height:365px}.dashboard-panel.medium{min-height:286px;height:286px}.dashboard-panel.short{min-height:210px;height:210px}
+.dashboard-panel-head{height:34px;box-sizing:border-box;display:flex;align-items:center;background:#e9eef5;border:1px solid #dce3ec;border-radius:5px;padding:.45rem .7rem;margin:-.78rem -.85rem .72rem;font-weight:800;color:#26364a;font-size:.82rem;line-height:1.15;letter-spacing:.01em}
+.dashboard-panel-sub{font-size:.75rem;color:#7b8798;margin:.05rem 0 .65rem;line-height:1.35}
+/* Strong contrast rule: dark surfaces always use light text. */
+.dashboard-panel .dashboard-kpi.kpi-blue *,
+.dashboard-panel .dashboard-kpi.kpi-cyan *,
+.dashboard-panel .dashboard-kpi.kpi-orange *,
+.dashboard-panel .dashboard-kpi.kpi-red *,
+.dashboard-panel .dashboard-kpi.kpi-purple *,
+.dashboard-kpi.kpi-blue *, .dashboard-kpi.kpi-cyan *,
+.dashboard-kpi.kpi-orange *, .dashboard-kpi.kpi-red *,
+.dashboard-kpi.kpi-purple *{color:#fff!important}
+/* Status colours: healthy=green, warning=orange, urgent=red. */
+.condition-card.condition-healthy{border-top-color:#12b76a!important}
+.condition-card.condition-deteriorating{border-top-color:#f5b82e!important}
+.condition-card.condition-attention{border-top-color:#f79009!important}
+.condition-card.condition-critical{border-top-color:#f04438!important}
+.status-healthy{color:#079455!important}.status-deteriorating{color:#b54708!important}.status-attention{color:#c4320a!important}.status-critical{color:#d92d20!important}
+.condition-card{background:#fff;border:1px solid #dfe5ed;border-radius:8px;padding:.78rem .82rem;min-height:104px;box-shadow:0 2px 6px rgba(16,24,40,.04);box-sizing:border-box}
+.condition-card .count{font-size:1.55rem;font-weight:850;color:#1d2939;line-height:1.1}.condition-card .label{font-size:.69rem;font-weight:800;color:#667085}.condition-card .pct{font-size:.68rem;color:#98a2b3;margin-top:.25rem;line-height:1.25}
 .condition-healthy{border-top:4px solid #12b76a}.condition-deteriorating{border-top:4px solid #f5b82e}.condition-attention{border-top:4px solid #f79009}.condition-critical{border-top:4px solid #f04438}
-.focus-box{background:linear-gradient(135deg,#eef6ff,#f8fbff);border:1px solid #b9d9ff;border-radius:8px;padding:.9rem 1rem}
-.area-card{background:#fff;border:1px solid #e3e7ef;border-radius:8px;padding:.85rem;box-shadow:0 2px 6px rgba(16,24,40,.04);min-height:112px}.area-card .area-title{font-weight:800;color:#344054;font-size:.8rem}.area-card .area-number{font-size:1.5rem;font-weight:850;color:#1d2939;margin-top:.35rem}.area-card .area-pct{font-size:.72rem;color:#667085}.signal-bar{height:6px;border-radius:8px;background:#e9edf3;margin-top:.5rem;overflow:hidden}.signal-fill{height:100%;border-radius:8px;background:linear-gradient(90deg,#1597e5,#ef476f)}
-
+.focus-box{background:linear-gradient(135deg,#eef6ff,#f8fbff);border:1px solid #b9d9ff;border-radius:8px;padding:.82rem .9rem;color:#344054;line-height:1.45;font-size:.8rem}
+.focus-box b{color:#175cd3}
+.area-card{background:#fff;border:1px solid #e1e6ee;border-radius:8px;padding:.75rem .8rem;box-shadow:0 2px 6px rgba(16,24,40,.04);min-height:105px;box-sizing:border-box}.area-card .area-title{font-weight:800;color:#344054;font-size:.76rem}.area-card .area-number{font-size:1.35rem;font-weight:850;color:#1d2939;margin-top:.3rem}.area-card .area-pct{font-size:.68rem;color:#667085}.signal-bar{height:6px;border-radius:8px;background:#e9edf3;margin-top:.48rem;overflow:hidden}.signal-fill{height:100%;border-radius:8px;background:linear-gradient(90deg,#1597e5,#ef476f)}
+.priority-line{margin:.45rem 0}.priority-line-top{display:flex;justify-content:space-between;align-items:center;font-size:.75rem;color:#475467;margin-bottom:.2rem}.priority-line-top b{color:#1d2939}.priority-line .signal-fill{background:linear-gradient(90deg,#2948d3,#1597e5)}
 .opp-card-title{font-size:.78rem;color:#667085;font-weight:600;margin-bottom:.35rem}.opp-card-value{font-size:1.25rem;color:#1d2939;font-weight:800;line-height:1.2;white-space:normal}.opp-card-small{font-size:.76rem;color:#667085;margin-top:.35rem}
 .status-normal{border-left:4px solid #12b76a}.status-deteriorating{border-left:4px solid #f5a524}.status-attention{border-left:4px solid #f79009}.status-critical{border-left:4px solid #f04438}.status-healthy{border-left:4px solid #12b76a}
 .opp-section{margin-top:1.15rem;margin-bottom:.65rem;font-size:1.05rem;font-weight:800;color:#1d2939}.opp-note{background:#eff8ff;border:1px solid #b2ddff;border-radius:12px;padding:.85rem 1rem;color:#175cd3;font-size:.86rem}.opp-warning{background:#fffaeb;border:1px solid #fedf89;border-radius:12px;padding:.85rem 1rem;color:#9b6500;font-size:.86rem}
 .priority-kpi{background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:.9rem 1rem;min-height:105px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
 .priority-kpi>div{font-size:.76rem;font-weight:700;color:#667085}.priority-kpi strong{display:block;font-size:1.65rem;line-height:1.15;color:#1d2939;margin:.3rem 0}.priority-kpi span{font-size:.7rem;color:#98a2b3}.priority-p1{border-top:4px solid #f04438}.priority-p2{border-top:4px solid #f79009}.priority-p3{border-top:4px solid #f5a524}.priority-p4{border-top:4px solid #12b76a}.priority-focus{border-top:4px solid #175cd3}
-.priority-matrix-card{background:linear-gradient(180deg,#fff,#f8fafc);border:1px solid #e4e7ec;border-radius:16px;padding:1rem;min-height:155px;position:relative;box-shadow:0 2px 5px rgba(16,24,40,.05);transition:transform .15s ease,box-shadow .15s ease}.priority-matrix-card:hover{transform:translateY(-2px);box-shadow:0 7px 18px rgba(16,24,40,.09)}.matrix-icon{font-size:1.15rem}.matrix-code{font-size:.72rem;font-weight:800;color:#667085;margin-top:.25rem}.matrix-title{font-size:.88rem;font-weight:700;color:#344054}.matrix-count{font-size:2rem;font-weight:850;color:#1d2939;line-height:1.1;margin-top:.65rem}.matrix-label{font-size:.7rem;color:#98a2b3}.selected-equipment-head{display:flex;align-items:center;justify-content:space-between;background:#f8fafc;border:1px solid #e4e7ec;border-radius:14px;padding:1rem 1.15rem;margin-bottom:.8rem}.selected-code{font-size:1.25rem;font-weight:850;color:#1d2939}.selected-name{font-size:.9rem;color:#667085;margin-left:.65rem}.selected-priority{font-size:.82rem;font-weight:850;padding:.35rem .7rem;border-radius:999px;background:#fff1f0;color:#b42318;border:1px solid #fecdca}.decision-card,.evidence-card{border:1px solid #e4e7ec;border-radius:12px;background:#fff;padding:.9rem 1rem;min-height:95px}.decision-card b,.evidence-card b{color:#344054}.decision-card span,.evidence-card span{font-size:.8rem;color:#667085}.stButton>button{border-radius:10px!important;font-weight:700!important;min-height:42px!important}
-
-div[data-testid="stDataFrame"]{border:1px solid #e4e7ec;border-radius:12px;overflow:hidden}div[data-baseweb="select"]>div{border-radius:10px!important;border-color:#d0d5dd!important;min-height:44px}
+.priority-matrix-card{background:linear-gradient(180deg,#fff,#f8fafc);border:1px solid #e4e7ec;border-radius:16px;padding:1rem;min-height:155px;position:relative;box-shadow:0 2px 5px rgba(16,24,40,.05);transition:transform .15s ease,box-shadow .15s ease}.priority-matrix-card:hover{transform:translateY(-2px);box-shadow:0 7px 18px rgba(16,24,40,.09)}.matrix-icon{font-size:1.15rem}.matrix-code{font-size:.72rem;font-weight:800;color:#667085;margin-top:.25rem}.matrix-title{font-size:.88rem;font-weight:700;color:#344054}.matrix-count{font-size:2rem;font-weight:850;color:#1d2939;margin-top:.25rem}.matrix-note{font-size:.7rem;color:#98a2b3;margin-top:.2rem}
 </style>""",unsafe_allow_html=True)
 
 @st.cache_data
@@ -626,16 +650,10 @@ e.metric("Low Confidence", f"{low:,}")
 st.divider()
 
 if page == "Dashboard":
-    # -------------------------------------------------------------------------
-    # Dashboard — executive visual overview.
-    # The underlying screening/action logic is unchanged; this layer focuses
-    # on a more colourful fixed-asset-management style presentation.
-    # -------------------------------------------------------------------------
+    # Executive dashboard: visual overview only. Detailed screening lives in
+    # Equipment Health / Maintenance Priority / Action Center.
     st.markdown('<div class="opp-page-title">🏭 OPP Fixed Asset Management Dashboard</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="opp-page-sub">Equipment performance, plant condition, engineering priorities and maintenance follow-up.</div>',
-        unsafe_allow_html=True,
-    )
+    st.markdown('<div class="opp-page-sub">A concise plant overview — identify the signal, understand the priority, then drill down when needed.</div>', unsafe_allow_html=True)
 
     screening = build_equipment_screening(master, df)
     findings = build_action_findings(master, df)
@@ -665,11 +683,13 @@ if page == "Dashboard":
             try:
                 last_data = pd.to_datetime(df["ArchiveTime"], errors="coerce").max().strftime("%d %b %Y")
             except Exception:
-                last_data = "—"
+                pass
         st.caption(f"Last data: {last_data}  ·  {len(df):,} historical records  ·  {len(master):,} PLC tags")
 
-        # Five large coloured KPI tiles, inspired by the reference dashboard.
-        k1, k2, k3, k4, k5 = st.columns(5)
+        # ------------------------------------------------------------------
+        # 1. Executive KPI strip — five equal tiles.
+        # ------------------------------------------------------------------
+        k1, k2, k3, k4, k5 = st.columns(5, gap="small")
         kpis = [
             (k1, "kpi-blue", "🩺 Screened Equipment", total_eq, "equipment covered by screening"),
             (k2, "kpi-cyan", "✓ Healthy Equipment", healthy, f"{healthy/max(total_eq,1)*100:.1f}% of screened"),
@@ -678,115 +698,59 @@ if page == "Dashboard":
             (k5, "kpi-purple", "🛠 Open Findings", open_count, "engineering follow-up open"),
         ]
         for col, cls, title, value, small in kpis:
-            col.markdown(
-                f'<div class="opp-card dashboard-kpi {cls}"><div class="opp-card-title">{title}</div><div class="opp-card-value">{value:,}</div><div class="opp-card-small">{small}</div></div>',
-                unsafe_allow_html=True,
-            )
+            col.markdown(f'<div class="opp-card dashboard-kpi {cls}"><div class="opp-card-title">{title}</div><div class="opp-card-value">{value:,}</div><div class="opp-card-small">{small}</div></div>', unsafe_allow_html=True)
 
-        # Two-column main body, similar to the reference dashboard.
-        left, right = st.columns([1.55, 1])
+        st.markdown('<div style="height:.75rem"></div>', unsafe_allow_html=True)
+
+        # ------------------------------------------------------------------
+        # 2. Condition + Action — equal-height control-room row.
+        # ------------------------------------------------------------------
+        left, right = st.columns([1.6, 1], gap="small")
         with left:
-            st.markdown('<div class="dashboard-panel">', unsafe_allow_html=True)
+            st.markdown('<div class="dashboard-panel medium">', unsafe_allow_html=True)
             st.markdown('<div class="dashboard-panel-head">🩺 Plant Condition</div>', unsafe_allow_html=True)
-            st.caption("Historical screening distribution — click a condition to open the worklist.")
-            c1, c2, c3, c4 = st.columns(4)
-            condition_cards = [
+            st.markdown('<div class="dashboard-panel-sub">Historical screening distribution — use the buttons to drill into abnormal equipment.</div>', unsafe_allow_html=True)
+            c1, c2, c3, c4 = st.columns(4, gap="small")
+            cards = [
                 (c1, "HEALTHY", healthy, "condition-healthy", "Routine condition", None),
                 (c2, "DETERIORATING", deteriorating, "condition-deteriorating", "Showing deterioration", "DETERIORATING"),
                 (c3, "ATTENTION", attention, "condition-attention", "Engineering review", "ATTENTION"),
                 (c4, "CRITICAL", critical, "condition-critical", "Highest concern", "CRITICAL"),
             ]
-            for col, label, n, cls, desc, filter_value in condition_cards:
-                col.markdown(
-                    f'<div class="condition-card {cls}"><div class="label">{label}</div><div class="count">{n:,}</div><div class="pct">{n/max(total_eq,1)*100:.1f}% · {desc}</div></div>',
-                    unsafe_allow_html=True,
-                )
+            for col, label, n, cls, desc, filter_value in cards:
+                status_cls = {"HEALTHY":"status-healthy","DETERIORATING":"status-deteriorating","ATTENTION":"status-attention","CRITICAL":"status-critical"}.get(label,"")
+                col.markdown(f'<div class="condition-card {cls}"><div class="label {status_cls}">{label}</div><div class="count">{n:,}</div><div class="pct">{n/max(total_eq,1)*100:.1f}% · {desc}</div></div>', unsafe_allow_html=True)
                 if filter_value:
-                    col.button(
-                        f"🔎 View {label.title()}",
-                        key=f"dash_condition_{filter_value.lower()}",
-                        use_container_width=True,
-                        on_click=_navigate_dashboard,
-                        args=("⚠  Maintenance Priority", filter_value),
-                    )
-            st.markdown('</div>', unsafe_allow_html=True)
-
-            st.markdown('<div class="dashboard-panel">', unsafe_allow_html=True)
-            st.markdown('<div class="dashboard-panel-head">🎯 Engineering Focus</div>', unsafe_allow_html=True)
-            st.markdown(
-                f'<div class="focus-box"><b>{nonhealthy:,} equipment</b> are outside the healthy screening state. '
-                f'Priority screening identifies <b>{p1n} P1</b> immediate-review, <b>{p2n} P2</b> planned-inspection, '
-                f'<b>{p3n} P3</b> monitoring and <b>{p4n} P4</b> routine items.</div>',
-                unsafe_allow_html=True,
-            )
-            q1, q2, q3, q4 = st.columns(4)
-            for col, label, n, icon in [(q1,"P1",p1n,"🔴"),(q2,"P2",p2n,"🟠"),(q3,"P3",p3n,"🟡"),(q4,"P4",p4n,"🟢")]:
-                col.metric(f"{icon} {label}", f"{n:,}")
-            st.button(
-                "🎯 Open Maintenance Priority",
-                key="dash_open_priority",
-                use_container_width=True,
-                on_click=_navigate_dashboard,
-                args=("⚠  Maintenance Priority", None),
-            )
-            st.markdown('</div>', unsafe_allow_html=True)
-
-            # Area signal cards.
-            st.markdown('<div class="dashboard-panel">', unsafe_allow_html=True)
-            st.markdown('<div class="dashboard-panel-head">📍 Area Signal</div>', unsafe_allow_html=True)
-            st.caption("Areas with the highest concentration of non-healthy equipment.")
-            area_df = screening.copy()
-            area_map = master[["Equipment Code", "Area"]].drop_duplicates("Equipment Code")
-            area_df = area_df.merge(area_map, on="Equipment Code", how="left")
-            area_df["Area"] = area_df["Area"].fillna("").astype(str).str.strip()
-            area_df = area_df[area_df["Area"] != ""]
-            if not area_df.empty:
-                area_summary = (
-                    area_df.assign(Abnormal=area_df["Condition"] != "HEALTHY")
-                    .groupby("Area", as_index=False)
-                    .agg(Equipment=("Equipment Code", "count"), Abnormal=("Abnormal", "sum"))
-                )
-                area_summary["Abnormal %"] = area_summary["Abnormal"] / area_summary["Equipment"].clip(lower=1) * 100
-                area_summary = area_summary.sort_values(["Abnormal", "Abnormal %"], ascending=[False, False]).head(6).reset_index(drop=True)
-                cols = st.columns(3)
-                for i, rr in area_summary.iterrows():
-                    col = cols[i % 3]
-                    area = rr["Area"]
-                    abnormal_n = int(rr["Abnormal"])
-                    equip_n = int(rr["Equipment"])
-                    pct = float(rr["Abnormal %"])
-                    col.markdown(
-                        f'<div class="area-card"><div class="area-title">📍 {area}</div><div class="area-number">{abnormal_n} <span style="font-size:.78rem;font-weight:600">of {equip_n} abnormal</span></div><div class="area-pct">{pct:.1f}% of equipment</div><div class="signal-bar"><div class="signal-fill" style="width:{min(100,pct):.0f}%"></div></div></div>',
-                        unsafe_allow_html=True,
-                    )
-                    col.button(
-                        f"🔎 View {area}",
-                        key=f"dash_area_{re.sub(r'[^A-Za-z0-9]+', '_', str(area))}",
-                        use_container_width=True,
-                        on_click=_navigate_dashboard,
-                        args=("〽  Equipment Health", area),
-                    )
+                    col.button(f"🔎 View {label.title()}", key=f"dash_condition_{filter_value.lower()}", use_container_width=True, on_click=_navigate_dashboard, args=("⚠  Maintenance Priority", filter_value))
             st.markdown('</div>', unsafe_allow_html=True)
 
         with right:
-            st.markdown('<div class="dashboard-panel">', unsafe_allow_html=True)
+            st.markdown('<div class="dashboard-panel medium">', unsafe_allow_html=True)
             st.markdown('<div class="dashboard-panel-head">🛠 Action Center</div>', unsafe_allow_html=True)
-            st.markdown(
-                f'<div class="opp-card kpi-purple" style="color:#fff;border:0"><div class="opp-card-title">OPEN ENGINEERING FINDINGS</div><div class="opp-card-value">{open_count:,}</div><div class="opp-card-small">findings awaiting engineering follow-up</div></div>',
-                unsafe_allow_html=True,
-            )
-            st.button(
-                "🛠 Open Action Center",
-                key="dash_open_action",
-                use_container_width=True,
-                on_click=_navigate_dashboard,
-                args=("✓  Action Center", None),
-            )
+            st.markdown(f'<div class="opp-card dashboard-kpi kpi-purple dashboard-action-kpi" style="min-height:108px"><div class="opp-card-title">🛠 OPEN ENGINEERING FINDINGS</div><div class="opp-card-value">{open_count:,}</div><div class="opp-card-small">findings awaiting engineering follow-up</div></div>', unsafe_allow_html=True)
+            st.button("🛠 Open Action Center", key="dash_open_action", use_container_width=True, on_click=_navigate_dashboard, args=("✓  Action Center", None))
             st.markdown('</div>', unsafe_allow_html=True)
 
-            st.markdown('<div class="dashboard-panel">', unsafe_allow_html=True)
+        st.markdown('<div style="height:.75rem"></div>', unsafe_allow_html=True)
+
+        # ------------------------------------------------------------------
+        # 3. Engineering Focus + Data Quality — same visual row.
+        # ------------------------------------------------------------------
+        left, right = st.columns([1.6, 1], gap="small")
+        with left:
+            st.markdown('<div class="dashboard-panel medium">', unsafe_allow_html=True)
+            st.markdown('<div class="dashboard-panel-head">🎯 Engineering Focus</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="focus-box"><b>{nonhealthy:,} equipment</b> are outside the healthy screening state. Priority screening identifies <b>{p1n} P1</b> immediate-review, <b>{p2n} P2</b> planned-inspection, <b>{p3n} P3</b> monitoring and <b>{p4n} P4</b> routine items.</div>', unsafe_allow_html=True)
+            q1,q2,q3,q4=st.columns(4, gap="small")
+            for col,label,n,icon in [(q1,"P1",p1n,"🔴"),(q2,"P2",p2n,"🟠"),(q3,"P3",p3n,"🟡"),(q4,"P4",p4n,"🟢")]:
+                col.metric(f"{icon} {label}", f"{n:,}")
+            st.button("🎯 Open Maintenance Priority", key="dash_open_priority", use_container_width=True, on_click=_navigate_dashboard, args=("⚠  Maintenance Priority", None))
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        with right:
+            st.markdown('<div class="dashboard-panel medium">', unsafe_allow_html=True)
             st.markdown('<div class="dashboard-panel-head">📊 Data Quality & Coverage</div>', unsafe_allow_html=True)
-            dq1, dq2, dq3 = st.columns(3)
+            dq1,dq2,dq3=st.columns(3, gap="small")
             dq1.metric("PLC Tags", f"{len(master):,}")
             dq2.metric("High", f"{high:,}")
             dq3.metric("Medium", f"{medium:,}")
@@ -794,20 +758,46 @@ if page == "Dashboard":
             st.caption("Confidence describes mapping evidence, not equipment condition.")
             st.markdown('</div>', unsafe_allow_html=True)
 
-            st.markdown('<div class="dashboard-panel">', unsafe_allow_html=True)
-            st.markdown('<div class="dashboard-panel-head">🚦 Priority Mix</div>', unsafe_allow_html=True)
-            priority_total = max(p1n+p2n+p3n+p4n, 1)
-            for label, n, cls, icon in [("P1 Immediate",p1n,"condition-critical","🔴"),("P2 Inspection",p2n,"condition-attention","🟠"),("P3 Monitor",p3n,"condition-deteriorating","🟡"),("P4 Routine",p4n,"condition-healthy","🟢")]:
-                pct = n/priority_total*100
-                st.markdown(
-                    f'<div style="display:flex;justify-content:space-between;font-size:.78rem;margin:.38rem 0 .15rem"><span>{icon} {label}</span><b>{n:,}</b></div><div class="signal-bar"><div class="signal-fill" style="width:{pct:.0f}%"></div></div>',
-                    unsafe_allow_html=True,
-                )
+        st.markdown('<div style="height:.75rem"></div>', unsafe_allow_html=True)
+
+        # ------------------------------------------------------------------
+        # 4. Area Signal + Priority Mix — aligned start; detail below only.
+        # ------------------------------------------------------------------
+        left, right = st.columns([1.6, 1], gap="small")
+        with left:
+            st.markdown('<div class="dashboard-panel tall">', unsafe_allow_html=True)
+            st.markdown('<div class="dashboard-panel-head">📍 Area Signal</div>', unsafe_allow_html=True)
+            st.markdown('<div class="dashboard-panel-sub">Areas with the highest concentration of non-healthy equipment.</div>', unsafe_allow_html=True)
+            area_df = screening.copy()
+            area_map = master[["Equipment Code", "Area"]].drop_duplicates("Equipment Code")
+            area_df = area_df.merge(area_map, on="Equipment Code", how="left")
+            area_df["Area"] = area_df["Area"].fillna("").astype(str).str.strip()
+            area_df = area_df[area_df["Area"] != ""]
+            if not area_df.empty:
+                area_summary=(area_df.assign(Abnormal=area_df["Condition"]!="HEALTHY").groupby("Area",as_index=False).agg(Equipment=("Equipment Code","count"),Abnormal=("Abnormal","sum")))
+                area_summary["Abnormal %"]=area_summary["Abnormal"]/area_summary["Equipment"].clip(lower=1)*100
+                area_summary=area_summary.sort_values(["Abnormal","Abnormal %"],ascending=[False,False]).head(6).reset_index(drop=True)
+                cols=st.columns(3, gap="small")
+                for i,rr in area_summary.iterrows():
+                    col=cols[i%3]; area=rr["Area"]; abnormal_n=int(rr["Abnormal"]); equip_n=int(rr["Equipment"]); pct=float(rr["Abnormal %"])
+                    safe_key=re.sub(r"[^A-Za-z0-9]+","_",str(area))
+                    col.markdown(f'<div class="area-card"><div class="area-title">📍 {area}</div><div class="area-number">{abnormal_n} <span style="font-size:.72rem;font-weight:600">of {equip_n} abnormal</span></div><div class="area-pct">{pct:.1f}% of equipment</div><div class="signal-bar"><div class="signal-fill" style="width:{min(100,pct):.0f}%"></div></div></div>',unsafe_allow_html=True)
+                    col.button(f"🔎 View {area}",key=f"dash_area_{safe_key}",use_container_width=True,on_click=_navigate_dashboard,args=("〽  Equipment Health",area))
             st.markdown('</div>', unsafe_allow_html=True)
 
-        st.caption(
-            "Historical screening is decision support only — not an alarm/trip limit or failure prediction. Validate abnormal signals against OEM limits, process condition, field inspection and engineering judgement."
-        )
+        with right:
+            st.markdown('<div class="dashboard-panel tall">', unsafe_allow_html=True)
+            st.markdown('<div class="dashboard-panel-head">🚦 Priority Mix</div>', unsafe_allow_html=True)
+            st.markdown('<div class="dashboard-panel-sub">Current screening distribution by maintenance priority.</div>', unsafe_allow_html=True)
+            priority_total=max(p1n+p2n+p3n+p4n,1)
+            for label,n,icon in [("P1 Immediate",p1n,"🔴"),("P2 Inspection",p2n,"🟠"),("P3 Monitor",p3n,"🟡"),("P4 Routine",p4n,"🟢")]:
+                pct=n/priority_total*100
+                st.markdown(f'<div class="priority-line"><div class="priority-line-top"><span>{icon} {label}</span><b>{n:,}</b></div><div class="signal-bar"><div class="signal-fill" style="width:{pct:.0f}%"></div></div></div>',unsafe_allow_html=True)
+            st.markdown('<div style="height:.65rem"></div>',unsafe_allow_html=True)
+            st.markdown('<div class="focus-box" style="margin-top:.35rem;font-size:.72rem"><b>🔴 P1</b> immediate review &nbsp;•&nbsp; <b>🟠 P2</b> planned inspection &nbsp;•&nbsp; <b>🟡 P3</b> monitor &nbsp;•&nbsp; <b>🟢 P4</b> routine</div>', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        st.caption("Historical screening is decision support only — not an alarm/trip limit or failure prediction. Validate abnormal signals against OEM limits, process condition, field inspection and engineering judgement.")
 
 elif page == "Equipment Health":
     st.markdown('<div class="opp-page-title">Equipment Health</div>',unsafe_allow_html=True)
