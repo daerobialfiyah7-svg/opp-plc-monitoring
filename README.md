@@ -1,5 +1,4 @@
-# OPP PLC Monitoring — Phase 1.1
+# OPP Engineering Monitoring — Phase 2
 
-Deployment-ready prototype using the three supplied PLC days as historical data.
-
-The data folder uses CSV.GZ files for reliable GitHub/Streamlit deployment.
+Tag Master and engineering trend prototype based on the three real PLC exports.
+The Area inference is intentionally conservative and requires engineering review.
