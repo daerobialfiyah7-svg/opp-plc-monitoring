@@ -584,6 +584,15 @@ master["Area"] = master["Area"].apply(normalize_area_label)
 
 st.sidebar.markdown("""<div class="opp-brand"><div class="opp-brand-title">⚙️ OPP</div><div class="opp-brand-sub">Engineering Monitoring</div></div>""",unsafe_allow_html=True)
 nav_options={"⌂  Dashboard":"Dashboard","〽  Equipment Health":"Equipment Health","⚠  Maintenance Priority":"Maintenance Priority","✓  Action Center":"Action Center","⌑  Tag Master":"Tag Master","↗  Engineering Trend":"Engineering Trend","⇧  Data Import":"Data Import"}
+
+# Navigation hand-off for action buttons.
+# The destination is applied BEFORE the radio widget is instantiated,
+# so Streamlit can safely switch pages on the next rerun.
+_pending_page = st.session_state.pop("_pending_page", None)
+if _pending_page in nav_options.values():
+    _nav_label = next(k for k, v in nav_options.items() if v == _pending_page)
+    st.session_state["main_navigation"] = _nav_label
+
 selected_nav=st.sidebar.radio("NAVIGATION",list(nav_options.keys()),key="main_navigation")
 page=nav_options[selected_nav]
 st.sidebar.markdown("---")
@@ -937,17 +946,22 @@ elif page == "Maintenance Priority":
             if b1.button("📈 Open Problem Trend", key=f"priority_open_trend_v2_{selected}", use_container_width=True):
                 st.session_state["trend_equipment_from_priority"] = selected
                 st.session_state["trend_tag_from_priority"] = r["Top Tag"]
-                st.success(f"Trend prepared for {r['Top Tag']}. Open **Engineering Trend** from Navigation.")
+                st.session_state["_pending_page"] = "Engineering Trend"
+                st.rerun()
+
             if b2.button("🛠️ Send to Action Center", key=f"priority_open_action_v2_{selected}", use_container_width=True):
                 fdf = build_action_findings(master[master["Equipment Code"] == selected], df, criticality_df)
                 if not fdf.empty:
                     st.session_state["action_selected_finding"] = str(fdf.iloc[0]["Finding ID"])
-                    st.success("Finding prepared for the Engineering Action Center. Open it from Navigation.")
+                    st.session_state["_pending_page"] = "Action Center"
+                    st.rerun()
                 else:
                     st.info("No abnormal finding is currently available for this equipment.")
+
             if b3.button("🔍 Open Equipment Health", key=f"priority_open_health_v2_{selected}", use_container_width=True):
                 st.session_state["health_selected_eq"] = selected
-                st.success(f"Equipment Health prepared for {selected}. Open **Equipment Health** from Navigation.")
+                st.session_state["_pending_page"] = "Equipment Health"
+                st.rerun()
 
         # ---- Criticality master tools ---------------------------------------
         with st.expander("📋 Equipment Criticality Master", expanded=False):
@@ -1066,6 +1080,11 @@ elif page == "Engineering Trend":
         default_index = eq_codes.index(default_trend_eq) if default_trend_eq in eq_codes else 0
         selected_eq = st.selectbox("Equipment Code", eq_codes, index=default_index, key="trend_equipment")
         eq_view = area_view[area_view["Equipment Code"] == selected_eq].copy()
+
+        # Keep the originating problem tag available for the engineer.
+        incoming_trend_tag = st.session_state.get("trend_tag_from_priority", "")
+        if incoming_trend_tag and incoming_trend_tag in eq_view["PLC Tag"].astype(str).tolist():
+            st.info(f"Problem parameter selected from Maintenance Priority: **{incoming_trend_tag}**")
         names = eq_view["Equipment"].replace("", np.nan).dropna()
         eq_name = names.iloc[0] if len(names) else "Equipment description not yet mapped"
         st.markdown(f"### {selected_eq}")
