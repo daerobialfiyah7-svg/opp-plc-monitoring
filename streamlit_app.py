@@ -2001,58 +2001,119 @@ elif page == "Engineering Trend":
 
 elif page == "Data Import":
     st.markdown('<div class="opp-page-title">⇧ Daily PLC Data Import</div>', unsafe_allow_html=True)
-    st.markdown('<div class="opp-page-sub">Upload a daily PLC Excel export, validate it, then append only new timestamps to the historical data used by Dashboard, Equipment Health and Engineering Trend.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="opp-page-sub">Upload one or more daily PLC Excel exports, validate each file, then append only new timestamps to the historical data used by Dashboard, Equipment Health and Engineering Trend.</div>', unsafe_allow_html=True)
     st.markdown('<div class="opp-note"><b>Import workflow:</b> Upload → Validate → Append New Rows → Refresh history.</div>', unsafe_allow_html=True)
 
-    uploaded = st.file_uploader("Upload daily PLC export (.xlsx)", type=["xlsx"], key="daily_plc_import_v11")
-    if uploaded:
-        try:
-            incoming = pd.read_excel(uploaded)
-        except Exception as exc:
-            st.error(f"Unable to read Excel file: {exc}")
-            incoming = pd.DataFrame()
+    uploaded_files = st.file_uploader(
+        "Upload one or more daily PLC exports (.xlsx)",
+        type=["xlsx"],
+        accept_multiple_files=True,
+        key="daily_plc_import_v12",
+        help="You can select multiple daily Excel files at once. Each file is validated separately and only new ArchiveTime records are appended."
+    )
+    if uploaded_files:
+        file_results = []
+        valid_frames = []
+        known = set(df["ArchiveTime"].dropna()) if not df.empty else set()
+        batch_seen = set()
 
-        if not incoming.empty:
+        for uploaded in uploaded_files:
+            try:
+                incoming = pd.read_excel(uploaded)
+            except Exception as exc:
+                file_results.append({"File": uploaded.name, "Status": f"Read error: {exc}", "Rows": 0, "New": 0, "Existing": 0, "Invalid": 0, "Duplicate in file": 0})
+                continue
+
+            if incoming.empty:
+                file_results.append({"File": uploaded.name, "Status": "Empty file", "Rows": 0, "New": 0, "Existing": 0, "Invalid": 0, "Duplicate in file": 0})
+                continue
+
             if "ArchiveTime" not in incoming.columns:
-                st.error("ArchiveTime not found. The Excel export must contain an 'ArchiveTime' column.")
-            else:
-                incoming["ArchiveTime"] = pd.to_datetime(incoming["ArchiveTime"], errors="coerce")
-                invalid_count = int(incoming["ArchiveTime"].isna().sum())
-                valid = incoming.dropna(subset=["ArchiveTime"]).copy()
-                before_dedup = len(valid)
-                valid = valid.drop_duplicates(subset=["ArchiveTime"], keep="last")
-                duplicate_count = before_dedup - len(valid)
+                file_results.append({"File": uploaded.name, "Status": "Missing ArchiveTime", "Rows": len(incoming), "New": 0, "Existing": 0, "Invalid": len(incoming), "Duplicate in file": 0})
+                continue
 
-                known = set(df["ArchiveTime"].dropna()) if not df.empty else set()
-                new_mask = ~valid["ArchiveTime"].isin(known)
-                new_count = int(new_mask.sum())
+            incoming["ArchiveTime"] = pd.to_datetime(incoming["ArchiveTime"], errors="coerce")
+            invalid_count = int(incoming["ArchiveTime"].isna().sum())
+            valid = incoming.dropna(subset=["ArchiveTime"]).copy()
+            before_dedup = len(valid)
+            valid = valid.drop_duplicates(subset=["ArchiveTime"], keep="last")
+            duplicate_count = before_dedup - len(valid)
 
-                q1, q2, q3, q4 = st.columns(4, gap="small")
-                q1.metric("Rows", f"{len(incoming):,}")
-                q2.metric("New timestamps", f"{new_count:,}")
-                q3.metric("Already in history", f"{len(valid) - new_count:,}")
-                q4.metric("Invalid timestamps", f"{invalid_count:,}")
+            # Treat timestamps from earlier files selected in the same upload batch as existing.
+            new_mask = (~valid["ArchiveTime"].isin(known)) & (~valid["ArchiveTime"].isin(batch_seen))
+            new_count = int(new_mask.sum())
+            existing_count = int(len(valid) - new_count)
 
-                if duplicate_count:
-                    st.caption(f"{duplicate_count:,} duplicate timestamp row(s) inside the uploaded file were collapsed before import.")
+            valid_new = valid.loc[new_mask].copy()
+            if not valid_new.empty:
+                valid_frames.append((uploaded.name, valid_new))
+                batch_seen.update(valid_new["ArchiveTime"].tolist())
 
-                st.markdown("#### Import Preview")
-                st.dataframe(valid.head(20), use_container_width=True, height=360)
+            file_results.append({
+                "File": uploaded.name,
+                "Status": "Ready" if new_count else "Already in history",
+                "Rows": len(incoming),
+                "New": new_count,
+                "Existing": existing_count,
+                "Invalid": invalid_count,
+                "Duplicate in file": duplicate_count,
+                "First Timestamp": valid["ArchiveTime"].min() if not valid.empty else pd.NaT,
+                "Last Timestamp": valid["ArchiveTime"].max() if not valid.empty else pd.NaT,
+            })
 
-                if new_count > 0:
-                    st.warning(f"{new_count:,} new timestamp row(s) are ready to be appended to the PLC history.")
-                    if st.button("✅ Append New Data to History", type="primary", use_container_width=True, key="append_daily_plc_v11"):
-                        written, output = persist_daily_import(valid, uploaded.name)
-                        if written:
-                            # load_history() is cached, so clear it before rerun.
-                            load_history.clear()
-                            st.success(f"Successfully appended {written:,} new rows from {uploaded.name}.")
-                            st.caption(f"Archive created: {output.name}")
-                            st.rerun()
-                        else:
-                            st.info("No new timestamps were appended; the uploaded data is already in history.")
+        result_df = pd.DataFrame(file_results)
+        if not result_df.empty:
+            st.markdown("#### File Validation Summary")
+            display_results = result_df.copy()
+            for c in ["First Timestamp", "Last Timestamp"]:
+                if c in display_results.columns:
+                    display_results[c] = pd.to_datetime(display_results[c], errors="coerce").dt.strftime("%d %b %Y %H:%M")
+            st.dataframe(display_results, use_container_width=True, hide_index=True)
+
+        total_rows = int(result_df["Rows"].sum()) if not result_df.empty else 0
+        total_new = int(result_df["New"].sum()) if not result_df.empty else 0
+        total_existing = int(result_df["Existing"].sum()) if not result_df.empty else 0
+        total_invalid = int(result_df["Invalid"].sum()) if not result_df.empty else 0
+        total_duplicates = int(result_df["Duplicate in file"].sum()) if not result_df.empty else 0
+
+        q1, q2, q3, q4, q5 = st.columns(5, gap="small")
+        q1.metric("Files", f"{len(uploaded_files):,}")
+        q2.metric("Rows", f"{total_rows:,}")
+        q3.metric("New timestamps", f"{total_new:,}")
+        q4.metric("Already in history", f"{total_existing:,}")
+        q5.metric("Invalid timestamps", f"{total_invalid:,}")
+
+        if total_duplicates:
+            st.caption(f"{total_duplicates:,} duplicate timestamp row(s) inside the selected file(s) were collapsed before import.")
+
+        st.markdown("#### Import Preview")
+        if valid_frames:
+            preview = pd.concat([frame.assign(**{"Source File": name}) for name, frame in valid_frames], ignore_index=True)
+            # Keep the preview useful even when many files are selected.
+            preview_cols = ["Source File"] + [c for c in preview.columns if c != "Source File"]
+            st.dataframe(preview[preview_cols].head(30), use_container_width=True, height=360)
+        else:
+            st.info("No new records are ready to append from the selected files.")
+
+        if total_new > 0:
+            st.warning(f"{total_new:,} new timestamp row(s) from {len(valid_frames):,} file(s) are ready to be appended to the PLC history.")
+            if st.button("✅ Append All New Data to History", type="primary", use_container_width=True, key="append_daily_plc_v12"):
+                written_total = 0
+                archive_names = []
+                for source_name, frame in valid_frames:
+                    written, output = persist_daily_import(frame, source_name)
+                    written_total += int(written)
+                    if output is not None:
+                        archive_names.append(output.name)
+                if written_total:
+                    load_history.clear()
+                    recent_import_log.clear()
+                    st.success(f"Successfully appended {written_total:,} new rows from {len(valid_frames):,} file(s).")
+                    st.rerun()
                 else:
-                    st.success("No new timestamps to append. The uploaded file is already represented in the current history.")
+                    st.info("No new timestamps were appended; the selected data is already in history.")
+        else:
+            st.success("No new timestamps to append. All selected valid records are already represented in the current history.")
 
     st.markdown("#### Historical Database Status")
     try:
