@@ -2001,75 +2001,55 @@ elif page == "Engineering Trend":
 
 elif page == "Data Import":
     st.markdown('<div class="opp-page-title">⇧ Daily PLC Data Import</div>', unsafe_allow_html=True)
-    st.markdown('<div class="opp-page-sub">Upload multiple daily PLC Excel exports, validate them safely one-by-one, then append only new timestamps to the historical data used by Dashboard, Equipment Health and Engineering Trend.</div>', unsafe_allow_html=True)
-    st.markdown('<div class="opp-note"><b>Import workflow:</b> Select files → Validate batch → Review summary → Append all new rows → Refresh history.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="opp-page-sub">Upload daily PLC Excel exports one file at a time. Each file is validated and committed directly to the historical database before the next file is selected.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="opp-note"><b>Robust import workflow:</b> Select ONE Excel file → Validate → Append to database → Select the next file. This avoids loading many large Excel workbooks into browser/server memory at the same time.</div>', unsafe_allow_html=True)
 
-    # Multi-file staging:
-    # Do NOT read all uploaded Excel workbooks during the Streamlit rerun.
-    # Reading 18 large .xlsx files at once can exhaust RAM / trigger an app restart.
-    # Files are first copied to a per-session staging folder and processed one at a time.
-    import uuid, shutil, gc
+    import gc
 
-    if "import_stage_id" not in st.session_state:
-        st.session_state["import_stage_id"] = uuid.uuid4().hex[:12]
-    stage_dir = ROOT / "data" / "import_staging" / st.session_state["import_stage_id"]
-    stage_dir.mkdir(parents=True, exist_ok=True)
-
-    uploaded_files = st.file_uploader(
-        "Upload daily PLC exports (.xlsx) — multiple files supported",
+    # IMPORTANT:
+    # Streamlit's multi-file uploader keeps the selected UploadedFile objects in memory.
+    # With large PLC exports, selecting 18 files can therefore exhaust Community Cloud
+    # memory before our Python code even gets a chance to process them sequentially.
+    # This page deliberately uses a SINGLE-file uploader. Each file is processed and
+    # committed to SQLite, then the uploader is reset for the next file.
+    uploaded = st.file_uploader(
+        "Select one daily PLC export (.xlsx)",
         type=["xlsx"],
-        accept_multiple_files=True,
-        key="daily_plc_import_v13",
-        help="Select multiple daily Excel files at once. The app stages them first, then validates each workbook sequentially to keep memory usage low."
+        accept_multiple_files=False,
+        key="daily_plc_import_v14",
+        help="For a large historical batch, import the files one-by-one. Each successful file is written to SQLite before you select the next file."
     )
 
-    if uploaded_files:
-        upload_signature = tuple((str(f.name), int(getattr(f, "size", 0) or 0)) for f in uploaded_files)
+    if uploaded is not None:
+        file_name = Path(uploaded.name).name
+        file_size_mb = (int(getattr(uploaded, "size", 0) or 0) / (1024 * 1024))
+        st.info(f"📄 **{file_name}**  •  {file_size_mb:.1f} MB  •  only this workbook will be processed in memory.")
 
-        # If the selection changed, replace the session staging batch.
-        if upload_signature != st.session_state.get("import_upload_signature"):
-            if stage_dir.exists():
-                shutil.rmtree(stage_dir, ignore_errors=True)
-            stage_dir.mkdir(parents=True, exist_ok=True)
+        c1, c2 = st.columns([1, 1], gap="small")
+        validate_one = c1.button("🔎 Validate File", type="secondary", use_container_width=True, key="validate_one_v14")
+        import_one = c2.button("✅ Import This File", type="primary", use_container_width=True, key="import_one_v14")
 
-            staged_files = []
-            for i, uploaded in enumerate(uploaded_files, start=1):
-                safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", uploaded.name)
-                staged = stage_dir / f"{i:03d}_{safe_name}"
-                with staged.open("wb") as fh:
-                    fh.write(uploaded.getbuffer())
-                staged_files.append(str(staged))
+        if validate_one or import_one:
+            import tempfile, os
+            tmp_path = None
+            try:
+                # Copy the uploaded workbook to disk first, then release the Streamlit
+                # buffer as soon as possible. Only one workbook is ever materialized.
+                tmp_dir = ROOT / "data" / "import_staging"
+                tmp_dir.mkdir(parents=True, exist_ok=True)
+                suffix = Path(file_name).suffix.lower() or ".xlsx"
+                with tempfile.NamedTemporaryFile(delete=False, suffix=suffix, dir=tmp_dir) as tf:
+                    tf.write(uploaded.getbuffer())
+                    tmp_path = Path(tf.name)
 
-            st.session_state["import_upload_signature"] = upload_signature
-            st.session_state["import_staged_files"] = staged_files
-            st.session_state.pop("import_validation", None)
+                progress = st.progress(0, text="Reading Excel workbook…")
+                incoming = pd.read_excel(tmp_path, engine="openpyxl")
+                progress.progress(0.45, text="Validating ArchiveTime…")
 
-        staged_files = [Path(x) for x in st.session_state.get("import_staged_files", [])]
-
-        st.info(
-            f"📦 **{len(staged_files):,} file(s) selected.** "
-            "Files are staged first; the Excel workbooks are not all loaded into memory simultaneously."
-        )
-
-        validate_clicked = st.button(
-            "🔎 Validate Selected Files",
-            type="primary",
-            use_container_width=True,
-            key="validate_daily_plc_v13"
-        )
-
-        if validate_clicked:
-            file_results = []
-            batch_seen = set()
-            known = set(df["ArchiveTime"].dropna()) if not df.empty else set()
-
-            progress = st.progress(0, text="Starting batch validation…")
-
-            for idx, path in enumerate(staged_files, start=1):
                 result = {
-                    "File": path.name,
+                    "File": file_name,
                     "Status": "Ready",
-                    "Rows": 0,
+                    "Rows": int(len(incoming)),
                     "New": 0,
                     "Existing": 0,
                     "Invalid": 0,
@@ -2078,206 +2058,106 @@ elif page == "Data Import":
                     "Last Timestamp": pd.NaT,
                 }
 
-                try:
-                    # One workbook at a time. Release it before the next iteration.
-                    incoming = pd.read_excel(path, engine="openpyxl")
-                    result["Rows"] = len(incoming)
-
-                    if incoming.empty:
-                        result["Status"] = "Empty file"
-                        file_results.append(result)
-                        del incoming
-                        gc.collect()
-                        progress.progress(idx / len(staged_files), text=f"Validated {idx}/{len(staged_files)} files…")
-                        continue
-
-                    if "ArchiveTime" not in incoming.columns:
-                        result["Status"] = "Missing ArchiveTime"
-                        result["Invalid"] = len(incoming)
-                        file_results.append(result)
-                        del incoming
-                        gc.collect()
-                        progress.progress(idx / len(staged_files), text=f"Validated {idx}/{len(staged_files)} files…")
-                        continue
-
+                if incoming.empty:
+                    result["Status"] = "Empty file"
+                elif "ArchiveTime" not in incoming.columns:
+                    result["Status"] = "Missing ArchiveTime"
+                    result["Invalid"] = int(len(incoming))
+                else:
                     incoming["ArchiveTime"] = pd.to_datetime(incoming["ArchiveTime"], errors="coerce")
                     result["Invalid"] = int(incoming["ArchiveTime"].isna().sum())
-
                     valid = incoming.dropna(subset=["ArchiveTime"]).copy()
                     result["First Timestamp"] = valid["ArchiveTime"].min() if not valid.empty else pd.NaT
                     result["Last Timestamp"] = valid["ArchiveTime"].max() if not valid.empty else pd.NaT
+                    before = len(valid)
+                    valid = valid.drop_duplicates("ArchiveTime", keep="last")
+                    result["Duplicate in file"] = int(before - len(valid))
 
-                    before_dedup = len(valid)
-                    valid = valid.drop_duplicates(subset=["ArchiveTime"], keep="last")
-                    result["Duplicate in file"] = before_dedup - len(valid)
-
-                    if not valid.empty:
-                        new_mask = (~valid["ArchiveTime"].isin(known)) & (~valid["ArchiveTime"].isin(batch_seen))
-                        result["New"] = int(new_mask.sum())
-                        result["Existing"] = int(len(valid) - result["New"])
-
-                        new_ts = valid.loc[new_mask, "ArchiveTime"].tolist()
-                        batch_seen.update(new_ts)
-
-                    if result["New"] == 0 and result["Existing"] > 0:
-                        result["Status"] = "Already in history"
-                    elif result["New"] == 0 and result["Existing"] == 0:
-                        result["Status"] = "No valid rows"
-
-                    file_results.append(result)
-
-                    del incoming, valid
-                    gc.collect()
-
-                except Exception as exc:
-                    result["Status"] = f"Read error: {type(exc).__name__}"
-                    result["Error Detail"] = str(exc)[:180]
-                    file_results.append(result)
-                    gc.collect()
-
-                progress.progress(idx / len(staged_files), text=f"Validated {idx}/{len(staged_files)} files…")
-
-            progress.empty()
-            st.session_state["import_validation"] = file_results
-
-        # Restore validation summary after reruns without re-reading all workbooks.
-        validation = st.session_state.get("import_validation", [])
-        if validation:
-            result_df = pd.DataFrame(validation)
-
-            st.markdown("#### File Validation Summary")
-            display_results = result_df.copy()
-            for c in ["First Timestamp", "Last Timestamp"]:
-                if c in display_results.columns:
-                    display_results[c] = pd.to_datetime(display_results[c], errors="coerce").dt.strftime("%d %b %Y %H:%M").fillna("—")
-            st.dataframe(display_results, use_container_width=True, hide_index=True)
-
-            total_rows = int(result_df["Rows"].sum())
-            total_new = int(result_df["New"].sum())
-            total_existing = int(result_df["Existing"].sum())
-            total_invalid = int(result_df["Invalid"].sum())
-            total_duplicates = int(result_df["Duplicate in file"].sum())
-
-            q1, q2, q3, q4, q5 = st.columns(5, gap="small")
-            q1.metric("Files", f"{len(staged_files):,}")
-            q2.metric("Rows", f"{total_rows:,}")
-            q3.metric("New timestamps", f"{total_new:,}")
-            q4.metric("Already in history", f"{total_existing:,}")
-            q5.metric("Invalid timestamps", f"{total_invalid:,}")
-
-            if total_duplicates:
-                st.caption(f"{total_duplicates:,} duplicate timestamp row(s) inside the selected file(s) will be collapsed before import.")
-
-            st.markdown("#### Import Preview")
-            # Preview only a small slice from the first valid staged workbook.
-            # This avoids concatenating all 18 workbooks into a huge DataFrame.
-            preview_path = next(
-                (Path(r["path"]) for r in st.session_state.get("import_preview_meta", []) if Path(r["path"]).exists()),
-                None
-            ) if st.session_state.get("import_preview_meta") else None
-
-            if preview_path is None:
-                for r, path in zip(validation, staged_files):
-                    if int(r.get("Rows", 0)) > 0 and "Missing ArchiveTime" not in str(r.get("Status", "")):
-                        preview_path = path
-                        break
-
-            if preview_path is not None:
-                try:
-                    preview = pd.read_excel(preview_path, engine="openpyxl", nrows=12)
-                    st.dataframe(preview, use_container_width=True, height=300)
-                    del preview
-                    gc.collect()
-                except Exception:
-                    st.caption("Preview could not be displayed, but validation results are still available.")
-
-            if total_new > 0:
-                st.warning(
-                    f"⚠️ **{total_new:,} new timestamp row(s)** are ready from the selected batch. "
-                    "Append processes each workbook sequentially."
-                )
-
-                if st.button(
-                    "✅ Append All New Data to History",
-                    type="primary",
-                    use_container_width=True,
-                    key="append_daily_plc_v13"
-                ):
-                    written_total = 0
-                    processed_files = 0
-                    progress = st.progress(0, text="Starting import…")
-
-                    # Read the current key set once. Update it after every successful file.
+                    # Query the DB directly instead of loading the complete history DataFrame.
                     _init_history_db()
                     conn = _db_connect()
                     try:
-                        existing_ts = {
+                        existing = {
                             row[0] for row in conn.execute(
-                                "SELECT archive_time FROM plc_history WHERE archive_time IS NOT NULL"
+                                "SELECT archive_time FROM plc_history"
                             ).fetchall()
                         }
                     finally:
                         conn.close()
 
-                    for idx, (path, validation_row) in enumerate(zip(staged_files, validation), start=1):
-                        if int(validation_row.get("New", 0)) <= 0:
-                            progress.progress(idx / len(staged_files), text=f"Skipped {idx}/{len(staged_files)} files…")
-                            continue
+                    valid_keys = valid["ArchiveTime"].map(lambda x: pd.Timestamp(x).isoformat())
+                    new_mask = ~valid_keys.isin(existing)
+                    result["New"] = int(new_mask.sum())
+                    result["Existing"] = int((~new_mask).sum())
 
-                        try:
-                            incoming = pd.read_excel(path, engine="openpyxl")
+                    if result["New"] == 0 and result["Existing"] > 0:
+                        result["Status"] = "Already in history"
+                    elif result["New"] == 0:
+                        result["Status"] = "No valid rows"
 
-                            if "ArchiveTime" not in incoming.columns:
-                                del incoming
-                                continue
+                    if import_one and result["New"] > 0:
+                        progress.progress(0.70, text="Writing new rows to SQLite…")
+                        new_rows = valid.loc[new_mask].copy()
+                        written, _ = persist_daily_import(new_rows, file_name)
+                        progress.progress(1.0, text="Import complete")
 
-                            incoming["ArchiveTime"] = pd.to_datetime(incoming["ArchiveTime"], errors="coerce")
-                            incoming = incoming.dropna(subset=["ArchiveTime"]).drop_duplicates("ArchiveTime", keep="last")
-
-                            # Only rows still absent from the live database / earlier files in this batch.
-                            live_new_mask = ~incoming["ArchiveTime"].map(lambda x: pd.Timestamp(x).isoformat()).isin(existing_ts)
-                            valid_new = incoming.loc[live_new_mask].copy()
-
-                            if not valid_new.empty:
-                                written, _ = persist_daily_import(valid_new, path.name)
-                                written_total += int(written)
-                                processed_files += 1
-                                existing_ts.update(
-                                    pd.to_datetime(valid_new["ArchiveTime"], errors="coerce")
-                                    .dropna()
-                                    .map(lambda x: pd.Timestamp(x).isoformat())
-                                    .tolist()
-                                )
-
-                            del incoming, valid_new
-                            gc.collect()
-
-                        except Exception as exc:
-                            st.error(f"Import failed for {path.name}: {type(exc).__name__}: {exc}")
-                            continue
-
-                        progress.progress(idx / len(staged_files), text=f"Imported {idx}/{len(staged_files)} files…")
-
-                    progress.empty()
-
-                    if written_total:
                         load_history.clear()
                         recent_import_log.clear()
-                        st.success(
-                            f"Successfully appended **{written_total:,} new rows** "
-                            f"from **{processed_files:,} file(s)**."
-                        )
-                        st.session_state.pop("import_validation", None)
-                        st.session_state.pop("import_upload_signature", None)
-                        st.session_state.pop("import_staged_files", None)
-                        shutil.rmtree(stage_dir, ignore_errors=True)
-                        st.rerun()
+                        st.session_state["import_last_result_v14"] = {
+                            **result,
+                            "Imported": int(written),
+                        }
+                        st.success(f"✅ **{written:,} new rows** imported from **{file_name}**.")
+                        st.caption("The historical database has been updated. Dashboard, Equipment Health and Engineering Trend will use the refreshed history on the next rerun.")
+
+                        del new_rows
+                    elif import_one and result["New"] == 0:
+                        progress.progress(1.0, text="Nothing new to import")
+                        st.warning(f"No new timestamps were imported from **{file_name}**. The valid records are already in history.")
                     else:
-                        st.info("No new timestamps were appended; the selected data is already represented in history.")
-            else:
-                st.success("No new timestamps to append. All selected valid records are already represented in the current history.")
-        else:
-            st.caption("Select your daily Excel files, then click **Validate Selected Files**. Validation is performed sequentially to protect app memory.")
+                        progress.progress(1.0, text="Validation complete")
+
+                # Show one-file validation result without retaining the workbook.
+                result_view = pd.DataFrame([result])
+                for c in ["First Timestamp", "Last Timestamp"]:
+                    result_view[c] = pd.to_datetime(result_view[c], errors="coerce").dt.strftime("%d %b %Y %H:%M").fillna("—")
+                st.markdown("#### File Validation Result")
+                st.dataframe(result_view, use_container_width=True, hide_index=True)
+
+                if validate_one and not import_one:
+                    if result.get("New", 0) > 0:
+                        st.success(f"Ready to import: **{result['New']:,} new timestamp row(s)**.")
+                    else:
+                        st.info("This file contains no new timestamp records for the current database.")
+
+                # Small preview only; the full workbook is not retained.
+                if tmp_path and tmp_path.exists():
+                    try:
+                        preview = pd.read_excel(tmp_path, engine="openpyxl", nrows=10)
+                        with st.expander("Preview first 10 rows", expanded=False):
+                            st.dataframe(preview, use_container_width=True, hide_index=True)
+                        del preview
+                    except Exception:
+                        pass
+
+                del incoming
+                gc.collect()
+
+            except Exception as exc:
+                st.error(f"❌ Could not process **{file_name}**: {type(exc).__name__}: {exc}")
+            finally:
+                if tmp_path is not None:
+                    try:
+                        tmp_path.unlink(missing_ok=True)
+                    except Exception:
+                        pass
+                gc.collect()
+
+    st.markdown("#### Batch Import Guidance")
+    g1, g2, g3 = st.columns(3, gap="small")
+    g1.markdown('<div class="dashboard-panel"><b>1. Select one file</b><br><span style="color:#667085;font-size:.75rem">Choose the next daily PLC Excel export.</span></div>', unsafe_allow_html=True)
+    g2.markdown('<div class="dashboard-panel"><b>2. Validate / Import</b><br><span style="color:#667085;font-size:.75rem">The workbook is processed and released from memory.</span></div>', unsafe_allow_html=True)
+    g3.markdown('<div class="dashboard-panel"><b>3. Repeat</b><br><span style="color:#667085;font-size:.75rem">Continue with the next day until the historical batch is complete.</span></div>', unsafe_allow_html=True)
 
     st.markdown("#### Historical Database Status")
     try:
