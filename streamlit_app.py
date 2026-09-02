@@ -300,7 +300,7 @@ st.markdown("""<style>
 </style>""",unsafe_allow_html=True)
 
 DB_PATH = ROOT / "data" / "plc_history.sqlite"
-DB_SCHEMA_VERSION = 1
+DB_SCHEMA_VERSION = 2
 
 
 def _db_connect():
@@ -313,6 +313,25 @@ def _db_connect():
     conn.execute("PRAGMA synchronous=NORMAL")
     conn.execute("PRAGMA foreign_keys=ON")
     return conn
+
+
+def _json_safe_record(record):
+    """Convert a pandas row into strict JSON-safe Python values."""
+    safe = {}
+    for key, value in record.items():
+        if pd.isna(value) if not isinstance(value, (list, tuple, dict)) else False:
+            safe[str(key)] = None
+        elif isinstance(value, (pd.Timestamp, np.datetime64)):
+            safe[str(key)] = pd.Timestamp(value).isoformat()
+        elif isinstance(value, (np.integer,)):
+            safe[str(key)] = int(value)
+        elif isinstance(value, (np.floating,)):
+            safe[str(key)] = None if not np.isfinite(value) else float(value)
+        elif isinstance(value, (np.bool_,)):
+            safe[str(key)] = bool(value)
+        else:
+            safe[str(key)] = value
+    return safe
 
 
 def _init_history_db():
@@ -345,11 +364,11 @@ def _init_history_db():
         conn.execute("INSERT OR IGNORE INTO app_meta(key,value) VALUES('schema_version',?)", (str(DB_SCHEMA_VERSION),))
         conn.commit()
 
-        # One-time migration of existing v9 *.csv.gz history into SQLite.
-        existing_count = conn.execute("SELECT COUNT(*) FROM plc_history").fetchone()[0]
+        # Migrate any legacy v9 *.csv.gz rows that are not already in SQLite.
+        # INSERT OR IGNORE makes this safe even if migration was partially completed.
         legacy_files = sorted((ROOT / "data").glob("*.csv.gz"))
         migrated = conn.execute("SELECT value FROM app_meta WHERE key='legacy_csv_migrated'").fetchone()
-        if existing_count == 0 and legacy_files and not migrated:
+        if legacy_files and not migrated:
             import gzip, json
             now = pd.Timestamp.utcnow().isoformat()
             for f in legacy_files:
@@ -361,7 +380,7 @@ def _init_history_db():
                     part = part.dropna(subset=["ArchiveTime"]).drop_duplicates("ArchiveTime", keep="last")
                     for _, row in part.iterrows():
                         ts = pd.Timestamp(row["ArchiveTime"]).isoformat()
-                        raw = json.dumps(row.to_dict(), default=str, allow_nan=False).encode("utf-8")
+                        raw = json.dumps(_json_safe_record(row.to_dict()), ensure_ascii=False, allow_nan=False).encode("utf-8")
                         blob = gzip.compress(raw, compresslevel=6)
                         conn.execute(
                             "INSERT OR IGNORE INTO plc_history(archive_time,payload,source_file,imported_at) VALUES(?,?,?,?)",
@@ -426,7 +445,7 @@ def persist_daily_import(incoming, source_name="PLC_Import"):
         conn.execute("BEGIN IMMEDIATE")
         for _, row in incoming.sort_values("ArchiveTime").iterrows():
             ts = pd.Timestamp(row["ArchiveTime"]).isoformat()
-            raw = json.dumps(row.to_dict(), default=str, allow_nan=False).encode("utf-8")
+            raw = json.dumps(_json_safe_record(row.to_dict()), ensure_ascii=False, allow_nan=False).encode("utf-8")
             blob = gzip.compress(raw, compresslevel=6)
             cur = conn.execute(
                 "INSERT OR IGNORE INTO plc_history(archive_time,payload,source_file,imported_at) VALUES(?,?,?,?)",
@@ -467,6 +486,24 @@ def history_database_stats():
         conn.close()
 
 @st.cache_data
+
+def recent_import_log(limit=10):
+    """Return the most recent import batches for operational traceability."""
+    _init_history_db()
+    conn = _db_connect()
+    try:
+        rows = conn.execute(
+            """SELECT imported_at, source_file, rows_received, rows_inserted, rows_duplicate,
+                      rows_invalid, first_timestamp, last_timestamp
+               FROM import_log ORDER BY id DESC LIMIT ?""",
+            (int(limit),)
+        ).fetchall()
+    finally:
+        conn.close()
+    cols = ["Imported At", "Source File", "Rows Received", "Rows Inserted", "Rows Duplicate",
+            "Rows Invalid", "First Timestamp", "Last Timestamp"]
+    return pd.DataFrame(rows, columns=cols)
+
 
 def load_master():
     return pd.read_csv(ROOT / "config" / "tag_master.csv").fillna("")
@@ -1967,7 +2004,7 @@ elif page == "Data Import":
     st.markdown('<div class="opp-page-sub">Upload a daily PLC Excel export, validate it, then append only new timestamps to the historical data used by Dashboard, Equipment Health and Engineering Trend.</div>', unsafe_allow_html=True)
     st.markdown('<div class="opp-note"><b>Import workflow:</b> Upload → Validate → Append New Rows → Refresh history.</div>', unsafe_allow_html=True)
 
-    uploaded = st.file_uploader("Upload daily PLC export (.xlsx)", type=["xlsx"], key="daily_plc_import_v9")
+    uploaded = st.file_uploader("Upload daily PLC export (.xlsx)", type=["xlsx"], key="daily_plc_import_v11")
     if uploaded:
         try:
             incoming = pd.read_excel(uploaded)
@@ -2004,7 +2041,7 @@ elif page == "Data Import":
 
                 if new_count > 0:
                     st.warning(f"{new_count:,} new timestamp row(s) are ready to be appended to the PLC history.")
-                    if st.button("✅ Append New Data to History", type="primary", use_container_width=True, key="append_daily_plc_v9"):
+                    if st.button("✅ Append New Data to History", type="primary", use_container_width=True, key="append_daily_plc_v11"):
                         written, output = persist_daily_import(valid, uploaded.name)
                         if written:
                             # load_history() is cached, so clear it before rerun.
@@ -2026,6 +2063,10 @@ elif page == "Data Import":
         h3.metric("Latest Timestamp", pd.to_datetime(db_last).strftime("%d %b %Y %H:%M") if db_last else "—")
         h4.metric("Import Batches", f"{import_count:,}")
         st.caption("SQLite is the single historical source consumed by Dashboard, Equipment Health and Engineering Trend. Re-uploading the same Excel file is safe: existing timestamps are not duplicated.")
+        log_df = recent_import_log(8)
+        if not log_df.empty:
+            with st.expander("🧾 Recent import history", expanded=False):
+                st.dataframe(log_df, use_container_width=True, hide_index=True)
         with st.expander("🗄️ Database details", expanded=False):
             st.code(str(DB_PATH), language="text")
             st.caption("Unique ArchiveTime key • transactional import • import log • compressed row payloads")
