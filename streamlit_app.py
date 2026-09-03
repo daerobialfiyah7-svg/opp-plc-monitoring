@@ -11,13 +11,127 @@ ROOT = Path(__file__).resolve().parent
 # --- Professional UI theme ---
 st.markdown("""<style>
 .main .block-container{padding-top:1.15rem;padding-bottom:3rem;max-width:1500px}
-[data-testid="stSidebar"]{background:#f4f7fb;border-right:1px solid #dfe5ee}
-[data-testid="stSidebar"] .stRadio>label{font-size:.82rem!important;font-weight:800!important;color:#344054!important}
-[data-testid="stSidebar"] .stRadio div[role="radiogroup"]{gap:.18rem}
-[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label{padding:.58rem .65rem!important;border-radius:.55rem;font-size:.92rem!important}
-[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label:hover{background:#e8f1ff}
-[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label:has(input:checked){background:#dcecff;color:#1256ad!important;font-weight:700!important}
-.opp-brand{padding:.35rem .35rem 1.1rem;border-bottom:1px solid #dfe5ee;margin-bottom:1rem}.opp-brand-title{font-size:1.35rem;font-weight:800;color:#182230}.opp-brand-sub{color:#667085;font-size:.76rem;margin-top:.2rem}
+/* ===== LEFT SIDEBAR — dashboard reference layout ===== */
+[data-testid="stSidebar"]{
+    background:#fbfcfe!important;
+    border-right:1px solid #e4e8ef!important;
+    min-width:205px!important;
+    max-width:205px!important;
+}
+[data-testid="stSidebar"] > div:first-child{padding-top:.55rem!important}
+[data-testid="stSidebar"] .block-container{padding:.45rem .55rem 1rem!important}
+[data-testid="stSidebar"] .stRadio>label{
+    font-size:.67rem!important;font-weight:800!important;
+    color:#6938d6!important;letter-spacing:.03em!important;
+    text-transform:uppercase!important;margin:.25rem 0 .45rem!important;
+}
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"]{
+    gap:.12rem!important;
+}
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label{
+    padding:.50rem .48rem!important;
+    border-radius:.46rem!important;
+    font-size:.78rem!important;
+    line-height:1.05!important;
+    min-height:31px!important;
+    color:#24344d!important;
+    font-weight:650!important;
+    border:1px solid transparent!important;
+}
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label:hover{
+    background:#f0edff!important;color:#2f62b5!important;
+}
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label:has(input:checked){
+    background:#e9e6ff!important;
+    color:#1769e0!important;
+    font-weight:750!important;
+    border-color:#e3defc!important;
+}
+[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label > div:first-child{
+    margin-right:.38rem!important;
+}
+.opp-brand{
+    padding:.05rem .15rem .85rem!important;
+    border-bottom:0!important;
+    margin-bottom:.18rem!important;
+}
+.opp-brand-title{
+    font-size:1.18rem!important;font-weight:850!important;
+    color:#182230!important;line-height:1!important;
+}
+.opp-brand-title .brand-gear{color:#6738d4!important}
+.opp-brand-sub{
+    color:#667085!important;font-size:.65rem!important;
+    margin:.22rem 0 0 2.35rem!important;
+    font-weight:550!important;
+}
+.sidebar-divider{
+    height:1px;background:#e4e8ef;margin:.65rem -.55rem .7rem;
+}
+.sidebar-section-title{
+    color:#6938d6;font-size:.65rem;font-weight:850;
+    letter-spacing:.04em;text-transform:uppercase;
+    margin:.72rem .18rem .42rem;
+}
+.sidebar-meta-row{
+    display:flex;align-items:center;gap:.48rem;
+    padding:.27rem .16rem;color:#344054;font-size:.66rem;
+    line-height:1.15;
+}
+.sidebar-meta-row .sicon{width:15px;text-align:center;color:#667085;font-size:.78rem}
+.sidebar-meta-row .svalue{font-weight:700;color:#344054;white-space:nowrap}
+.sidebar-meta-row .slabel{margin-left:auto;color:#667085;font-size:.56rem}
+.sidebar-coverage{
+    display:flex;align-items:center;gap:.58rem;margin:.18rem 0 .55rem;
+}
+.sidebar-ring{
+    width:52px;height:52px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:.67rem;font-weight:850;color:#344054;
+    background:conic-gradient(#12b76a var(--pct),#e7ebf0 0);
+    position:relative;flex:0 0 auto;
+}
+.sidebar-ring:after{
+    content:"";position:absolute;inset:6px;background:#fbfcfe;border-radius:50%;
+}
+.sidebar-ring span{position:relative;z-index:1}
+.sidebar-coverage-text{font-size:.61rem;color:#667085;line-height:1.4}
+.sidebar-coverage-text b{display:block;color:#344054;font-size:.75rem}
+.sidebar-coverage-text .available{color:#667085}
+.sidebar-quality-btn{
+    border:1px solid #ddd7fb;border-radius:6px;background:#fff;
+    color:#6938d6;font-size:.62rem;font-weight:750;
+    text-align:center;padding:.43rem .25rem;margin:.15rem 0 .35rem;
+}
+.sidebar-connected{
+    display:flex;align-items:center;gap:.42rem;
+    color:#12a66a;font-size:.66rem;font-weight:750;padding:.28rem .16rem;
+}
+.sidebar-db-card{
+    margin:.9rem -.05rem 0;padding:.62rem .55rem;
+    background:#fff;border:1px solid #e7ebf1;border-radius:7px;
+    box-shadow:0 1px 3px rgba(16,24,40,.04);
+}
+.sidebar-db-title{font-size:.56rem;color:#667085;margin-bottom:.18rem}
+.sidebar-db-value{font-size:.68rem;color:#079455;font-weight:800}
+.sidebar-db-dot{display:inline-block;width:7px;height:7px;background:#12b76a;border-radius:50%;margin-right:.3rem}
+.sidebar-version{text-align:right;color:#98a2b3;font-size:.52rem;margin-top:.18rem}
+.sidebar-select .stSelectbox>label{display:none!important}
+.sidebar-select [data-baseweb="select"]{
+    min-height:31px!important;border:1px solid #dfe5ee!important;
+    border-radius:6px!important;background:#fff!important;
+}
+.sidebar-select [data-baseweb="select"]>div{
+    min-height:31px!important;padding:0 .45rem!important;
+    font-size:.67rem!important;color:#344054!important;
+}
+.sidebar-select{margin-bottom:.18rem!important}\n[data-testid="stSidebar"] .stSelectbox{margin-bottom:.18rem!important}\n[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"]{box-shadow:0 1px 2px rgba(16,24,40,.03)!important}
+.sidebar-filter-icon{
+    position:absolute;left:.62rem;z-index:2;line-height:31px;
+    color:#667085;font-size:.72rem;pointer-events:none;
+}
+.sidebar-filter-wrap{position:relative}
+
 .opp-page-title{font-size:1.75rem;font-weight:800;color:#1d2939;margin-bottom:.15rem}.opp-page-sub{color:#667085;font-size:.88rem;margin-bottom:1rem}
 .dashboard-kpi{color:#fff!important;border:0!important;border-radius:5px!important;min-height:96px;padding:.95rem 1rem!important;box-shadow:0 3px 8px rgba(18,44,88,.14)!important;text-align:center;display:flex;flex-direction:column;justify-content:center}
 .dashboard-kpi .opp-card-title,.dashboard-kpi .opp-card-value,.dashboard-kpi .opp-card-small{color:#fff!important}
@@ -1139,12 +1253,113 @@ def _navigate_dashboard(nav_label, value=None):
     elif nav_label == "〽  Equipment Health" and value:
         st.session_state["health_area"] = value
 
-st.sidebar.markdown("""<div class="opp-brand"><div class="opp-brand-title">⚙️ OPP</div><div class="opp-brand-sub">Engineering Monitoring</div></div>""",unsafe_allow_html=True)
-nav_options={"⌂  Dashboard":"Dashboard","〽  Equipment Health":"Equipment Health","⚠  Maintenance Priority":"Maintenance Priority","✓  Action Center":"Action Center","⌑  Tag Master":"Tag Master","↗  Engineering Trend":"Engineering Trend","⇧  Data Import":"Data Import"}
+# ===== LEFT SIDEBAR — reference design =====
+st.sidebar.markdown(
+    """<div class="opp-brand">
+        <div class="opp-brand-title"><span class="brand-gear">⚙</span>&nbsp; OPP</div>
+        <div class="opp-brand-sub">Engineering Monitoring</div>
+    </div>""",
+    unsafe_allow_html=True
+)
+
+nav_options={
+    "⌂  Dashboard":"Dashboard",
+    "♧  Equipment Health":"Equipment Health",
+    "⚠  Maintenance Priority":"Maintenance Priority",
+    "↗  Action Center":"Action Center",
+    "◆  Tag Master":"Tag Master",
+    "▥  Engineering Trend":"Engineering Trend",
+    "▣  Data Import":"Data Import"
+}
 selected_nav=st.sidebar.radio("NAVIGATION",list(nav_options.keys()),key="main_navigation")
 page=nav_options[selected_nav]
-st.sidebar.markdown("---")
-st.sidebar.caption("Decision Support • OPP Engineering")
+
+# Quick filter controls — kept lightweight and independent from the screening engine.
+st.sidebar.markdown('<div class="sidebar-divider"></div><div class="sidebar-section-title">QUICK FILTER</div>', unsafe_allow_html=True)
+
+area_filter_options=["All Areas"] + sorted([str(x) for x in master["Area"].dropna().unique() if str(x).strip() and str(x).strip()!="nan"])
+equipment_type_options=["All Equipment Types"]
+for candidate in ["Equipment Type","Equipment Category","Instrument Type"]:
+    if candidate in master.columns:
+        vals=sorted([str(x) for x in master[candidate].dropna().unique() if str(x).strip() and str(x).strip()!="nan"])
+        if vals:
+            equipment_type_options += vals
+            break
+status_options=["All Screening Status","Healthy","Deteriorating","Attention","Critical"]
+
+sidebar_area=st.sidebar.selectbox(
+    "Area filter",area_filter_options,key="sidebar_area_filter",
+    format_func=lambda x: f"  ⌖   {x}",
+    label_visibility="collapsed"
+)
+sidebar_type=st.sidebar.selectbox(
+    "Equipment type filter",equipment_type_options,key="sidebar_type_filter",
+    format_func=lambda x: f"  ♟   {x}",
+    label_visibility="collapsed"
+)
+sidebar_status=st.sidebar.selectbox(
+    "Screening status filter",status_options,key="sidebar_status_filter",
+    format_func=lambda x: f"  ⚑   {x}",
+    label_visibility="collapsed"
+)
+
+# Data coverage block — derived from the actual historical ArchiveTime records.
+_sidebar_min_dt=_sidebar_max_dt=None
+_sidebar_data_days=0
+_sidebar_unique_days=0
+if not df.empty and "ArchiveTime" in df.columns:
+    _sidebar_dt=pd.to_datetime(df["ArchiveTime"],errors="coerce").dropna()
+    if len(_sidebar_dt):
+        _sidebar_min_dt=_sidebar_dt.min()
+        _sidebar_max_dt=_sidebar_dt.max()
+        _sidebar_data_days=max(1,(_sidebar_max_dt.normalize()-_sidebar_min_dt.normalize()).days+1)
+        _sidebar_unique_days=_sidebar_dt.dt.normalize().nunique()
+_sidebar_cov=(_sidebar_unique_days/_sidebar_data_days*100) if _sidebar_data_days else 0
+
+st.sidebar.markdown('<div class="sidebar-section-title">DATA COVERAGE</div>', unsafe_allow_html=True)
+st.sidebar.markdown(
+    f'<div class="sidebar-meta-row"><span class="sicon">▣</span><span class="svalue">{_sidebar_min_dt.strftime("%d %b %Y %H:%M") if _sidebar_min_dt is not None else "—"}</span><span class="slabel">First Data</span></div>'
+    f'<div class="sidebar-meta-row"><span class="sicon">▣</span><span class="svalue">{_sidebar_max_dt.strftime("%d %b %Y %H:%M") if _sidebar_max_dt is not None else "—"}</span><span class="slabel">Latest Data</span></div>',
+    unsafe_allow_html=True
+)
+st.sidebar.markdown(
+    f'<div class="sidebar-coverage"><div class="sidebar-ring" style="--pct:{min(100,max(0,_sidebar_cov)):.1f}%"><span>{_sidebar_cov:.1f}%</span></div>'
+    f'<div class="sidebar-coverage-text">Data Coverage<b>{_sidebar_unique_days:,} / {_sidebar_data_days:,} Days</b><span class="available">Data Available</span></div></div>',
+    unsafe_allow_html=True
+)
+if st.sidebar.button("View Data Quality",key="sidebar_data_quality",use_container_width=True):
+    st.session_state["main_navigation"]="⇧  Data Import"
+    st.rerun()
+
+# Last updated — prefer the latest import timestamp, otherwise latest PLC data.
+_sidebar_last_updated=None
+try:
+    _sidebar_log=recent_import_log(1)
+    if not _sidebar_log.empty and "Imported At" in _sidebar_log.columns:
+        _sidebar_last_updated=pd.to_datetime(_sidebar_log.iloc[0]["Imported At"],errors="coerce")
+except Exception:
+    pass
+if _sidebar_last_updated is None or pd.isna(_sidebar_last_updated):
+    _sidebar_last_updated=_sidebar_max_dt
+
+st.sidebar.markdown('<div class="sidebar-section-title">LAST UPDATED</div>', unsafe_allow_html=True)
+st.sidebar.markdown(
+    f'<div class="sidebar-meta-row"><span class="sicon">◷</span><span class="svalue">{_sidebar_last_updated.strftime("%d %b %Y %H:%M") if _sidebar_last_updated is not None and pd.notna(_sidebar_last_updated) else "—"}</span></div>',
+    unsafe_allow_html=True
+)
+st.sidebar.markdown('<div class="sidebar-connected"><span>⌁</span> Connected</div>', unsafe_allow_html=True)
+
+# Bottom database status card.
+try:
+    _db_rows,_db_first,_db_last,_db_imports=history_database_stats()
+except Exception:
+    _db_rows,_db_first,_db_last,_db_imports=0,None,None,0
+st.sidebar.markdown(
+    f'<div class="sidebar-db-card"><div class="sidebar-db-title">Database Status</div>'
+    f'<div class="sidebar-db-value"><span class="sidebar-db-dot"></span>Connected</div>'
+    f'<div class="sidebar-version">OPP Engineering Monitoring System<br>v2.0.0</div></div>',
+    unsafe_allow_html=True
+)
 
 if page != "Dashboard":
     st.markdown('<div class="opp-page-title">OPP Engineering Monitoring</div>',unsafe_allow_html=True)
