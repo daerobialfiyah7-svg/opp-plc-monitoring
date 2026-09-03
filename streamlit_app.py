@@ -521,6 +521,76 @@ st.markdown("""<style>
 .eh22-empty{background:#f8fafc;border:1px solid #dfe5ee;border-radius:12px;padding:1.5rem;text-align:center;margin-top:.8rem}.eh22-empty-icon{font-size:2rem;color:#98a2b3}.eh22-empty b{display:block;color:#344054;font-size:.82rem;margin-top:.3rem}.eh22-empty span{display:block;color:#98a2b3;font-size:.64rem;margin-top:.25rem}
 @media(max-width:900px){.eh22-header{align-items:flex-start;flex-direction:column}.eh22-hero{align-items:flex-start;flex-direction:column}.eh22-hero-right{text-align:left}.eh22-name{max-width:75vw}}
 
+/* ===== Equipment Health v29 — Engineering Diagnosis ===== */
+.eh29-section-title{
+    font-size:.78rem;font-weight:900;color:#25364d;margin:.95rem 0 .08rem
+}
+.eh29-section-sub{
+    font-size:.61rem;color:#98a2b3;margin-bottom:.55rem
+}
+.eh29-gate{
+    border:1px solid #fed7aa;border-left:4px solid #f79009;background:#fff7ed;
+    border-radius:9px;padding:.58rem .7rem;font-size:.57rem;color:#8a4b08;
+    line-height:1.45;margin-bottom:.6rem
+}
+.eh29-empty{
+    border:1px dashed #d0d5dd;border-radius:9px;background:#fafbfc;
+    padding:.75rem;font-size:.59rem;color:#667085;margin-bottom:.6rem
+}
+.eh29-dx-card{
+    min-height:175px;border:1px solid #dfe5ee;border-top:3px solid #2563eb;
+    border-radius:10px;background:#fff;padding:.7rem;
+    box-shadow:0 2px 7px rgba(16,24,40,.035)
+}
+.eh29-dx-rank{
+    font-size:.48rem;font-weight:900;color:#667085;letter-spacing:.025em
+}
+.eh29-dx-title{
+    font-size:.76rem;font-weight:900;color:#172b4d;margin:.25rem 0 .35rem
+}
+.eh29-dx-card ul{margin:.1rem 0 .45rem;padding-left:1rem}
+.eh29-dx-card li{
+    font-size:.55rem;color:#667085;line-height:1.35;margin:.15rem 0
+}
+.eh29-dx-caution{
+    font-size:.51rem;color:#9a5b00;background:#fffaf5;border-radius:6px;
+    padding:.4rem;line-height:1.35
+}
+.eh29-panel{
+    border:1px solid #dfe5ee;border-radius:10px;background:#fff;
+    padding:.7rem;min-height:260px
+}
+.eh29-panel-title{
+    font-size:.66rem;font-weight:900;color:#25364d
+}
+.eh29-panel-sub{
+    font-size:.52rem;color:#98a2b3;margin:.15rem 0 .5rem
+}
+.eh29-check{
+    display:flex;gap:.45rem;padding:.42rem 0;border-top:1px solid #eef1f5;
+    font-size:.57rem;color:#475467;line-height:1.4
+}
+.eh29-check span{font-size:.72rem;color:#2563eb}
+.eh29-caution{
+    margin-top:.55rem;border-top:1px solid #eef1f5;padding-top:.5rem;
+    font-size:.53rem;color:#8a4b08;line-height:1.4
+}
+.eh29-correlation{
+    border:1px solid #dfe5ee;border-radius:10px;background:#fff;
+    padding:.7rem;margin-top:.6rem
+}
+.eh29-correlation table{width:100%;border-collapse:collapse;font-size:.55rem}
+.eh29-correlation th{
+    text-align:left;color:#667085;background:#f8fafc;padding:.38rem;
+    border-bottom:1px solid #e4e7ec
+}
+.eh29-correlation td{
+    padding:.38rem;border-bottom:1px solid #eef1f5;color:#475467
+}
+@media(max-width:1000px){
+    .eh29-panel{min-height:auto}
+}
+
 /* ===== Equipment Health v28 — Maintenance Context ===== */
 .eh28-section-title{
     font-size:.78rem;font-weight:900;color:#25364d;margin:.95rem 0 .08rem;
@@ -1985,6 +2055,268 @@ def _eh_context_card(title, value, subtitle, cls="neutral"):
     )
 
 
+
+# -------------------------------------------------------------------------
+# Equipment Health v29 — Engineering Diagnosis / Root Cause Assist
+# -------------------------------------------------------------------------
+# This is a differential-diagnosis assistant, NOT an automatic root-cause
+# predictor. It ranks plausible mechanisms from available signal evidence and
+# explicitly asks for field/process verification before intervention.
+# -------------------------------------------------------------------------
+EH29_RULES = [
+    {
+        "id": "MECH_BEARING",
+        "title": "Bearing / rotating mechanical condition",
+        "families": {"vibration", "temperature"},
+        "keywords": ["bearing", "lubric", "alignment", "looseness"],
+        "checks": [
+            "Check bearing vibration and temperature at the affected bearing location.",
+            "Verify lubrication quantity, condition and lubrication interval.",
+            "Inspect coupling/alignment and signs of mechanical looseness.",
+            "Compare drive-end and non-drive-end behaviour where measurements exist.",
+        ],
+        "caution": "Do not attribute high temperature or vibration to bearing damage without confirming operating load, lubrication and field condition.",
+    },
+    {
+        "id": "MECH_LOAD",
+        "title": "Mechanical load / resistance increase",
+        "families": {"load", "vibration", "speed"},
+        "keywords": ["load", "resistance", "friction", "material", "blockage"],
+        "checks": [
+            "Verify motor current/load against normal operating demand.",
+            "Check for mechanical resistance, rubbing, blockage or abnormal material loading.",
+            "Compare speed feedback with commanded/required speed.",
+            "Inspect drive train, coupling and rotating clearances if the load remains elevated.",
+        ],
+        "caution": "High current alone does not prove a mechanical fault; process loading and operating setpoint must be checked first.",
+    },
+    {
+        "id": "FLOW_RESTRICTION",
+        "title": "Flow restriction / valve / downstream resistance",
+        "families": {"flow", "pressure"},
+        "keywords": ["restriction", "valve", "line", "blockage"],
+        "checks": [
+            "Verify upstream and downstream pressure against the process operating point.",
+            "Check valve position/feedback and confirm the valve is responding to command.",
+            "Inspect line, strainer, screen or downstream path for restriction.",
+            "Confirm the process demand and whether the equipment is actually required to deliver flow.",
+        ],
+        "caution": "A low/high flow pattern must be interpreted together with pressure and process demand.",
+    },
+    {
+        "id": "PUMP_PERFORMANCE",
+        "title": "Pump / hydraulic performance",
+        "families": {"flow", "pressure", "load"},
+        "keywords": ["pump", "cavitation", "suction", "discharge", "impeller"],
+        "checks": [
+            "Verify suction condition and discharge pressure at the operating point.",
+            "Check pump flow against the applicable pump curve and process demand.",
+            "Inspect valve lineup, suction restriction and possible air ingress.",
+            "If indicated by the process, inspect for cavitation, impeller wear or recirculation.",
+        ],
+        "caution": "Use the pump curve and actual process conditions before concluding pump degradation.",
+    },
+    {
+        "id": "DRIVE_CONTROL",
+        "title": "Drive / speed-control / instrumentation issue",
+        "families": {"speed", "load", "flow"},
+        "keywords": ["drive", "feedback", "setpoint", "instrument"],
+        "checks": [
+            "Compare command/setpoint with actual feedback where both are available.",
+            "Verify VSD/drive alarms, permissives and operating mode.",
+            "Check instrument health, calibration status and signal wiring/communication.",
+            "Confirm that the process demand is consistent with the commanded operating point.",
+        ],
+        "caution": "A speed or flow deviation may originate in the process, drive or measurement chain.",
+    },
+    {
+        "id": "THERMAL",
+        "title": "Thermal / cooling / lubrication condition",
+        "families": {"temperature", "load"},
+        "keywords": ["cooling", "lubrication", "ambient", "heat"],
+        "checks": [
+            "Verify temperature against load and ambient/process conditions.",
+            "Check cooling fan, cooling water/air and heat-transfer path where applicable.",
+            "Verify lubrication condition and correct lubricant for the component.",
+            "Confirm that the temperature sensor is healthy and physically representative.",
+        ],
+        "caution": "Temperature must be interpreted against load and ambient/process conditions, not as an isolated threshold.",
+    },
+    {
+        "id": "INSTRUMENTATION",
+        "title": "Instrumentation / signal-quality issue",
+        "families": {"flatline", "quality"},
+        "keywords": ["flatline", "stale", "signal", "instrument", "communication"],
+        "checks": [
+            "Verify PLC tag update rate and historian timestamp freshness.",
+            "Compare the signal with local indication or a secondary measurement where available.",
+            "Check transmitter power, wiring, communication and calibration status.",
+            "Confirm equipment operating state before interpreting a zero/constant signal.",
+        ],
+        "caution": "Signal-quality evidence can invalidate an otherwise plausible equipment diagnosis.",
+    },
+]
+
+
+def _eh29_family(parameter="", tag=""):
+    """Classify a signal into an engineering parameter family."""
+    s=f"{parameter} {tag}".upper()
+    if any(k in s for k in ["VIBRATION","VIB","VELOCITY","ACCEL"]):
+        return "vibration"
+    if any(k in s for k in ["TEMPERATURE","TEMP","TIT"]):
+        return "temperature"
+    if any(k in s for k in ["CURRENT","AMP","AMPERE","POWER","PWR","LOAD","TORQUE","IIT"]):
+        return "load"
+    if any(k in s for k in ["SPEED","RPM","VSD","FREQUENCY","HZ"]):
+        return "speed"
+    if any(k in s for k in ["PRESSURE","PRESS","PIT"]):
+        return "pressure"
+    if any(k in s for k in ["FLOW","FLOWMETER","FIT","FQI","RATE","FEED"]):
+        return "flow"
+    return "other"
+
+
+def _eh29_direction_value(row):
+    d=str(row.get("Direction","Stable"))
+    return 1 if d=="Increasing" else -1 if d=="Decreasing" else 0
+
+
+def _eh29_build_context(health):
+    ctx={}
+    for _,r in health.iterrows():
+        fam=_eh29_family(r.get("Parameter",""),r.get("PLC Tag",""))
+        ctx.setdefault(fam,[]).append(r)
+    return ctx
+
+
+def _eh29_rank_diagnoses(health, quality_gate=False, parameter_quality_gate=False):
+    """Rank differential mechanisms from available evidence.
+
+    Scores are evidence-ranking scores, not probabilities.
+    """
+    if health is None or health.empty:
+        return []
+
+    ctx=_eh29_build_context(health)
+    bad=health[health["Condition"].isin(["Critical","Attention","Deteriorating"])].copy()
+    abnormal_fams=set(_eh29_family(r.get("Parameter",""),r.get("PLC Tag","")) for _,r in bad.iterrows())
+
+    # Signal quality is itself a diagnostic hypothesis.
+    flatline_n=0
+    for _,r in health.iterrows():
+        tag=str(r.get("PLC Tag",""))
+        q=_eh_parameter_quality(df,tag) if "df" in globals() else {}
+        if q.get("flatline",False) or q.get("status") in {"STALE","NO RECENT DATA","NO VALID DATA","MISSING TAG"}:
+            flatline_n+=1
+
+    results=[]
+    for rule in EH29_RULES:
+        score=0.0
+        evidence=[]
+        families=rule["families"]
+
+        present=families & set(ctx.keys())
+        abnormal=families & abnormal_fams
+        score += 18*len(abnormal) + 5*len(present)
+
+        # Stronger paired-pattern evidence.
+        if rule["id"]=="MECH_BEARING" and "vibration" in ctx and "temperature" in ctx:
+            v=ctx["vibration"]; tm=ctx["temperature"]
+            if any(str(x.get("Condition")) in {"Critical","Attention","Deteriorating"} for x in v):
+                score+=22; evidence.append("abnormal vibration signal")
+            if any(str(x.get("Condition")) in {"Critical","Attention","Deteriorating"} for x in tm):
+                score+=18; evidence.append("abnormal temperature signal")
+
+        elif rule["id"]=="MECH_LOAD":
+            if "load" in ctx and any(_eh29_direction_value(x)>0 for x in ctx["load"]):
+                score+=18; evidence.append("increasing load/current")
+            if "vibration" in ctx and any(_eh29_direction_value(x)>0 for x in ctx["vibration"]):
+                score+=15; evidence.append("increasing vibration")
+            if "speed" in ctx and any(_eh29_direction_value(x)<0 for x in ctx["speed"]):
+                score+=10; evidence.append("decreasing speed")
+
+        elif rule["id"]=="FLOW_RESTRICTION":
+            if "flow" in ctx and "pressure" in ctx:
+                score+=12; evidence.append("flow + pressure context available")
+                low_flow=any(_eh29_direction_value(x)<0 or x.get("Deviation Side")=="Below baseline" for x in ctx["flow"])
+                high_press=any(_eh29_direction_value(x)>0 or x.get("Deviation Side")=="Above baseline" for x in ctx["pressure"])
+                if low_flow and high_press:
+                    score+=30; evidence.append("low-flow / high-pressure pattern")
+
+        elif rule["id"]=="PUMP_PERFORMANCE":
+            if {"flow","pressure"}.issubset(ctx):
+                score+=14; evidence.append("flow + pressure available")
+            if "load" in ctx:
+                score+=5; evidence.append("load context available")
+
+        elif rule["id"]=="DRIVE_CONTROL":
+            if "speed" in ctx:
+                score+=14; evidence.append("speed feedback available")
+            if "load" in ctx:
+                score+=8; evidence.append("load feedback available")
+            if "flow" in ctx:
+                score+=7; evidence.append("process response signal available")
+
+        elif rule["id"]=="THERMAL":
+            if "temperature" in ctx and any(str(x.get("Condition"))!="Normal" for x in ctx["temperature"]):
+                score+=22; evidence.append("temperature deviation")
+            if "load" in ctx and any(_eh29_direction_value(x)>0 for x in ctx["load"]):
+                score+=14; evidence.append("increasing load context")
+
+        elif rule["id"]=="INSTRUMENTATION":
+            score += min(flatline_n*12,36)
+            if quality_gate:
+                score += 25; evidence.append("equipment data is stale/unverified")
+            if parameter_quality_gate:
+                score += 18; evidence.append("parameter data-quality issue")
+            if flatline_n:
+                evidence.append(f"{flatline_n} signal(s) require quality verification")
+
+        # Remove weak diagnoses that have no usable evidence.
+        if score>=18:
+            evidence=list(dict.fromkeys(evidence))
+            results.append({
+                "id":rule["id"], "title":rule["title"], "score":min(100,int(round(score))),
+                "evidence":evidence, "checks":rule["checks"], "caution":rule["caution"],
+            })
+
+    results.sort(key=lambda x:(-x["score"], x["title"]))
+    return results[:5]
+
+
+def _eh29_correlation_evidence(health, df, max_pairs=5):
+    """Find useful co-movement among monitored signals; correlation is
+    presented only as supporting evidence, never as causality."""
+    if health is None or health.empty or df is None or df.empty or "ArchiveTime" not in df.columns:
+        return []
+
+    tags=[str(x) for x in health["PLC Tag"].tolist() if str(x) in df.columns]
+    if len(tags)<2:
+        return []
+
+    work=pd.DataFrame({"ArchiveTime":pd.to_datetime(df["ArchiveTime"],errors="coerce")})
+    pairs=[]
+    for tag in tags:
+        x=pd.to_numeric(df[tag],errors="coerce")
+        work[tag]=x
+
+    for i,a in enumerate(tags):
+        for b in tags[i+1:]:
+            pair=work[[a,b]].dropna()
+            if len(pair)<30:
+                continue
+            corr=float(pair[a].corr(pair[b]))
+            if not np.isfinite(corr) or abs(corr)<0.70:
+                continue
+            ra=health[health["PLC Tag"]==a]
+            rb=health[health["PLC Tag"]==b]
+            pa=str(ra.iloc[0]["Parameter"]) if not ra.empty else a
+            pb=str(rb.iloc[0]["Parameter"]) if not rb.empty else b
+            pairs.append((abs(corr),corr,pa,pb,a,b,len(pair)))
+    pairs.sort(reverse=True)
+    return pairs[:max_pairs]
+
+
 if page == "Dashboard":
     # -------------------------------------------------------------------------
     # Dashboard v15 — executive engineering view.
@@ -2860,6 +3192,113 @@ elif page == "Equipment Health":
                 f'</div>',
                 unsafe_allow_html=True,
             )
+
+            # -----------------------------------------------------------------
+            # Stage 5 — Engineering Diagnosis / Root Cause Assist
+            # -----------------------------------------------------------------
+            diagnoses = _eh29_rank_diagnoses(
+                health,
+                quality_gate=quality_gate,
+                parameter_quality_gate=parameter_quality_gate,
+            )
+            corr_pairs = _eh29_correlation_evidence(health, df)
+
+            st.markdown(
+                '<div class="eh29-section-title">🧠 ENGINEERING DIAGNOSIS</div>'
+                '<div class="eh29-section-sub">Differential diagnosis — rank plausible mechanisms from available signal evidence; confirm in the field before intervention</div>',
+                unsafe_allow_html=True,
+            )
+
+            if quality_gate or parameter_quality_gate:
+                st.markdown(
+                    '<div class="eh29-gate">⚠ <b>DIAGNOSTIC GATE:</b> current evidence is not sufficiently verified. '
+                    'The cards below are <b>historical / diagnostic hypotheses only</b>; do not treat them as present equipment failure conclusions.</div>',
+                    unsafe_allow_html=True,
+                )
+
+            if not diagnoses:
+                st.markdown(
+                    '<div class="eh29-empty"><b>No defensible diagnostic hypothesis yet.</b> '
+                    'More verified signal evidence or a clearer parameter relationship is required.</div>',
+                    unsafe_allow_html=True,
+                )
+            else:
+                dcols=st.columns(min(3,len(diagnoses)), gap="medium")
+                for j,diag in enumerate(diagnoses[:3]):
+                    evidence_html="".join(f'<li>{x}</li>' for x in diag["evidence"]) or "<li>Context evidence available</li>"
+                    dcols[j].markdown(
+                        f'<div class="eh29-dx-card">'
+                        f'<div class="eh29-dx-rank">#{j+1} · EVIDENCE SCORE {diag["score"]}/100</div>'
+                        f'<div class="eh29-dx-title">{diag["title"]}</div>'
+                        f'<ul>{evidence_html}</ul>'
+                        f'<div class="eh29-dx-caution">⚠ {diag["caution"]}</div>'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
+
+                selected_dx=st.selectbox(
+                    "🔎 Investigate diagnostic hypothesis",
+                    [d["id"] for d in diagnoses],
+                    format_func=lambda x: next((d["title"] for d in diagnoses if d["id"]==x),x),
+                    key=f"eh29_dx_{selected_eq}",
+                )
+                dx=next(d for d in diagnoses if d["id"]==selected_dx)
+
+                dx1,dx2=st.columns([1.15,1.0],gap="medium")
+                with dx1:
+                    st.markdown(
+                        '<div class="eh29-panel"><div class="eh29-panel-title">🔬 SUPPORTING EVIDENCE</div>'
+                        '<div class="eh29-panel-sub">Signals that support or challenge the selected mechanism</div>',
+                        unsafe_allow_html=True,
+                    )
+                    support_rows=[]
+                    rule_fams=next((r["families"] for r in EH29_RULES if r["id"]==dx["id"]),set())
+                    for _,rr in health.iterrows():
+                        fam=_eh29_family(rr.get("Parameter",""),rr.get("PLC Tag",""))
+                        if fam not in rule_fams and dx["id"]!="INSTRUMENTATION":
+                            continue
+                        support_rows.append({
+                            "Parameter":str(rr["Parameter"]),
+                            "Tag":str(rr["PLC Tag"]),
+                            "Condition":str(rr["Condition"]),
+                            "Direction":str(rr["Direction"]),
+                            "Shift":float(rr["Shift %"]),
+                            "Deviation":float(rr["Deviation Sigma"]),
+                        })
+                    if support_rows:
+                        evdf=pd.DataFrame(support_rows).sort_values(["Deviation","Shift"],ascending=[False,False]).head(8)
+                        st.dataframe(evdf, width="stretch", hide_index=True, height=min(330,120+len(evdf)*32))
+                    else:
+                        st.markdown('<div class="eh29-empty">No direct supporting parameter family is available.</div>',unsafe_allow_html=True)
+                    st.markdown('</div>',unsafe_allow_html=True)
+
+                with dx2:
+                    checks="".join(
+                        f'<div class="eh29-check"><span>□</span><div>{c}</div></div>'
+                        for c in dx["checks"]
+                    )
+                    st.markdown(
+                        f'<div class="eh29-panel"><div class="eh29-panel-title">🛠 FIELD VERIFICATION CHECKLIST</div>'
+                        f'<div class="eh29-panel-sub">Use these checks to confirm or reject the hypothesis</div>'
+                        f'{checks}'
+                        f'<div class="eh29-caution"><b>Engineering caution:</b> {dx["caution"]}</div>'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
+
+            if corr_pairs:
+                corr_html="".join(
+                    f'<tr><td>{a}</td><td>{b}</td><td>{corr:+.2f}</td><td>{n:,}</td></tr>'
+                    for _,corr,a,b,ta,tb,n in corr_pairs
+                )
+                st.markdown(
+                    '<div class="eh29-correlation">'
+                    '<div class="eh29-panel-title">🔗 SIGNAL RELATIONSHIPS</div>'
+                    '<div class="eh29-panel-sub">Strong historical co-movement (|r| ≥ 0.70). Correlation supports investigation but does not establish causality.</div>'
+                    '<table><thead><tr><th>Signal A</th><th>Signal B</th><th>Correlation r</th><th>Samples</th></tr></thead>'
+                    f'<tbody>{corr_html}</tbody></table></div>',
+                    unsafe_allow_html=True,
+                )
 
             # -----------------------------------------------------------------
             # Diagnostic overview
