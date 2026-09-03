@@ -50,6 +50,95 @@ st.markdown("""<style>
 }
 
 
+
+/* V21 — Data Coverage visual polish */
+.coverage-date-v19,
+.coverage-date-v19 b,
+.coverage-date-v19 small,
+.coverage-label-v21,
+.coverage-value-v21,
+.coverage-note-v21{
+    font-family:inherit!important;
+}
+.coverage-date-v19>div{
+    padding-top:.34rem!important;
+    padding-bottom:.42rem!important;
+}
+.coverage-date-v19 b{
+    font-size:.72rem!important;
+    font-weight:700!important;
+    color:#344054!important;
+}
+.coverage-date-v19 small{
+    font-size:.60rem!important;
+    color:#98a2b3!important;
+    top:.38rem!important;
+}
+.coverage-icon-v19{
+    font-size:.76rem!important;
+    color:#667085!important;
+    top:.31rem!important;
+}
+.coverage-summary-v21{
+    display:flex!important;
+    align-items:center!important;
+    gap:.72rem!important;
+    padding:.52rem 0 .28rem!important;
+}
+.coverage-ring-v21{
+    width:58px!important;
+    height:58px!important;
+    min-width:58px!important;
+    border-radius:50%!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    background:#087443!important;
+    color:#fff!important;
+    border:4px solid #087443!important;
+    box-shadow:0 3px 8px rgba(8,116,67,.18)!important;
+    position:relative!important;
+}
+.coverage-ring-v21:after{
+    content:""!important;
+    position:absolute!important;
+    inset:0!important;
+    border-radius:50%!important;
+    border:1px solid rgba(255,255,255,.16)!important;
+}
+.coverage-ring-v21 span{
+    position:relative!important;
+    z-index:1!important;
+    color:#fff!important;
+    font-family:inherit!important;
+    font-size:.72rem!important;
+    font-weight:800!important;
+    letter-spacing:-.01em!important;
+}
+.coverage-copy-v21{
+    min-width:0!important;
+}
+.coverage-label-v21{
+    color:#667085!important;
+    font-size:.62rem!important;
+    font-weight:500!important;
+    line-height:1.2!important;
+}
+.coverage-value-v21{
+    color:#344054!important;
+    font-size:.76rem!important;
+    font-weight:750!important;
+    line-height:1.35!important;
+    margin-top:.10rem!important;
+}
+.coverage-note-v21{
+    color:#98a2b3!important;
+    font-size:.58rem!important;
+    font-weight:500!important;
+    line-height:1.25!important;
+    margin-top:.04rem!important;
+}
+
 /* V20 — visible but subtle sidebar boundary. No fixed width. */
 [data-testid="stSidebar"]{
     box-shadow:1px 0 0 #e5e7eb;
@@ -1364,15 +1453,20 @@ st.sidebar.markdown(
 )
 st.sidebar.markdown(
     f'<div class="coverage-date-v19">'
-    f'<div><span class="coverage-icon-v19">▣</span><b>{_sidebar_min_dt.strftime("%d %b %Y %H:%M") if _sidebar_min_dt is not None else "—"}</b><small>First Data</small></div>'
-    f'<div><span class="coverage-icon-v19">▣</span><b>{_sidebar_max_dt.strftime("%d %b %Y %H:%M") if _sidebar_max_dt is not None else "—"}</b><small>Latest Data</small></div>'
+    f'<div><span class="coverage-icon-v19">▣</span>'
+    f'<b>{_sidebar_min_dt.strftime("%d %b %Y") if _sidebar_min_dt is not None else "—"}</b>'
+    f'<small>First Data</small></div>'
+    f'<div><span class="coverage-icon-v19">▣</span>'
+    f'<b>{_sidebar_max_dt.strftime("%d %b %Y") if _sidebar_max_dt is not None else "—"}</b>'
+    f'<small>Latest Data</small></div>'
     f'</div>'
-    f'<div class="coverage-summary-v19">'
-    f'<div class="sidebar-ring-v19" style="--pct:{min(100,max(0,_sidebar_cov)):.1f}%"><span>{_sidebar_cov:.1f}%</span></div>'
-    f'<div><div class="coverage-label-v19">Data Coverage</div>'
-    f'<div class="coverage-value-v19">{_sidebar_unique_days:,} / {_sidebar_data_days:,} Days</div>'
-    f'<div class="coverage-note-v19">Historical data available</div></div>'
-    f'</div>',
+    f'<div class="coverage-summary-v21">'
+    f'<div class="coverage-ring-v21"><span>{_sidebar_cov:.1f}%</span></div>'
+    f'<div class="coverage-copy-v21">'
+    f'<div class="coverage-label-v21">Data Coverage</div>'
+    f'<div class="coverage-value-v21">{_sidebar_unique_days:,} / {_sidebar_data_days:,} Days</div>'
+    f'<div class="coverage-note-v21">Historical data available</div>'
+    f'</div></div>',
     unsafe_allow_html=True,
 )
 
