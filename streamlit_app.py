@@ -299,6 +299,17 @@ st.markdown("""<style>
 
 
 /* ===== Dashboard v15 — bright, solid-color executive UI ===== */
+
+/* V16 spacing polish: each dashboard block is visually independent. */
+.v15-row-gap{height:1rem}
+[data-testid="stHorizontalBlock"]{column-gap:1rem!important}
+.v15-kpi{margin-bottom:0!important}
+.v15-panel-head{border-radius:8px 8px 0 0}
+.v15-condition{box-shadow:0 1px 3px rgba(16,24,40,.05)}
+.v15-mini{box-shadow:0 1px 3px rgba(16,24,40,.04)}
+.v15-priority{box-shadow:0 2px 5px rgba(16,24,40,.10)}
+.v15-dq{box-shadow:0 1px 3px rgba(16,24,40,.04)}
+.v15-table{background:#fff;border:1px solid #e4e7ec;border-radius:7px;overflow:hidden}
 .v15-header{padding:.15rem 0 .7rem}.v15-title{font-size:1.72rem;font-weight:850;color:#14213d;line-height:1.12}.v15-live{display:inline-block;margin-left:.35rem;padding:.22rem .48rem;border-radius:999px;background:#e7f8ee;color:#07895a;font-size:.62rem;font-weight:850;vertical-align:middle}.v15-subtitle{font-size:.78rem;color:#667085;margin-top:.32rem;line-height:1.4}.v15-period{border:1px solid #dce3ec;background:#f8fafc;border-radius:9px;padding:.55rem .7rem;min-height:68px;box-sizing:border-box}.v15-period-label{font-size:.59rem;font-weight:800;color:#667085}.v15-period-value{font-size:.79rem;font-weight:800;color:#172b4d;margin-top:.18rem}.v15-period-small{font-size:.59rem;color:#98a2b3;margin-top:.1rem}.v15-kpi{border-radius:8px;min-height:104px;padding:.82rem .85rem;box-sizing:border-box;color:#fff;box-shadow:0 3px 8px rgba(16,24,40,.13);margin-bottom:.68rem}.v15-kpi-top{font-size:.67rem;font-weight:800;display:flex;align-items:center;gap:.35rem;line-height:1.2}.v15-kpi-value{font-size:1.72rem;font-weight:900;line-height:1.05;margin-top:.38rem}.v15-kpi-small{font-size:.61rem;font-weight:600;margin-top:.35rem;opacity:.95}.v15-panel-head{height:38px;margin:-.65rem -.7rem .58rem;padding:0 .7rem;display:flex;align-items:center;background:#edf2f7;border-bottom:1px solid #dfe5ee;color:#25364d;font-size:.78rem;font-weight:850}.v15-panel-head span{font-size:.62rem;font-weight:600;color:#98a2b3;margin-left:.4rem}.v15-panel-sub{font-size:.68rem;color:#7b8798;margin-bottom:.55rem}.v15-stack{height:14px;display:flex;border-radius:5px;overflow:hidden;background:#eef1f5;border:1px solid #e1e6ec;margin:.25rem 0 .72rem}.v15-stack>div{height:100%}.v15-condition{background:#f8fafc;border:1px solid #e1e6ee;border-radius:7px;padding:.58rem .62rem;min-height:92px;box-sizing:border-box}.v15-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:.3rem}.v15-condition-label{font-size:.59rem;font-weight:850;color:#475467;display:inline}.v15-condition-count{font-size:1.35rem;font-weight:900;color:#172b4d;line-height:1.1;margin-top:.32rem}.v15-condition-small{font-size:.58rem;color:#98a2b3;margin-top:.2rem;line-height:1.2}.v15-interpret{background:#eef6ff;border:1px solid #bfdbfe;border-radius:7px;padding:.55rem .62rem;margin-top:.55rem;color:#175cd3;font-size:.65rem;line-height:1.35}.v15-action-main{color:#fff;border-radius:8px;padding:.72rem .72rem;display:flex;align-items:center;gap:.65rem;min-height:86px;box-sizing:border-box}.v15-action-number{font-size:2.25rem;font-weight:900;line-height:1}.v15-action-title{font-size:.73rem;font-weight:850}.v15-action-small{font-size:.59rem;margin-top:.18rem;opacity:.92;line-height:1.25}.v15-action-icon{font-size:1.9rem;margin-left:auto;opacity:.95}.v15-mini{background:#f8fafc;border:1px solid #e2e8f0;border-radius:7px;padding:.5rem .48rem;min-height:70px;box-sizing:border-box;font-size:.54rem;color:#667085}.v15-mini strong{display:block;font-size:1.05rem;color:#172b4d;margin-top:.25rem}.v15-focus{background:#eef6ff;border:1px solid #bfdbfe;border-radius:7px;padding:.58rem .65rem;color:#175cd3;font-size:.68rem;line-height:1.35;margin-bottom:.55rem}.v15-priority{color:#fff;border-radius:8px;min-height:100px;padding:.62rem .65rem;box-sizing:border-box;box-shadow:0 2px 6px rgba(16,24,40,.12)}.v15-priority .vp-top{font-size:.65rem;font-weight:850}.v15-priority .vp-count{font-size:1.65rem;font-weight:900;line-height:1;margin-top:.28rem}.v15-priority .vp-desc{font-size:.58rem;margin-top:.3rem;line-height:1.15}.v15-dq{border:1px solid #dfe5ee;border-radius:7px;background:#f8fafc;min-height:76px;padding:.52rem .5rem;box-sizing:border-box}.v15-dq>div{font-size:.55rem;font-weight:800;color:#667085}.v15-dq strong{display:block;font-size:1.25rem;color:#172b4d;margin-top:.22rem}.v15-dq.high{background:#f0fdf4;border-color:#bbf7d0}.v15-dq.high strong{color:#07895a}.v15-dq.medium{background:#fff7ed;border-color:#fed7aa}.v15-dq.medium strong{color:#dc6803}.v15-dq.low{background:#fff5f5;border-color:#fecaca}.v15-dq.low strong{color:#d92d20}.v15-coverage{margin-top:.58rem}.v15-coverage>div:first-child{display:flex;justify-content:space-between;font-size:.61rem;color:#667085}.v15-coverage b{color:#07895a;font-size:.76rem}.v15-cover-track{height:8px;background:#e8edf3;border-radius:6px;overflow:hidden;margin:.3rem 0}.v15-cover-track>div{height:100%;background:#12b76a}.v15-coverage small{font-size:.55rem;color:#98a2b3}.v15-table{width:100%;border-collapse:collapse;font-size:.59rem;color:#344054}.v15-table th{background:#f4f7fa;color:#667085;text-align:left;font-weight:800;padding:.38rem .35rem;border-bottom:1px solid #dfe5ee}.v15-table td{padding:.4rem .35rem;border-bottom:1px solid #edf0f4;vertical-align:middle}.v15-table td span{color:#98a2b3;font-size:.53rem}.v15-status{font-weight:850}.v15-footer{display:flex;gap:1.1rem;flex-wrap:wrap;align-items:center;background:#f8fafc;border:1px solid #dfe5ee;border-radius:8px;padding:.58rem .7rem;margin-top:.7rem;font-size:.57rem;color:#667085}.v15-footer b{color:#172b4d}.v15-footer span:first-child{color:#07895a;font-weight:750}.v15-panel-head+div{box-sizing:border-box}@media(max-width:900px){.v15-title{font-size:1.35rem}.v15-period{margin-top:.2rem}.v15-action-main{min-height:78px}.v15-footer{gap:.6rem}}
 
 </style>""",unsafe_allow_html=True)
@@ -1127,7 +1138,7 @@ if page == "Dashboard":
         p4n = int((screening["Screening Priority"] == "P4").sum())
 
         # Header + period controls.
-        hleft, hmid, hright = st.columns([1.7, 1.0, .7], gap="small")
+        hleft, hmid, hright = st.columns([1.7, 1.0, .7], gap="medium")
         with hleft:
             st.markdown(
                 '<div class="v15-header"><div class="v15-title">⚙️ OPP Engineering Monitoring Dashboard <span class="v15-live">● LIVE</span></div>'
@@ -1145,7 +1156,7 @@ if page == "Dashboard":
                 st.rerun()
 
         # Executive KPI strip.
-        k1, k2, k3, k4, k5 = st.columns(5, gap="small")
+        k1, k2, k3, k4, k5 = st.columns(5, gap="medium")
         kpi_data = [
             (k1, "#1769E0", "🔧", "SCREENED EQUIPMENT", total_eq, "Equipment with sufficient PLC history"),
             (k2, "#0A9F78", "✓", "HEALTHY EQUIPMENT", healthy, f"{healthy/max(total_eq,1)*100:.1f}% of screened"),
@@ -1159,7 +1170,7 @@ if page == "Dashboard":
                 f'<div class="v15-kpi-value">{value:,}</div><div class="v15-kpi-small">{small}</div></div>', unsafe_allow_html=True)
 
         # ---------------- Plant Condition + Action Center ----------------
-        left, right = st.columns([1.55, 1], gap="small")
+        left, right = st.columns([1.55, 1], gap="medium")
         with left:
             with st.container(border=True, key="dash_v15_condition"):
                 st.markdown('<div class="v15-panel-head">🩺 PLANT CONDITION OVERVIEW <span>• current screening state</span></div>', unsafe_allow_html=True)
@@ -1173,7 +1184,7 @@ if page == "Dashboard":
                     if n:
                         segs.append(f'<div style="width:{n/max(total_eq,1)*100:.2f}%;background:{color}"></div>')
                 st.markdown(f'<div class="v15-stack">{"".join(segs)}</div>', unsafe_allow_html=True)
-                c1,c2,c3,c4 = st.columns(4, gap="small")
+                c1,c2,c3,c4 = st.columns(4, gap="medium")
                 cards = [
                     (c1,"#12B76A","HEALTHY",healthy,"Routine condition",None),
                     (c2,"#F5B82E","DETERIORATING",deteriorating,"Watch trend", "DETERIORATING"),
@@ -1191,7 +1202,7 @@ if page == "Dashboard":
             with st.container(border=True, key="dash_v15_actions"):
                 st.markdown('<div class="v15-panel-head">🛠 ACTION CENTER <span>• engineering follow-up</span></div>', unsafe_allow_html=True)
                 st.markdown(f'<div class="v15-action-main" style="background:#6246C9"><div class="v15-action-number">{open_count:,}</div><div><div class="v15-action-title">OPEN ENGINEERING FINDINGS</div><div class="v15-action-small">Findings awaiting investigation, action or verification.</div></div><div class="v15-action-icon">☑</div></div>', unsafe_allow_html=True)
-                a1,a2,a3,a4 = st.columns(4, gap="small")
+                a1,a2,a3,a4 = st.columns(4, gap="medium")
                 status_counts = {s:int((action_df["Status"]==s).sum()) if not action_df.empty and "Status" in action_df else 0 for s in ACTION_STATUSES}
                 for col, label, n, color, icon in [
                     (a1,"OPEN",status_counts["OPEN"],"#1769E0","🔎"),(a2,"INVESTIGATION",status_counts["INVESTIGATION"],"#F28C00","🧭"),
@@ -1200,14 +1211,16 @@ if page == "Dashboard":
                 st.button("🛠 Open Action Center →", key="dash_v15_action", use_container_width=True,
                           on_click=_navigate_dashboard, args=("✓  Action Center", None))
 
+        st.markdown('<div class="v15-row-gap"></div>', unsafe_allow_html=True)
+
         # ---------------- Engineering Focus + Data Quality ----------------
-        left, right = st.columns([1.55, 1], gap="small")
+        left, right = st.columns([1.55, 1], gap="medium")
         with left:
             with st.container(border=True, key="dash_v15_focus"):
                 st.markdown('<div class="v15-panel-head">🎯 ENGINEERING FOCUS <span>• what should be looked at first?</span></div>', unsafe_allow_html=True)
                 lead = "P1 immediate review" if p1n else "P2 planned inspection" if p2n else "routine monitoring"
                 st.markdown(f'<div class="v15-focus"><b>{nonhealthy:,} equipment</b> are outside the healthy screening state. Current screening focus: <b>{lead}</b>.</div>', unsafe_allow_html=True)
-                q1,q2,q3,q4 = st.columns(4, gap="small")
+                q1,q2,q3,q4 = st.columns(4, gap="medium")
                 for col, p, n, desc, color in [
                     (q1,"P1",p1n,"Immediate Review","#E63950"),(q2,"P2",p2n,"Planned Inspection","#F79009"),
                     (q3,"P3",p3n,"Monitoring","#D9A514"),(q4,"P4",p4n,"Routine","#12A66F")]:
@@ -1218,7 +1231,7 @@ if page == "Dashboard":
         with right:
             with st.container(border=True, key="dash_v15_quality"):
                 st.markdown('<div class="v15-panel-head">📊 DATA QUALITY & COVERAGE <span>• mapping evidence</span></div>', unsafe_allow_html=True)
-                d1,d2,d3,d4 = st.columns(4, gap="small")
+                d1,d2,d3,d4 = st.columns(4, gap="medium")
                 for col,label,n,cls in [(d1,"PLC TAGS",len(master),"neutral"),(d2,"HIGH",high,"high"),(d3,"MEDIUM",medium,"medium"),(d4,"LOW",low,"low")]:
                     col.markdown(f'<div class="v15-dq {cls}"><div>{label}</div><strong>{n:,}</strong></div>', unsafe_allow_html=True)
                 cov = f"{coverage_pct:.1f}%" if coverage_pct is not None else "—"
@@ -1226,8 +1239,10 @@ if page == "Dashboard":
                 st.button("📊 Open Data Import / Coverage →", key="dash_v15_data", use_container_width=True,
                           on_click=_navigate_dashboard, args=("⇧  Data Import", None))
 
+        st.markdown('<div class="v15-row-gap"></div>', unsafe_allow_html=True)
+
         # ---------------- Equipment Health Summary + Screening Overview ----------------
-        left, right = st.columns([1.25, 1], gap="small")
+        left, right = st.columns([1.25, 1], gap="medium")
         with left:
             with st.container(border=True, key="dash_v15_health_summary"):
                 st.markdown('<div class="v15-panel-head">🔧 EQUIPMENT HEALTH SUMMARY <span>• highest concern first</span></div>', unsafe_allow_html=True)
@@ -1247,7 +1262,7 @@ if page == "Dashboard":
                           on_click=_navigate_dashboard, args=("〽  Equipment Health", None))
 
         with right:
-            with st.container(border=True, key="dash_v15_trend"):
+            with st.container(border=True, key="dash_v15_trend_panel"):
                 st.markdown('<div class="v15-panel-head">📈 SCREENING OVERVIEW <span>• recent historical signal</span></div>', unsafe_allow_html=True)
                 if not df.empty and "ArchiveTime" in df.columns:
                     tmp = df[["ArchiveTime"]].copy()
