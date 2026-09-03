@@ -503,7 +503,9 @@ st.markdown("""<style>
 .eh22-panel-sub{font-size:.61rem;color:#98a2b3;margin:.28rem 0 .5rem}
 .eh22-dist-row{display:grid;grid-template-columns:1fr auto 35px;align-items:center;gap:.35rem;padding:.43rem .38rem;border-bottom:1px solid #f0f2f5;font-size:.63rem;color:#475467}
 .eh22-dist-row:last-child{border-bottom:0}.eh22-dist-row strong{font-size:.9rem;color:#172b4d}.eh22-dist-row small{text-align:right;color:#98a2b3}
-.eh22-mini-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:.3rem}.eh22-mini-dot.normal{background:#12b76a}.eh22-mini-dot.deteriorating{background:#f5b82e}.eh22-mini-dot.attention{background:#f79009}.eh22-mini-dot.critical{background:#f04438}
+.eh22-mini-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:.3rem}.eh22-mini-dot.normal{background:#12b76a}
+.eh22-mini-dot.unverified{background:#94a3b8}
+.eh22-mini-dot.deteriorating{background:#f5b82e}.eh22-mini-dot.attention{background:#f79009}.eh22-mini-dot.critical{background:#f04438}
 .eh22-abnormal-row{display:flex;justify-content:space-between;align-items:center;gap:.6rem;padding:.48rem .42rem;border-bottom:1px solid #edf0f4}
 .eh22-abnormal-row:last-child{border-bottom:0}.eh22-abnormal-main{display:flex;align-items:center;gap:.35rem;min-width:0}.eh22-abnormal-main>b{font-size:.65rem;color:#344054;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.eh22-tag{font-size:.55rem;color:#98a2b3;white-space:nowrap}
 .eh22-status-pill{font-size:.5rem;font-weight:900;border-radius:999px;padding:.18rem .32rem;white-space:nowrap}.eh22-status-pill.critical{color:#c81e1e;background:#fff1f2}.eh22-status-pill.attention{color:#c2410c;background:#fff7ed}.eh22-status-pill.deteriorating{color:#a16207;background:#fffbeb}
@@ -1064,45 +1066,71 @@ def _eh_freshness(ts):
     return {"state": state, "class": cls, "hours": age_h, "label": t.strftime("%d %b %Y · %H:%M WITA")}
 
 def _eh_parameter_quality(df, tag, min_points=20):
-    """Return transparent data-quality evidence for one PLC tag."""
+    """Return transparent data-quality evidence for one PLC tag.
+
+    Data quality is separate from condition. Stale/no-data evidence is never
+    presented as a Normal condition.
+    """
+    base = {
+        "status": "MISSING TAG", "class": "bad", "valid": 0, "unique": 0,
+        "latest": pd.NaT, "fresh_pct": 0.0, "label": "MISSING TAG",
+        "verified": False, "flatline": False,
+    }
     if tag not in df.columns or "ArchiveTime" not in df.columns:
-        return {"status": "MISSING TAG", "class": "bad", "valid": 0, "unique": 0, "latest": pd.NaT, "fresh_pct": 0.0}
+        return base
+
     x = pd.DataFrame({
         "ts": pd.to_datetime(df["ArchiveTime"], errors="coerce"),
         "v": pd.to_numeric(df[tag], errors="coerce"),
-    }).replace([np.inf, -np.inf], np.nan).dropna(subset=["ts", "v"]).sort_values("ts")
+    }).replace([np.inf, -np.inf], np.nan).dropna(
+        subset=["ts", "v"]
+    ).sort_values("ts")
+
     n = len(x)
     if n == 0:
-        return {"status": "NO VALID DATA", "class": "bad", "valid": 0, "unique": 0, "latest": pd.NaT, "fresh_pct": 0.0}
+        base.update({"status": "NO VALID DATA", "label": "NO VALID DATA"})
+        return base
+
     latest = x["ts"].iloc[-1]
     freshness = _eh_freshness(latest)
     unique = int(x["v"].nunique(dropna=True))
     flatline = n >= min_points and unique <= 1
-    # Compare timestamps in UTC to avoid server-time / plant-time ambiguity.
+
     ts_utc = pd.to_datetime(x["ts"], errors="coerce", utc=True)
     now_utc = pd.Timestamp.now(tz="UTC")
     recent_cut = now_utc - pd.Timedelta(hours=24)
     fresh_pct = float((ts_utc >= recent_cut).mean() * 100)
+
     if flatline:
-        status, cls = "FLATLINE SUSPECT", "warning"
+        status, cls, label, verified = "FLATLINE", "warning", "FLATLINE — VERIFY OPERATING STATE", False
     elif n < min_points:
-        status, cls = f"INSUFFICIENT ({n} pts)", "warning"
+        status, cls, label, verified = "INSUFFICIENT", "warning", f"INSUFFICIENT DATA · {n} pts", False
     elif freshness["state"] in {"STALE", "NO RECENT DATA"}:
-        status, cls = freshness["state"], "warning"
+        status, cls, label, verified = freshness["state"], "warning", freshness["state"], False
+    elif freshness["state"] == "NO DATA":
+        status, cls, label, verified = "NO DATA", "bad", "NO DATA", False
     else:
-        status, cls = "VALID", "good"
-    return {"status": status, "class": cls, "valid": n, "unique": unique, "latest": latest, "fresh_pct": fresh_pct}
+        status, cls, label, verified = "VALID", "good", "VALID", True
+
+    return {
+        "status": status, "class": cls, "valid": n, "unique": unique,
+        "latest": latest, "fresh_pct": fresh_pct, "label": label,
+        "verified": verified, "flatline": flatline,
+    }
+
 
 def _eh_recommendation(row, quality, freshness_state):
     """Recommendation must reflect condition AND evidence quality."""
     if quality["status"] in {"NO VALID DATA", "MISSING TAG"} or freshness_state == "NO DATA":
         return "Data unavailable — verify PLC tag, historian connection and instrument signal before assessing equipment condition."
-    if quality["status"] == "INSUFFICIENT ({} pts)".format(quality["valid"]):
+    if quality["status"] == "INSUFFICIENT":
         return "Build sufficient historical evidence before intervention; verify signal availability and operating context."
-    if quality["status"] == "FLATLINE SUSPECT":
-        return "Verify instrument signal and equipment operating state; a flatline may indicate standby operation, signal freeze or instrumentation issue."
-    if freshness_state in {"STALE", "NO RECENT DATA", "AGING"}:
-        return "Refresh PLC data before making a maintenance decision; current evidence is not sufficiently recent."
+    if quality["status"] == "FLATLINE":
+        return "Verify equipment operating state first. If the equipment should be running, verify instrument signal, pump/motor status and valve position before treating the flatline as an instrumentation issue."
+    if freshness_state in {"STALE", "NO RECENT DATA"}:
+        return "Refresh PLC/historian data before making a maintenance decision; current equipment condition cannot be verified from stale evidence."
+    if freshness_state == "AGING":
+        return "Current evidence is aging. Recheck the PLC signal before intervention if the decision is time-sensitive."
     condition = str(row.get("Condition", "Normal"))
     if condition == "Normal":
         return "No intervention required. Continue routine monitoring; no abnormal deviation is detected against the current historical screening envelope."
@@ -1710,7 +1738,7 @@ if page == "Dashboard":
                 f'<div class="v15-period"><div class="v15-period-label">📅 DATA PERIOD</div><div class="v15-period-value">{period_text}</div>'
                 f'<div class="v15-period-small">{data_days:,} days of history</div></div>', unsafe_allow_html=True)
         with hright:
-            if st.button("↻ Refresh Data", key="dash_refresh_v15", use_container_width=True):
+            if st.button("↻ Refresh Data", key="dash_refresh_v15", width='stretch'):
                 load_history.clear()
                 st.rerun()
 
@@ -1852,7 +1880,7 @@ if page == "Dashboard":
                     daily = tmp.dropna().groupby("Date").size().tail(14)
                     if len(daily):
                         chart = daily.rename("PLC Records")
-                        st.line_chart(chart, height=185, use_container_width=True)
+                        st.line_chart(chart, height=185, width='stretch')
                         st.caption("Record volume by day — use Engineering Trend for parameter-level behaviour.")
                     else:
                         st.info("No recent historical record series available.")
@@ -2019,12 +2047,24 @@ elif page == "Equipment Health":
             freshness = _eh_freshness(eq_latest)
             quality_warnings = [
                 (tag, q) for tag, q in quality_map.items()
-                if q["status"] not in {"VALID"}
+                if not q.get("verified", False)
             ]
             analyzable = sum(1 for q in quality_map.values() if q["valid"] >= 20)
             coverage_pct = analyzable / max(len(eq_tags), 1) * 100
             quality_gate = freshness["state"] in {"STALE", "NO RECENT DATA", "NO DATA"}
-            parameter_quality_gate = any(q["status"] in {"NO VALID DATA", "MISSING TAG", "FLATLINE SUSPECT"} for q in quality_map.values())
+            parameter_quality_gate = any(
+                q["status"] in {"NO VALID DATA", "MISSING TAG", "FLATLINE", "INSUFFICIENT"}
+                for q in quality_map.values()
+            )
+            verified_tags = {tag for tag, q in quality_map.items() if q.get("verified", False)}
+            unverified_count = max(0, total_params - len(verified_tags))
+
+            # Historical condition remains available for analysis, but the
+            # engineer-facing page never calls stale/unverified data Normal.
+            visible_normal = normal if not quality_gate and not parameter_quality_gate else 0
+            visible_deteriorating = deteriorating if not quality_gate and not parameter_quality_gate else 0
+            visible_attention = attention if not quality_gate and not parameter_quality_gate else 0
+            visible_critical = critical if not quality_gate and not parameter_quality_gate else 0
 
             # Existing page score logic is preserved only when current evidence
             # is recent enough to justify a present-state screening statement.
@@ -2043,12 +2083,12 @@ elif page == "Equipment Health":
             raw_score = 100 - float(health["Penalty"].mean())
 
             if quality_gate:
-                # Do not label stale historical evidence as HEALTHY.
-                overall = "DATA STALE" if freshness["state"] != "NO DATA" else "NO DATA"
-                risk, priority, icon, cap = "DATA QUALITY", "P4", "🟠", None
+                overall, risk, priority, icon, cap = "UNVERIFIED", "DATA QUALITY", "P4", (
+                    "⚪" if freshness["state"] == "NO RECENT DATA" else "🟠"
+                ), None
                 score = None
             elif parameter_quality_gate:
-                overall, risk, priority, icon, cap = "DATA REVIEW", "DATA QUALITY", "P4", "🟡", None
+                overall, risk, priority, icon, cap = "UNVERIFIED", "DATA QUALITY", "P4", "🟡", None
                 score = None
             elif critical:
                 overall, risk, priority, icon, cap = "CRITICAL", "HIGH", "P1", "🔴", 69
@@ -2065,6 +2105,11 @@ elif page == "Equipment Health":
 
             # Current data timestamp is equipment-specific, not plant-wide.
             last_label = freshness["label"] if pd.notna(eq_latest) else "No valid PLC timestamp"
+            if pd.notna(freshness["hours"]):
+                age_h = float(freshness["hours"])
+                data_age_label = f"{age_h/24.0:.0f} days" if age_h >= 24 else f"{age_h:.1f} h"
+            else:
+                data_age_label = "—"
 
             # Primary abnormal signal.
             flagged = health[health["Condition"] != "Normal"].copy()
@@ -2126,7 +2171,7 @@ elif page == "Equipment Health":
             if quality_gate:
                 decision_text = (
                     f'<b>Do not make a current maintenance decision from this screen.</b> Latest equipment evidence is '
-                    f'<b>{freshness["state"].lower()}</b> ({freshness["hours"]:.1f} h old). Refresh PLC/historian data first.'
+                    f'<b>{freshness["state"].lower()}</b> ({data_age_label} old). Refresh PLC/historian data first.'
                     if pd.notna(freshness["hours"]) else
                     '<b>Current evidence unavailable.</b> Verify PLC/historian connectivity and tag mapping before assessing equipment condition.'
                 )
@@ -2179,10 +2224,11 @@ elif page == "Equipment Health":
                     unsafe_allow_html=True,
                 )
                 for label, n, cls in [
-                    ("NORMAL", normal, "normal"),
-                    ("DETERIORATING", deteriorating, "deteriorating"),
-                    ("ATTENTION", attention, "attention"),
-                    ("CRITICAL", critical, "critical"),
+                    ("VERIFIED NORMAL", visible_normal, "normal"),
+                    ("DETERIORATING", visible_deteriorating, "deteriorating"),
+                    ("ATTENTION", visible_attention, "attention"),
+                    ("CRITICAL", visible_critical, "critical"),
+                    ("UNVERIFIED", unverified_count, "unverified"),
                 ]:
                     pct = n / max(total_params, 1) * 100
                     st.markdown(
@@ -2190,6 +2236,11 @@ elif page == "Equipment Health":
                         f'<strong>{n}</strong><small>{pct:.0f}%</small></div>',
                         unsafe_allow_html=True,
                     )
+                st.markdown(
+                    f'<div class="eh22-panel-sub" style="margin-top:8px;">'
+                    f'Data quality: {len(verified_tags)}/{max(len(eq_tags),1)} tags verified</div>',
+                    unsafe_allow_html=True,
+                )
                 st.markdown('</div>', unsafe_allow_html=True)
 
             with d_mid:
@@ -2198,7 +2249,14 @@ elif page == "Equipment Health":
                     '<div class="eh22-panel-sub">Ranked by condition severity and deviation</div>',
                     unsafe_allow_html=True,
                 )
-                if flagged.empty:
+                if quality_gate or parameter_quality_gate:
+                    st.markdown(
+                        f'<div class="eh22-no-issue" style="border-left:4px solid #f59e0b;">'
+                        f'⚪ Current condition is <b>unverified</b>. Historical screening is available, '
+                        f'but {unverified_count} parameter(s) do not have sufficiently current/verified evidence.</div>',
+                        unsafe_allow_html=True,
+                    )
+                elif flagged.empty:
                     st.markdown('<div class="eh22-no-issue">✓ All monitored parameters are currently within historical screening range.</div>', unsafe_allow_html=True)
                 else:
                     for _, rr in flagged.head(5).iterrows():
@@ -2279,11 +2337,32 @@ elif page == "Equipment Health":
                 if not trend_df.empty:
                     trend_df[selected_tag] = pd.to_numeric(trend_df[selected_tag], errors="coerce")
                     trend_df = trend_df.dropna().sort_values("ArchiveTime").set_index("ArchiveTime")
+
+                selected_quality_for_trend = _eh_parameter_quality(df, selected_tag)
+                trend_quality_text = selected_quality_for_trend["label"].lower()
+
                 st.markdown(
                     f'<div class="eh22-panel"><div class="eh22-panel-head">📈 PARAMETER TREND</div>'
-                    f'<div class="eh22-panel-sub">{selected_row["Parameter"]} · historical screening envelope P05–P95 · data {(_eh_parameter_quality(df, selected_tag)["status"]).lower()}</div>',
+                    f'<div class="eh22-panel-sub">{selected_row["Parameter"]} · historical screening envelope P05–P95 · data {trend_quality_text}</div>',
                     unsafe_allow_html=True,
                 )
+
+                if selected_quality_for_trend["status"] in {"STALE", "NO RECENT DATA", "NO DATA"}:
+                    st.markdown(
+                        '<div style="padding:10px 12px;border:1px solid #fed7aa;background:#fff7ed;border-radius:8px;'
+                        'color:#9a3412;font-size:12px;font-weight:600;margin-bottom:8px;">'
+                        '⚠ CURRENT DATA UNAVAILABLE · Historical behaviour is shown for reference only. '
+                        'The last valid PLC point must not be interpreted as the present equipment state.</div>',
+                        unsafe_allow_html=True,
+                    )
+                elif selected_quality_for_trend["status"] == "FLATLINE":
+                    st.markdown(
+                        '<div style="padding:10px 12px;border:1px solid #fde68a;background:#fffbeb;border-radius:8px;'
+                        'color:#92400e;font-size:12px;font-weight:600;margin-bottom:8px;">'
+                        '⚠ FLATLINE · Verify whether the equipment was operating before interpreting the zero/constant signal.</div>',
+                        unsafe_allow_html=True,
+                    )
+
                 if not trend_df.empty:
                     plot_df = pd.DataFrame(
                         {
@@ -2293,7 +2372,7 @@ elif page == "Equipment Health":
                         },
                         index=trend_df.index,
                     )
-                    st.line_chart(plot_df, height=265, use_container_width=True)
+                    st.line_chart(plot_df, height=265, width="stretch")
                 else:
                     st.info("No valid historical trend is available for this PLC tag.")
                 st.markdown('</div>', unsafe_allow_html=True)
@@ -2304,13 +2383,24 @@ elif page == "Equipment Health":
                     '<div class="eh22-panel-sub">Latest signal versus historical behaviour</div>',
                     unsafe_allow_html=True,
                 )
+                selected_quality_for_evidence = _eh_parameter_quality(df, selected_tag)
+                selected_last = selected_quality_for_evidence.get("latest", pd.NaT)
+                selected_freshness = _eh_freshness(selected_last)
+                selected_age = selected_freshness["hours"]
+                selected_age_label = (
+                    f'{selected_age/24.0:.0f} days' if pd.notna(selected_age) and selected_age >= 24
+                    else f'{selected_age:.1f} h' if pd.notna(selected_age)
+                    else "—"
+                )
                 evidence_items = [
-                    ("Current", f'{selected_row["Current"]:.3f} {selected_row["Unit"]}'),
+                    ("Current / last valid", f'{selected_row["Current"]:.3f} {selected_row["Unit"]}'),
                     ("Historical P05", f'{selected_row["Baseline Low"]:.3f} {selected_row["Unit"]}'),
                     ("Historical P95", f'{selected_row["Baseline High"]:.3f} {selected_row["Unit"]}'),
                     ("Recent Shift", f'{selected_row["Shift %"]:+.1f}%'),
                     ("Deviation", f'{selected_row["Deviation Sigma"]:.2f}σ'),
                     ("Outside Fraction", f'{selected_row["Outside Fraction"]*100:.1f}%'),
+                    ("Last valid PLC", selected_freshness["label"] if pd.notna(selected_last) else "No valid timestamp"),
+                    ("Data age", selected_age_label),
                 ]
                 for lab, val in evidence_items:
                     st.markdown(
@@ -2339,29 +2429,41 @@ elif page == "Equipment Health":
                 )
                 ac1, ac2 = st.columns(2, gap="small")
                 with ac1:
-                    if st.button("📈 Engineering Trend", key=f"eh22_trend_{selected_eq}_{selected_tag}", use_container_width=True):
+                    if st.button("📈 Engineering Trend", key=f"eh22_trend_{selected_eq}_{selected_tag}", width='stretch'):
                         st.session_state["trend_equipment_from_priority"] = selected_eq
                         st.session_state["trend_tag_from_priority"] = selected_tag
                         st.query_params["opp_nav"] = "↗  Engineering Trend"
                         st.rerun()
                 with ac2:
-                    if st.button("🎯 Maintenance Priority", key=f"eh22_priority_{selected_eq}", use_container_width=True):
+                    if st.button("🎯 Maintenance Priority", key=f"eh22_priority_{selected_eq}", width='stretch'):
                         st.session_state["priority_equipment_from_health"] = selected_eq
                         st.query_params["opp_nav"] = "⚠  Maintenance Priority"
                         st.rerun()
-                if st.button("🛠 Action Center", key=f"eh22_action_{selected_eq}_{selected_tag}", use_container_width=True):
+                if st.button("🛠 Action Center", key=f"eh22_action_{selected_eq}_{selected_tag}", width='stretch'):
                     st.query_params["opp_nav"] = "✓  Action Center"
                     st.rerun()
                 st.markdown('</div>', unsafe_allow_html=True)
 
             # Compact normal-parameter appendix.
-            with st.expander(f"📋 View {normal} normal parameter(s)", expanded=False):
-                normal_table = health[health["Condition"] == "Normal"][
+            appendix_title = (
+                f"📋 View {visible_normal} verified normal parameter(s)"
+                if not quality_gate and not parameter_quality_gate
+                else f"📋 View {total_params} parameter(s) — current condition unverified"
+            )
+            with st.expander(appendix_title, expanded=False):
+                appendix_condition = health[health["Condition"] == "Normal"].copy()
+                if quality_gate or parameter_quality_gate:
+                    appendix_condition["Current Status"] = "UNVERIFIED"
+                    appendix_condition["Data Quality"] = appendix_condition["PLC Tag"].map(
+                        lambda t: quality_map.get(str(t), {}).get("label", "UNKNOWN")
+                    )
+                normal_table = appendix_condition[
                     ["PLC Tag", "Parameter", "Unit", "Current", "Baseline Low", "Baseline High", "Direction", "Confidence"]
+                    + (["Current Status", "Data Quality"] if quality_gate or parameter_quality_gate else [])
                 ].copy()
                 for c in ["Current", "Baseline Low", "Baseline High"]:
                     normal_table[c] = normal_table[c].round(3)
-                st.dataframe(normal_table, use_container_width=True, hide_index=True)
+                st.dataframe(normal_table, width="stretch", hide_index=True)
 
             st.markdown(
                 '<div class="eh22-disclaimer"><b>Engineering governance:</b> historical screening is a decision-support indicator, not an alarm, trip limit or failure prediction. Validate abnormal signals against OEM/design limits, process condition, field inspection and engineering judgement.</div>',
@@ -2507,7 +2609,7 @@ elif page == "Maintenance Priority":
             ]
             display = view[[c for c in display_cols if c in view.columns]].copy()
             display.insert(0, "", range(1, len(display) + 1))
-            st.dataframe(display, use_container_width=True, hide_index=True, height=420)
+            st.dataframe(display, width='stretch', hide_index=True, height=420)
 
             # Streamlit dataframes are intentionally kept read-only here for
             # reliability across Streamlit versions. The explicit selector
@@ -2562,18 +2664,18 @@ elif page == "Maintenance Priority":
                 )
 
             b1, b2, b3 = st.columns(3)
-            if b1.button("📈 Open Problem Trend", key=f"priority_open_trend_v2_{selected}", use_container_width=True):
+            if b1.button("📈 Open Problem Trend", key=f"priority_open_trend_v2_{selected}", width='stretch'):
                 st.session_state["trend_equipment_from_priority"] = selected
                 st.session_state["trend_tag_from_priority"] = r["Top Tag"]
                 st.success(f"Trend prepared for {r['Top Tag']}. Open **Engineering Trend** from Navigation.")
-            if b2.button("🛠️ Send to Action Center", key=f"priority_open_action_v2_{selected}", use_container_width=True):
+            if b2.button("🛠️ Send to Action Center", key=f"priority_open_action_v2_{selected}", width='stretch'):
                 fdf = build_action_findings(master[master["Equipment Code"] == selected], df, criticality_df)
                 if not fdf.empty:
                     st.session_state["action_selected_finding"] = str(fdf.iloc[0]["Finding ID"])
                     st.success("Finding prepared for the Engineering Action Center. Open it from Navigation.")
                 else:
                     st.info("No abnormal finding is currently available for this equipment.")
-            if b3.button("🔍 Open Equipment Health", key=f"priority_open_health_v2_{selected}", use_container_width=True):
+            if b3.button("🔍 Open Equipment Health", key=f"priority_open_health_v2_{selected}", width='stretch'):
                 st.session_state["health_selected_eq"] = selected
                 st.success(f"Equipment Health prepared for {selected}. Open **Equipment Health** from Navigation.")
 
@@ -2624,7 +2726,7 @@ elif page == "Action Center":
         if q.empty:
             st.info("No finding matches the selected filters.")
         else:
-            st.dataframe(q[["Equipment Code","Equipment","PLC Tag","Parameter","Condition","Priority","Status","PIC","Target Date","Shift %"]],use_container_width=True,hide_index=True,height=360)
+            st.dataframe(q[["Equipment Code","Equipment","PLC Tag","Parameter","Condition","Priority","Status","PIC","Target Date","Shift %"]],width='stretch',hide_index=True,height=360)
             choices=q["Finding ID"].tolist()
             labels={fid: (lambda rr:f"{rr['Equipment Code']} • {rr['PLC Tag']} • {rr['Parameter']} • {rr['Status']}")(q[q["Finding ID"]==fid].iloc[0]) for fid in choices}
             selected_default=st.session_state.get("action_selected_finding")
@@ -2654,7 +2756,7 @@ elif page == "Action Center":
             st.markdown("### Workflow Guidance")
             st.write("**OPEN → INVESTIGATION → ACTION → VERIFICATION → CLOSED**. Do not move to CLOSED until the engineering verification is documented and the condition is acceptable.")
             d1,d2=st.columns(2); export_df=actions_dataframe(store)
-            d1.download_button("Download Engineering Action Log (.csv)",export_df.to_csv(index=False).encode("utf-8"),"OPP_engineering_action_log.csv","text/csv",use_container_width=True)
+            d1.download_button("Download Engineering Action Log (.csv)",export_df.to_csv(index=False).encode("utf-8"),"OPP_engineering_action_log.csv","text/csv",width='stretch')
             uploaded_actions=d2.file_uploader("Restore Action Log (.csv)",type=["csv"],key="action_restore")
             if uploaded_actions is not None:
                 restored=pd.read_csv(uploaded_actions).fillna("")
@@ -2677,7 +2779,7 @@ elif page == "Tag Master":
         view = view[view["Area"] == area]
     if conf != "All":
         view = view[view["Confidence"] == conf]
-    st.dataframe(view, use_container_width=True, height=620)
+    st.dataframe(view, width='stretch', height=620)
     st.download_button("Download Tag Master CSV", master.to_csv(index=False).encode("utf-8"), "OPP_Tag_Master_Phase4_1.csv", "text/csv")
 
 elif page == "Engineering Trend":
@@ -2722,7 +2824,7 @@ elif page == "Engineering Trend":
                 st.markdown("#### Equipment Parameter Summary")
                 summary = [{"PLC Tag": m["PLC Tag"], "Parameter": p, "Unit": u, "Current": s.iloc[-1], "Average": s.mean(), "Min": s.min(), "Max": s.max(), "Confidence": m["Confidence"] or "Low", "Parameter Source": src} for m, _, s, p, u, src in rows]
                 if summary:
-                    st.dataframe(pd.DataFrame(summary), use_container_width=True, height=300)
+                    st.dataframe(pd.DataFrame(summary), width='stretch', height=300)
                 st.markdown("#### Parameter Trends")
                 for meta, d, s, parameter, unit, source in rows:
                     tag = meta["PLC Tag"]
@@ -2761,8 +2863,8 @@ elif page == "Data Import":
         st.info(f"📄 **{file_name}**  •  {file_size_mb:.1f} MB  •  only this workbook will be processed in memory.")
 
         c1, c2 = st.columns([1, 1], gap="small")
-        validate_one = c1.button("🔎 Validate File", type="secondary", use_container_width=True, key="validate_one_v14")
-        import_one = c2.button("✅ Import This File", type="primary", use_container_width=True, key="import_one_v14")
+        validate_one = c1.button("🔎 Validate File", type="secondary", width='stretch', key="validate_one_v14")
+        import_one = c2.button("✅ Import This File", type="primary", width='stretch', key="import_one_v14")
 
         if validate_one or import_one:
             import tempfile, os
@@ -2857,7 +2959,7 @@ elif page == "Data Import":
                 for c in ["First Timestamp", "Last Timestamp"]:
                     result_view[c] = pd.to_datetime(result_view[c], errors="coerce").dt.strftime("%d %b %Y %H:%M").fillna("—")
                 st.markdown("#### File Validation Result")
-                st.dataframe(result_view, use_container_width=True, hide_index=True)
+                st.dataframe(result_view, width='stretch', hide_index=True)
 
                 if validate_one and not import_one:
                     if result.get("New", 0) > 0:
@@ -2870,7 +2972,7 @@ elif page == "Data Import":
                     try:
                         preview = pd.read_excel(tmp_path, engine="openpyxl", nrows=10)
                         with st.expander("Preview first 10 rows", expanded=False):
-                            st.dataframe(preview, use_container_width=True, hide_index=True)
+                            st.dataframe(preview, width='stretch', hide_index=True)
                         del preview
                     except Exception:
                         pass
@@ -2906,7 +3008,7 @@ elif page == "Data Import":
         log_df = recent_import_log(8)
         if not log_df.empty:
             with st.expander("🧾 Recent import history", expanded=False):
-                st.dataframe(log_df, use_container_width=True, hide_index=True)
+                st.dataframe(log_df, width='stretch', hide_index=True)
         with st.expander("🗄️ Database details", expanded=False):
             st.code(str(DB_PATH), language="text")
             st.caption("Unique ArchiveTime key • transactional import • import log • compressed row payloads")
