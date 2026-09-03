@@ -1341,23 +1341,23 @@ def _eh_parameter_quality(df, tag, min_points=20):
 def _eh_recommendation(row, quality, freshness_state):
     """Recommendation must reflect condition AND evidence quality."""
     if quality["status"] in {"NO VALID DATA", "MISSING TAG"} or freshness_state == "NO DATA":
-        return "Data unavailable — verify PLC tag, historian connection and instrument signal before assessing equipment condition."
+        return "Data tidak tersedia — verify PLC tag, historian connection and instrument signal before assessing equipment condition."
     if quality["status"] == "INSUFFICIENT":
-        return "Build sufficient historical evidence before intervention; verify signal availability and operating context."
+        return "Bangun historical evidence yang memadai sebelum intervention; verifikasi ketersediaan signal dan operating context."
     if quality["status"] == "FLATLINE":
-        return "Verify equipment operating state first. If the equipment should be running, verify instrument signal, pump/motor status and valve position before treating the flatline as an instrumentation issue."
+        return "Verifikasi operating state Equipment terlebih dahulu. If the equipment should be running, verify instrument signal, pump/motor status and valve position before treating the flatline as an instrumentation issue."
     if freshness_state in {"STALE", "NO RECENT DATA"}:
-        return "Refresh PLC/historian data before making a maintenance decision; current equipment condition cannot be verified from stale evidence."
+        return "Refresh data PLC/historian sebelum mengambil keputusan maintenance; current equipment condition cannot be verified from stale evidence."
     if freshness_state == "AGING":
-        return "Current evidence is aging. Recheck the PLC signal before intervention if the decision is time-sensitive."
+        return "Current evidence mulai usang. Recheck PLC signal sebelum intervention jika keputusan bersifat time-sensitive."
     condition = str(row.get("Condition", "Normal"))
     if condition == "Normal":
-        return "No intervention required. Continue routine monitoring; no abnormal deviation is detected against the current historical screening envelope."
+        return "Tidak diperlukan intervention. Lanjutkan routine monitoring; no abnormal deviation is detected against the current historical screening envelope."
     if condition == "Deteriorating":
-        return str(row.get("Action", "Monitor the trend and verify whether deterioration persists.")) + " Confirm persistence before intervention."
+        return str(row.get("Action", "Monitor the trend and verify whether deterioration persists.")) + " Konfirmasi persistence sebelum intervention."
     if condition == "Attention":
-        return str(row.get("Action", "Perform focused engineering verification."))
-    return "Immediate engineering verification. Validate the signal against field condition, process state and applicable OEM/design limits before maintenance action."
+        return str(row.get("Action", "Lakukan focused engineering verification."))
+    return "Lakukan engineering verification segera. Validate the signal against field condition, process state and applicable OEM/design limits before maintenance action."
 
 def infer_parameter(tag, source_parameter="", source_unit="", instrument_type=""):
     """Display helper only. Source mapping is never overwritten.
@@ -2556,7 +2556,7 @@ elif page == "Equipment Health":
         '<div class="eh22-header">'
         '<div><div class="eh22-title">🩺 Equipment Health</div>'
         '<div class="eh22-subtitle">Condition-based engineering workspace — identify the abnormal signal, quantify the deviation, and decide the next verification.</div></div>'
-        '<div class="eh22-live">● LIVE SCREENING</div>'
+        '<div class="eh22-live">● PEMANTAUAN LANGSUNG</div>'
         '</div>',
         unsafe_allow_html=True,
     )
@@ -2789,7 +2789,7 @@ elif page == "Equipment Health":
             confidence_mode = str(confidence_counts.idxmax()) if len(confidence_counts) else "—"
             confidence_n = int(confidence_counts.max()) if len(confidence_counts) else 0
             score_value = str(score) if score is not None else "N/A"
-            score_small = "Current evidence screening" if score is not None else "Current-state score withheld"
+            score_small = "Screening berdasarkan current evidence" if score is not None else "Score kondisi saat ini tidak ditampilkan"
             freshness_cls = {"LIVE":"green", "RECENT":"green", "AGING":"orange", "STALE":"orange", "NO RECENT DATA":"critical", "NO DATA":"critical"}.get(freshness["state"], "orange")
             historical_flags = int(abnormal)
             current_verified_abnormal = int(
@@ -2798,10 +2798,10 @@ elif page == "Equipment Health":
             )
             kpis = [
                 (k1, "CONDITION SCORE", score_value, "/ 100" if score is not None else "", score_small, "blue" if score is not None else "critical"),
-                (k2, "CURRENT CONDITION", f"{icon} {overall}", "", f"{unverified_count} unverified parameter(s)" if quality_gate or parameter_quality_gate else f"{current_verified_abnormal} abnormal parameter(s)", status_cls),
-                (k3, "HISTORICAL FLAGS", f"{historical_flags}", f"/ {total_params}", "historical screening only", "orange" if historical_flags else "green"),
+                (k2, "KONDISI SAAT INI", f"{icon} {overall}", "", f"{unverified_count} parameter belum terverifikasi" if quality_gate or parameter_quality_gate else f"{current_verified_abnormal} parameter abnormal", status_cls),
+                (k3, "HISTORICAL FLAGS", f"{historical_flags}", f"/ {total_params}", "hanya historical screening", "orange" if historical_flags else "green"),
                 (k4, "PRIORITY", priority, "", f"{risk}", priority.lower()),
-                (k5, "DATA FRESHNESS", freshness["state"], "", f"{analyzable}/{max(len(eq_tags),1)} tags analyzable · {coverage_pct:.0f}%", freshness_cls),
+                (k5, "KESEGARAN DATA", freshness["state"], "", f"{analyzable}/{max(len(eq_tags),1)} tag yang dapat dianalisis · {coverage_pct:.0f}%", freshness_cls),
             ]
             for col, label, value, suffix, small, cls in kpis:
                 col.markdown(
@@ -2823,7 +2823,7 @@ elif page == "Equipment Health":
                 )
                 st.markdown(
                     f'<div class="eh22-decision"><div class="eh22-decision-icon">⚠</div>'
-                    f'<div><div class="eh22-decision-title">DATA FRESHNESS GATE</div>'
+                    f'<div><div class="eh22-decision-title">KESEGARAN DATA GATE</div>'
                     f'<div class="eh22-decision-text">{decision_text}</div></div></div>',
                     unsafe_allow_html=True,
                 )
@@ -2862,7 +2862,7 @@ elif page == "Equipment Health":
             # Stage 2 — Parameter Health Matrix
             # -----------------------------------------------------------------
             st.markdown(
-                '<div class="eh25-section-title">📋 PARAMETER HEALTH MATRIX</div>'
+                '<div class="eh25-section-title">📋 MATRIX HEALTH PARAMETER</div>'
                 '<div class="eh25-section-sub">Engineer view — top signals first; current condition is separated from historical screening</div>',
                 unsafe_allow_html=True,
             )
@@ -2944,7 +2944,7 @@ elif page == "Equipment Health":
                         f'<div class="eh25-confidence"><b>{rr["Confidence"]}</b></div>'
                         '</div>'
                     )
-                return ''.join(html_rows) if html_rows else '<div class="eh25-empty">No parameter evidence is available.</div>'
+                return ''.join(html_rows) if html_rows else '<div class="eh25-empty">Tidak tersedia evidence parameter.</div>'
 
             matrix_header = (
                 '<div class="eh25-matrix">'
@@ -2960,7 +2960,7 @@ elif page == "Equipment Health":
             )
 
             if len(matrix_df) > top_n:
-                with st.expander(f"📋 View all {len(matrix_df)} monitored parameters", expanded=False):
+                with st.expander(f"📋 Lihat semua {len(matrix_df)} parameter yang dimonitor", expanded=False):
                     st.markdown(
                         matrix_header + _render_matrix(matrix_df) + '</div>',
                         unsafe_allow_html=True
@@ -3004,7 +3004,7 @@ elif page == "Equipment Health":
             )
 
             st.markdown(
-                '<div class="eh26-section-title">⚙️ OPERATING CONTEXT</div>'
+                '<div class="eh26-section-title">⚙️ KONTEKS OPERASI</div>'
                 '<div class="eh26-section-sub">Use operating context to distinguish equipment behaviour from process/load effects</div>',
                 unsafe_allow_html=True,
             )
@@ -3124,7 +3124,7 @@ elif page == "Equipment Health":
 
             maintenance_cards = [
                 _eh_context_card(
-                    "EQUIPMENT CRITICALITY",
+                    "CRITICALITY EQUIPMENT",
                     criticality_value,
                     criticality_basis,
                     "running" if criticality_value in {"CRITICAL", "VERY HIGH", "HIGH"} else "neutral"
@@ -3136,15 +3136,15 @@ elif page == "Equipment Health":
                     "stopped" if historical_finding_count else "neutral"
                 ),
                 _eh_context_card(
-                    "OPEN ACTIONS",
+                    "ACTION TERBUKA",
                     f"{open_action_count}",
                     action_status_summary,
                     "stopped" if open_action_count else "neutral"
                 ),
                 _eh_context_card(
-                    "MAINTENANCE HISTORY",
+                    "RIWAYAT MAINTENANCE",
                     "CONNECTED" if maintenance_history_connected else "NOT CONNECTED",
-                    "Source available to this screen" if maintenance_history_connected else "PM / breakdown / work-order history is not yet linked",
+                    "Source available to this screen" if maintenance_history_connected else "Riwayat PM / breakdown / work order belum terhubung",
                     "running" if maintenance_history_connected else "neutral"
                 ),
             ]
@@ -3155,7 +3155,7 @@ elif page == "Equipment Health":
 
             if not maintenance_history_connected:
                 st.markdown(
-                    '<div class="eh28-maint-note">ⓘ <b>Maintenance history gap:</b> this screen currently cannot confirm '
+                    '<div class="eh28-maint-note">ⓘ <b>Kesenjangan maintenance history:</b> this screen currently cannot confirm '
                     'last PM, last breakdown, running hours, work order age or repeat-failure history. '
                     'Those items should be connected before using maintenance history as evidence.</div>',
                     unsafe_allow_html=True,
@@ -3169,20 +3169,20 @@ elif page == "Equipment Health":
 
             # Maintenance decision bridge — concise and explicit.
             if freshness["state"] in {"STALE", "NO RECENT DATA", "NO DATA"}:
-                maint_decision_title = "REFRESH EVIDENCE FIRST"
-                maint_decision_text = "Current PLC condition is unverified. Do not escalate maintenance solely from historical screening."
+                maint_decision_title = "REFRESH EVIDENCE TERLEBIH DAHULU"
+                maint_decision_text = "Kondisi PLC saat ini belum terverifikasi. Jangan melakukan eskalasi maintenance hanya berdasarkan historical screening."
                 maint_decision_cls = "blocked"
             elif historical_finding_count and open_action_count:
-                maint_decision_title = "CONTINUE EXISTING INVESTIGATION"
-                maint_decision_text = "A historical PLC finding already has an active Action Center record. Verify the existing investigation before opening another action."
+                maint_decision_title = "LANJUTKAN INVESTIGATION YANG ADA"
+                maint_decision_text = "Historical PLC finding sudah memiliki record aktif di Action Center. Verifikasi investigation yang ada sebelum membuat action baru."
                 maint_decision_cls = "active"
             elif historical_finding_count:
-                maint_decision_title = "VERIFY HISTORICAL FINDING"
-                maint_decision_text = "A PLC-derived historical finding exists. Confirm persistence, operating context and field condition before maintenance intervention."
+                maint_decision_title = "VERIFIKASI HISTORICAL FINDING"
+                maint_decision_text = "Terdapat historical finding dari PLC. Konfirmasi persistence, operating context, dan field condition sebelum intervention maintenance."
                 maint_decision_cls = "review"
             else:
                 maint_decision_title = "ROUTINE MAINTENANCE PATH"
-                maint_decision_text = "No PLC-derived historical finding is currently generated for this equipment. Continue the approved maintenance strategy."
+                maint_decision_text = "Tidak ada historical finding dari PLC untuk Equipment ini. Lanjutkan maintenance strategy yang telah disetujui."
                 maint_decision_cls = "normal"
 
             st.markdown(
@@ -3204,8 +3204,8 @@ elif page == "Equipment Health":
             corr_pairs = _eh29_correlation_evidence(health, df)
 
             st.markdown(
-                '<div class="eh29-section-title">🧠 ENGINEERING DIAGNOSIS</div>'
-                '<div class="eh29-section-sub">Differential diagnosis — rank plausible mechanisms from available signal evidence; confirm in the field before intervention</div>',
+                '<div class="eh29-section-title">🧠 DIAGNOSIS ENGINEERING</div>'
+                '<div class="eh29-section-sub">Differential diagnosis — peringkat kemungkinan mekanisme berdasarkan signal evidence; lakukan Field Verification sebelum intervention</div>',
                 unsafe_allow_html=True,
             )
 
@@ -3218,8 +3218,8 @@ elif page == "Equipment Health":
 
             if not diagnoses:
                 st.markdown(
-                    '<div class="eh29-empty"><b>No defensible diagnostic hypothesis yet.</b> '
-                    'More verified signal evidence or a clearer parameter relationship is required.</div>',
+                    '<div class="eh29-empty"><b>Belum ada hipotesis diagnosis yang cukup kuat.</b> '
+                    'Diperlukan verified signal evidence tambahan atau hubungan antar-parameter yang lebih jelas.</div>',
                     unsafe_allow_html=True,
                 )
             else:
@@ -3247,8 +3247,8 @@ elif page == "Equipment Health":
                 dx1,dx2=st.columns([1.15,1.0],gap="medium")
                 with dx1:
                     st.markdown(
-                        '<div class="eh29-panel"><div class="eh29-panel-title">🔬 SUPPORTING EVIDENCE</div>'
-                        '<div class="eh29-panel-sub">Signals that support or challenge the selected mechanism</div>',
+                        '<div class="eh29-panel"><div class="eh29-panel-title">🔬 BUKTI PENDUKUNG</div>'
+                        '<div class="eh29-panel-sub">Signal yang mendukung atau menantang hipotesis yang dipilih</div>',
                         unsafe_allow_html=True,
                     )
                     support_rows=[]
@@ -3269,7 +3269,7 @@ elif page == "Equipment Health":
                         evdf=pd.DataFrame(support_rows).sort_values(["Deviation","Shift"],ascending=[False,False]).head(8)
                         st.dataframe(evdf, width="stretch", hide_index=True, height=min(330,120+len(evdf)*32))
                     else:
-                        st.markdown('<div class="eh29-empty">No direct supporting parameter family is available.</div>',unsafe_allow_html=True)
+                        st.markdown('<div class="eh29-empty">Tidak tersedia parameter family yang secara langsung mendukung.</div>',unsafe_allow_html=True)
                     st.markdown('</div>',unsafe_allow_html=True)
 
                 with dx2:
@@ -3278,10 +3278,10 @@ elif page == "Equipment Health":
                         for c in dx["checks"]
                     )
                     st.markdown(
-                        f'<div class="eh29-panel"><div class="eh29-panel-title">🛠 FIELD VERIFICATION CHECKLIST</div>'
-                        f'<div class="eh29-panel-sub">Use these checks to confirm or reject the hypothesis</div>'
+                        f'<div class="eh29-panel"><div class="eh29-panel-title">🛠 CHECKLIST FIELD VERIFICATION</div>'
+                        f'<div class="eh29-panel-sub">Gunakan pemeriksaan berikut untuk mengonfirmasi atau menolak hipotesis</div>'
                         f'{checks}'
-                        f'<div class="eh29-caution"><b>Engineering caution:</b> {dx["caution"]}</div>'
+                        f'<div class="eh29-caution"><b>Catatan engineering:</b> {dx["caution"]}</div>'
                         f'</div>',
                         unsafe_allow_html=True,
                     )
@@ -3293,8 +3293,8 @@ elif page == "Equipment Health":
                 )
                 st.markdown(
                     '<div class="eh29-correlation">'
-                    '<div class="eh29-panel-title">🔗 SIGNAL RELATIONSHIPS</div>'
-                    '<div class="eh29-panel-sub">Strong historical co-movement (|r| ≥ 0.70). Correlation supports investigation but does not establish causality.</div>'
+                    '<div class="eh29-panel-title">🔗 HUBUNGAN ANTAR-SIGNAL</div>'
+                    '<div class="eh29-panel-sub">Co-movement historis yang kuat (|r| ≥ 0.70). Correlation mendukung investigasi, tetapi tidak membuktikan hubungan sebab-akibat.</div>'
                     '<table><thead><tr><th>Signal A</th><th>Signal B</th><th>Correlation r</th><th>Samples</th></tr></thead>'
                     f'<tbody>{corr_html}</tbody></table></div>',
                     unsafe_allow_html=True,
@@ -3345,7 +3345,7 @@ elif page == "Equipment Health":
                         unsafe_allow_html=True,
                     )
                 elif flagged.empty:
-                    st.markdown('<div class="eh22-no-issue">✓ All monitored parameters are currently within historical screening range.</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="eh22-no-issue">✓ All parameter yang dimonitor are currently within historical screening range.</div>', unsafe_allow_html=True)
                 else:
                     for _, rr in flagged.head(5).iterrows():
                         cls = str(rr["Condition"]).lower()
@@ -3417,7 +3417,7 @@ elif page == "Equipment Health":
                     else "UNVERIFIED"
                 )
                 st.markdown(
-                    f'<div class="eh22-evidence-chip"><span>SELECTED SIGNAL</span>'
+                    f'<div class="eh22-evidence-chip"><span>SIGNAL TERPILIH</span>'
                     f'<b>{selected_current_state}</b>'
                     f'<small>Historical screening: {selected_row["Condition"]} · {selected_row["Confidence"]} confidence · {selected_q["label"]}</small></div>',
                     unsafe_allow_html=True,
@@ -3446,7 +3446,7 @@ elif page == "Equipment Health":
                     st.markdown(
                         '<div style="padding:10px 12px;border:1px solid #fed7aa;background:#fff7ed;border-radius:8px;'
                         'color:#9a3412;font-size:12px;font-weight:600;margin-bottom:8px;">'
-                        '⚠ CURRENT DATA UNAVAILABLE · Historical behaviour is shown for reference only. '
+                        '⚠ CURRENT DATA TIDAK TERSEDIA · Historical behaviour is shown for reference only. '
                         'The last valid PLC point must not be interpreted as the present equipment state.</div>',
                         unsafe_allow_html=True,
                     )
@@ -3454,7 +3454,7 @@ elif page == "Equipment Health":
                     st.markdown(
                         '<div style="padding:10px 12px;border:1px solid #fde68a;background:#fffbeb;border-radius:8px;'
                         'color:#92400e;font-size:12px;font-weight:600;margin-bottom:8px;">'
-                        '⚠ FLATLINE · Verify whether the equipment was operating before interpreting the zero/constant signal.</div>',
+                        '⚠ FLATLINE · Verifikasi apakah Equipment sedang beroperasi sebelum menginterpretasikan signal zero/constant.</div>',
                         unsafe_allow_html=True,
                     )
 
@@ -3469,7 +3469,7 @@ elif page == "Equipment Health":
                     )
                     st.line_chart(plot_df, height=265, width="stretch")
                 else:
-                    st.info("No valid historical trend is available for this PLC tag.")
+                    st.info("Tidak tersedia historical trend yang valid untuk PLC tag ini.")
                 st.markdown('</div>', unsafe_allow_html=True)
 
             with evidence:
@@ -3495,7 +3495,7 @@ elif page == "Equipment Health":
                     ("Deviation", f'{selected_row["Deviation Sigma"]:.2f}σ'),
                     ("Outside Fraction", f'{selected_row["Outside Fraction"]*100:.1f}%'),
                     ("Last valid PLC", selected_freshness["label"] if pd.notna(selected_last) else "No valid timestamp"),
-                    ("Data age", selected_age_label),
+                    ("Usia data", selected_age_label),
                 ]
                 for lab, val in evidence_items:
                     st.markdown(
