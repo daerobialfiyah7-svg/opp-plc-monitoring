@@ -1666,6 +1666,158 @@ st.markdown("""<style>
     word-break:break-word;
 }
 
+
+/* ================================================================
+   v34 — KPI STRIP ALIGNMENT
+   Lima KPI dibuat sebagai satu visual strip yang sejajar:
+   - tinggi card sama
+   - label berada pada baseline yang sama
+   - value memiliki area tinggi yang sama
+   - secondary text memiliki area yang sama
+   - long status wrap 1–2 baris tanpa memperbesar card
+   ================================================================ */
+
+.eh22-kpi{
+    height:132px !important;
+    min-height:132px !important;
+    max-height:132px !important;
+    width:100% !important;
+    min-width:0 !important;
+    overflow:hidden !important;
+    display:flex !important;
+    flex-direction:column !important;
+    justify-content:flex-start !important;
+    padding:.68rem .72rem !important;
+    border-radius:12px !important;
+}
+
+/* Semua lima label memiliki ruang yang sama. */
+.eh22-kpi-label{
+    min-height:17px !important;
+    height:17px !important;
+    display:flex !important;
+    align-items:flex-start !important;
+    font-size:.58rem !important;
+    line-height:1.15 !important;
+    letter-spacing:.025em !important;
+    white-space:normal !important;
+    overflow:hidden !important;
+    overflow-wrap:anywhere !important;
+}
+
+/* Area value dibuat sama tinggi sehingga subtitle selalu mulai sejajar. */
+.eh22-kpi-value{
+    min-height:43px !important;
+    height:43px !important;
+    max-height:43px !important;
+    margin-top:.28rem !important;
+    display:flex !important;
+    align-items:flex-start !important;
+    gap:.12rem !important;
+    font-size:clamp(.98rem,1.28vw,1.18rem) !important;
+    line-height:1.10 !important;
+    white-space:normal !important;
+    overflow:hidden !important;
+    overflow-wrap:anywhere !important;
+    word-break:normal !important;
+}
+
+/* Pisahkan status text panjang agar tetap terbaca dalam 2 baris. */
+.eh22-kpi-value{
+    text-overflow:clip !important;
+}
+
+/* Suffix / denominator tidak boleh memaksa lebar card. */
+.eh22-kpi-value small{
+    flex:0 1 auto !important;
+    min-width:0 !important;
+    max-width:45% !important;
+    font-size:.62rem !important;
+    line-height:1.15 !important;
+    white-space:normal !important;
+    overflow-wrap:anywhere !important;
+}
+
+/* Secondary description konsisten berada di bawah value. */
+.eh22-kpi-small{
+    min-height:30px !important;
+    max-height:30px !important;
+    margin-top:.08rem !important;
+    font-size:.57rem !important;
+    line-height:1.28 !important;
+    white-space:normal !important;
+    overflow:hidden !important;
+    overflow-wrap:anywhere !important;
+    word-break:normal !important;
+}
+
+/* Khusus value yang sangat panjang: tetap 2 baris maksimum. */
+.eh22-kpi-value,
+.eh22-kpi-value *{
+    -webkit-line-clamp:2;
+}
+
+/* Parent Streamlit columns: jangan biarkan satu card mengubah tinggi strip. */
+div[data-testid="stHorizontalBlock"]:has(.eh22-kpi){
+    align-items:stretch !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.eh22-kpi) > div[data-testid="column"]{
+    min-width:0 !important;
+    display:flex !important;
+    align-items:stretch !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.eh22-kpi) > div[data-testid="column"] > div{
+    width:100% !important;
+    min-width:0 !important;
+}
+
+/* Desktop: lima card harus terasa sebagai satu strip yang proporsional. */
+@media (min-width: 1101px){
+    .eh22-kpi{
+        height:126px !important;
+        min-height:126px !important;
+        max-height:126px !important;
+    }
+    .eh22-kpi-label{font-size:.57rem !important;}
+    .eh22-kpi-value{font-size:clamp(.92rem,1.16vw,1.10rem) !important;}
+    .eh22-kpi-small{font-size:.55rem !important;}
+}
+
+/* Tablet/mobile: tetap sejajar dalam row ketika memungkinkan,
+   tetapi tinggi card tidak berubah-ubah karena text. */
+@media (max-width: 1100px){
+    .eh22-kpi{
+        height:124px !important;
+        min-height:124px !important;
+        max-height:124px !important;
+    }
+}
+
+@media (max-width: 760px){
+    .eh22-kpi{
+        height:116px !important;
+        min-height:116px !important;
+        max-height:116px !important;
+        padding:.58rem .62rem !important;
+    }
+    .eh22-kpi-label{
+        min-height:15px !important;
+        height:15px !important;
+        font-size:.53rem !important;
+    }
+    .eh22-kpi-value{
+        min-height:39px !important;
+        height:39px !important;
+        max-height:39px !important;
+        font-size:.90rem !important;
+    }
+    .eh22-kpi-small{
+        min-height:27px !important;
+        max-height:27px !important;
+        font-size:.52rem !important;
+    }
+}
+
 </style>""",unsafe_allow_html=True)
 
 DB_PATH = ROOT / "data" / "plc_history.sqlite"
