@@ -521,6 +521,15 @@ st.markdown("""<style>
 .eh22-empty{background:#f8fafc;border:1px solid #dfe5ee;border-radius:12px;padding:1.5rem;text-align:center;margin-top:.8rem}.eh22-empty-icon{font-size:2rem;color:#98a2b3}.eh22-empty b{display:block;color:#344054;font-size:.82rem;margin-top:.3rem}.eh22-empty span{display:block;color:#98a2b3;font-size:.64rem;margin-top:.25rem}
 @media(max-width:900px){.eh22-header{align-items:flex-start;flex-direction:column}.eh22-hero{align-items:flex-start;flex-direction:column}.eh22-hero-right{text-align:left}.eh22-name{max-width:75vw}}
 
+/* ===== Equipment Health v27 refinements ===== */
+.eh26-context-card{min-width:0}
+.eh26-context-value{font-size:.69rem}
+.eh26-context-sub{font-size:.49rem}
+.eh25-matrix-head,.eh25-matrix-row{
+    grid-template-columns:1.65fr .75fr .9fr 1fr .85fr 1.2fr .5fr;
+}
+.eh25-focus{margin-top:.55rem}
+
 /* ===== Equipment Health v26 — Operating Context ===== */
 .eh26-section-title{
     font-size:.78rem;font-weight:900;color:#25364d;margin:.95rem 0 .08rem;
@@ -1783,29 +1792,121 @@ low = int((master["Confidence"] == "Low").sum())
 # These helpers only use signals that actually exist in the selected
 # equipment's monitored parameter set. Missing context is never guessed.
 # -------------------------------------------------------------------------
-def _eh_find_context_signal(health_df, keywords):
-    """Find the best available monitored signal for an operating-context role."""
+
+def _eh_find_context_signal(health_df, role, equipment_name=""):
+    """Select a context signal using role + equipment-aware scoring.
+
+    Keyword matches are weighted by semantic specificity. Generic words such
+    as 'flow', 'current' and 'pressure' receive lower weight than explicit
+    phrases such as 'mill feed', 'motor current' or 'discharge pressure'.
+    """
     if health_df is None or health_df.empty:
         return None
+
+    eq = str(equipment_name).lower()
+    role_terms = {
+        "feed": [
+            ("mill feed", 20), ("ore feed", 18), ("feed rate", 17),
+            ("throughput", 14), ("process feed", 16), ("feed", 8),
+            ("flow", 4), ("rate", 3),
+        ],
+        "load": [
+            ("main motor current", 24), ("mill motor current", 24),
+            ("motor current", 20), ("motor load", 18), ("motor power", 18),
+            ("power", 9), ("load", 8), ("current", 4), ("torque", 7),
+        ],
+        "speed": [
+            ("mill speed", 22), ("motor speed", 20), ("speed", 12),
+            ("rpm", 12), ("frequency", 8), ("hz", 5),
+        ],
+        "pressure": [
+            ("discharge pressure", 22), ("mill discharge pressure", 25),
+            ("suction pressure", 20), ("pump discharge pressure", 23),
+            ("pressure", 8),
+        ],
+        "temperature": [
+            ("bearing temperature", 24), ("motor temperature", 22),
+            ("gearbox temperature", 22), ("oil temperature", 20),
+            ("temperature", 8),
+        ],
+        "vibration": [
+            ("bearing vibration", 24), ("motor vibration", 22),
+            ("vibration", 14), ("velocity", 8), ("acceleration", 6),
+        ],
+        "status": [
+            ("run status", 24), ("running status", 24),
+            ("equipment status", 24), ("motor status", 22),
+            ("pump status", 22), ("run feedback", 22),
+            ("run fb", 20), ("on/off", 18), ("status", 8),
+        ],
+    }
+
+    # Equipment-specific semantic boosts.
+    boosts = []
+    if "sag mill" in eq or "ball mill" in eq or "mill" in eq:
+        boosts = {
+            "feed": ["mill feed", "ore feed", "feed rate"],
+            "load": ["mill motor current", "main motor current", "motor current"],
+            "speed": ["mill speed", "motor speed"],
+            "pressure": ["mill discharge pressure"],
+            "temperature": ["bearing temperature", "gearbox temperature"],
+            "vibration": ["bearing vibration"],
+        }.get(role, [])
+    elif "pump" in eq:
+        boosts = {
+            "feed": ["flow", "flow rate"],
+            "load": ["motor current", "motor load"],
+            "speed": ["pump speed", "motor speed"],
+            "pressure": ["discharge pressure", "suction pressure"],
+            "temperature": ["bearing temperature", "motor temperature"],
+            "vibration": ["bearing vibration", "pump vibration"],
+        }.get(role, [])
+    elif "crusher" in eq:
+        boosts = {
+            "feed": ["feed rate", "ore feed", "throughput"],
+            "load": ["motor current", "motor load"],
+            "speed": ["crusher speed", "motor speed"],
+            "pressure": ["hydraulic pressure", "discharge pressure"],
+            "temperature": ["bearing temperature"],
+            "vibration": ["bearing vibration"],
+        }.get(role, [])
+
     candidates = []
+    terms = role_terms.get(role, [])
     for _, r in health_df.iterrows():
         p = str(r.get("Parameter", "")).lower()
         tag = str(r.get("PLC Tag", "")).lower()
+        combined = f"{p} {tag}"
         score = 0
-        for kw, weight in keywords:
-            if kw in p:
+        matched = []
+        for term, weight in terms:
+            if term in p:
                 score += weight
-            if kw in tag:
+                matched.append(term)
+            elif term in tag:
                 score += max(1, weight // 2)
+                matched.append(term + " [tag]")
+
+        for boost in boosts:
+            if boost in combined:
+                score += 8
+
+        # Avoid treating a parameter as context solely because it shares the
+        # same broad keyword with another role.
         if score > 0:
-            candidates.append((score, r))
+            candidates.append((score, len(matched), r))
+
     if not candidates:
         return None
-    candidates.sort(key=lambda x: (-x[0], str(x[1].get("Parameter", ""))))
-    return candidates[0][1]
+
+    candidates.sort(
+        key=lambda x: (-x[0], -x[1], str(x[2].get("Parameter", "")))
+    )
+    return candidates[0][2]
 
 
-def _eh_context_value(row):
+def _eh_context_value(row, stale=False):
+    """Display current value or explicitly mark it as last-valid evidence."""
     if row is None:
         return "NOT AVAILABLE"
     try:
@@ -1813,27 +1914,21 @@ def _eh_context_value(row):
         if not np.isfinite(value):
             return "NOT AVAILABLE"
         unit = str(row.get("Unit", "") or "")
-        return f"{value:,.3f} {unit}".strip()
+        prefix = "LAST VALID · " if stale else ""
+        return f"{prefix}{value:,.3f} {unit}".strip()
     except Exception:
         return "NOT AVAILABLE"
 
 
-def _eh_context_operating_state(health_df):
-    """Infer state only from an explicit status/run feedback signal."""
-    if health_df is None or health_df.empty:
-        return "NOT VERIFIED", "No operating-state signal available"
-    keywords = [
-        ("running", 10), ("run status", 10), ("equipment status", 10),
-        ("motor status", 10), ("pump status", 10), ("run feedback", 10),
-        ("run fb", 10), ("on/off", 10), ("status", 8),
-    ]
-    row = _eh_find_context_signal(health_df, keywords)
+def _eh_context_operating_state(health_df, equipment_name=""):
+    """Infer state only from an explicit status/run-feedback signal."""
+    row = _eh_find_context_signal(health_df, "status", equipment_name)
     if row is None:
         return "NOT VERIFIED", "No explicit run/status signal in monitored tags"
     try:
         value = float(row.get("Current", np.nan))
         if not np.isfinite(value):
-            return "NOT VERIFIED", f'{row.get("Parameter", "Status")} has no valid current value'
+            return "NOT VERIFIED", f'{row.get("Parameter", "Status")} has no valid value'
         if value > 0.5:
             return "RUNNING", f'{row.get("Parameter", "Status")} = {value:g}'
         return "STOPPED / OFF", f'{row.get("Parameter", "Status")} = {value:g}'
@@ -2325,10 +2420,15 @@ elif page == "Equipment Health":
             score_value = str(score) if score is not None else "N/A"
             score_small = "Current evidence screening" if score is not None else "Current-state score withheld"
             freshness_cls = {"LIVE":"green", "RECENT":"green", "AGING":"orange", "STALE":"orange", "NO RECENT DATA":"critical", "NO DATA":"critical"}.get(freshness["state"], "orange")
+            historical_flags = int(abnormal)
+            current_verified_abnormal = int(
+                (health["Condition"].isin(["Deteriorating", "Attention", "Critical"])
+                 & health["PLC Tag"].map(lambda t: quality_map.get(str(t), {}).get("verified", False))).sum()
+            )
             kpis = [
                 (k1, "CONDITION SCORE", score_value, "/ 100" if score is not None else "", score_small, "blue" if score is not None else "critical"),
-                (k2, "CONDITION", f"{icon} {overall}", "", f"{abnormal} abnormal parameter(s)", status_cls),
-                (k3, "ABNORMAL SIGNALS", f"{abnormal}", f"/ {total_params}", f"{abnormal/max(total_params,1)*100:.0f}% of analyzable", "orange" if abnormal else "green"),
+                (k2, "CURRENT CONDITION", f"{icon} {overall}", "", f"{unverified_count} unverified parameter(s)" if quality_gate or parameter_quality_gate else f"{current_verified_abnormal} abnormal parameter(s)", status_cls),
+                (k3, "HISTORICAL FLAGS", f"{historical_flags}", f"/ {total_params}", "historical screening only", "orange" if historical_flags else "green"),
                 (k4, "PRIORITY", priority, "", f"{risk}", priority.lower()),
                 (k5, "DATA FRESHNESS", freshness["state"], "", f"{analyzable}/{max(len(eq_tags),1)} tags analyzable · {coverage_pct:.0f}%", freshness_cls),
             ]
@@ -2389,15 +2489,10 @@ elif page == "Equipment Health":
 
             # -----------------------------------------------------------------
             # Stage 2 — Parameter Health Matrix
-            # Gives the engineer one compact view of every monitored signal:
-            # current value, screening condition, trend direction, magnitude
-            # of deviation and data quality. This is intentionally separate
-            # from the condition mix so "Unverified" is not confused with
-            # "Normal".
             # -----------------------------------------------------------------
             st.markdown(
                 '<div class="eh25-section-title">📋 PARAMETER HEALTH MATRIX</div>'
-                '<div class="eh25-section-sub">Engineer view — identify which signal needs attention and why</div>',
+                '<div class="eh25-section-sub">Engineer view — top signals first; current condition is separated from historical screening</div>',
                 unsafe_allow_html=True,
             )
 
@@ -2406,52 +2501,48 @@ elif page == "Equipment Health":
                 tag = str(rr["PLC Tag"])
                 q = quality_map.get(tag, {})
                 qlabel = q.get("label", q.get("status", "UNKNOWN"))
-                if not q.get("verified", False):
-                    display_condition = "UNVERIFIED"
-                else:
-                    display_condition = str(rr["Condition"]).upper()
-
-                shift = float(rr.get("Shift %", 0.0))
-                sigma = float(rr.get("Deviation Sigma", 0.0))
-                outside = float(rr.get("Outside Fraction", 0.0)) * 100.0
-                direction = str(rr.get("Direction", "Stable"))
-
+                display_condition = (
+                    str(rr["Condition"]).upper()
+                    if q.get("verified", False) and not quality_gate and not parameter_quality_gate
+                    else "UNVERIFIED"
+                )
                 matrix_rows.append({
                     "PLC Tag": tag,
                     "Parameter": str(rr["Parameter"]),
                     "Current": float(rr["Current"]),
                     "Unit": str(rr["Unit"]),
                     "Condition": display_condition,
-                    "Direction": direction,
-                    "Shift": shift,
-                    "Deviation": sigma,
-                    "Outside": outside,
+                    "Historical": str(rr["Condition"]).upper(),
+                    "Direction": str(rr.get("Direction", "Stable")),
+                    "Shift": float(rr.get("Shift %", 0.0)),
+                    "Deviation": float(rr.get("Deviation Sigma", 0.0)),
+                    "Outside": float(rr.get("Outside Fraction", 0.0)) * 100.0,
                     "Confidence": str(rr["Confidence"]),
                     "Data Quality": qlabel,
                 })
 
             matrix_df = pd.DataFrame(matrix_rows)
-
-            # Rank abnormal verified signals first, then unverified signals,
-            # then normal signals. This makes the table useful at a glance.
             condition_rank = {
                 "CRITICAL": 0, "ATTENTION": 1, "DETERIORATING": 2,
                 "UNVERIFIED": 3, "NORMAL": 4
             }
             matrix_df["_rank"] = matrix_df["Condition"].map(condition_rank).fillna(9)
-            matrix_df["_sigma"] = matrix_df["Deviation"].abs()
+            matrix_df["_signal_score"] = (
+                matrix_df["Deviation"].abs() * 3
+                + matrix_df["Outside"] / 10
+                + matrix_df["Shift"].abs() / 10
+                + matrix_df["_rank"].replace({4: 0, 3: 1, 2: 2, 1: 3, 0: 4})
+            )
             matrix_df = matrix_df.sort_values(
-                ["_rank", "_sigma", "Outside"],
-                ascending=[True, False, False]
-            ).drop(columns=["_rank", "_sigma"])
+                ["_rank", "_signal_score"],
+                ascending=[True, False]
+            ).drop(columns=["_rank", "_signal_score"])
 
             def _matrix_condition_badge(value):
                 v = str(value).upper()
                 cls = {
-                    "CRITICAL": "critical",
-                    "ATTENTION": "attention",
-                    "DETERIORATING": "deteriorating",
-                    "NORMAL": "normal",
+                    "CRITICAL": "critical", "ATTENTION": "attention",
+                    "DETERIORATING": "deteriorating", "NORMAL": "normal",
                     "UNVERIFIED": "unverified",
                 }.get(v, "unverified")
                 return f'<span class="eh25-pill {cls}">{v}</span>'
@@ -2468,22 +2559,21 @@ elif page == "Equipment Health":
                     cls = "warn"
                 return f'<span class="eh25-quality {cls}">{v}</span>'
 
-            html_rows = []
-            for _, rr in matrix_df.iterrows():
-                shift_txt = f'{rr["Shift"]:+.1f}%'
-                sigma_txt = f'{rr["Deviation"]:.2f}σ'
-                outside_txt = f'{rr["Outside"]:.0f}%'
-                html_rows.append(
-                    '<div class="eh25-matrix-row">'
-                    f'<div class="eh25-param"><b>{rr["Parameter"]}</b><small>{rr["PLC Tag"]}</small></div>'
-                    f'<div class="eh25-current"><b>{rr["Current"]:.3f}</b><small>{rr["Unit"]}</small></div>'
-                    f'<div>{_matrix_condition_badge(rr["Condition"])}</div>'
-                    f'<div class="eh25-direction"><b>{rr["Direction"]}</b><small>Shift {shift_txt}</small></div>'
-                    f'<div class="eh25-deviation"><b>{sigma_txt}</b><small>Outside {outside_txt}</small></div>'
-                    f'<div>{_matrix_quality_badge(rr["Data Quality"])}</div>'
-                    f'<div class="eh25-confidence"><b>{rr["Confidence"]}</b></div>'
-                    '</div>'
-                )
+            def _render_matrix(frame):
+                html_rows = []
+                for _, rr in frame.iterrows():
+                    html_rows.append(
+                        '<div class="eh25-matrix-row">'
+                        f'<div class="eh25-param"><b>{rr["Parameter"]}</b><small>{rr["PLC Tag"]}</small></div>'
+                        f'<div class="eh25-current"><b>{rr["Current"]:.3f}</b><small>{rr["Unit"]}</small></div>'
+                        f'<div>{_matrix_condition_badge(rr["Condition"])}</div>'
+                        f'<div class="eh25-direction"><b>{rr["Direction"]}</b><small>Shift {rr["Shift"]:+.1f}%</small></div>'
+                        f'<div class="eh25-deviation"><b>{rr["Deviation"]:.2f}σ</b><small>Outside {rr["Outside"]:.0f}%</small></div>'
+                        f'<div>{_matrix_quality_badge(rr["Data Quality"])}</div>'
+                        f'<div class="eh25-confidence"><b>{rr["Confidence"]}</b></div>'
+                        '</div>'
+                    )
+                return ''.join(html_rows) if html_rows else '<div class="eh25-empty">No parameter evidence is available.</div>'
 
             matrix_header = (
                 '<div class="eh25-matrix">'
@@ -2492,83 +2582,89 @@ elif page == "Equipment Health":
                 '<div>TREND</div><div>DEVIATION</div><div>DATA QUALITY</div><div>CONF.</div>'
                 '</div>'
             )
-            matrix_body = ''.join(html_rows) if html_rows else (
-                '<div class="eh25-empty">No parameter evidence is available.</div>'
+            top_n = min(10, len(matrix_df))
+            st.markdown(
+                matrix_header + _render_matrix(matrix_df.head(top_n)) + '</div>',
+                unsafe_allow_html=True
             )
-            st.markdown(matrix_header + matrix_body + '</div>', unsafe_allow_html=True)
 
-            if not matrix_df.empty:
-                verified_abnormal = matrix_df[
-                    (matrix_df["Condition"].isin(["CRITICAL", "ATTENTION", "DETERIORATING"]))
-                ]
-                if not verified_abnormal.empty:
-                    top = verified_abnormal.iloc[0]
+            if len(matrix_df) > top_n:
+                with st.expander(f"📋 View all {len(matrix_df)} monitored parameters", expanded=False):
                     st.markdown(
-                        f'<div class="eh25-focus">'
-                        f'<b>ENGINEERING FOCUS:</b> {top["Parameter"]} '
-                        f'({top["PLC Tag"]}) is the highest-ranked verified signal — '
-                        f'{top["Condition"]}, {top["Deviation"]:.2f}σ deviation, '
-                        f'{top["Shift"]:+.1f}% recent shift.</div>',
-                        unsafe_allow_html=True,
+                        matrix_header + _render_matrix(matrix_df) + '</div>',
+                        unsafe_allow_html=True
                     )
-                elif unverified_count:
-                    st.markdown(
-                        f'<div class="eh25-focus neutral">'
-                        f'<b>DATA FOCUS:</b> {unverified_count} parameter(s) are unverified. '
-                        f'Validate equipment operating state and signal quality before interpreting condition.</div>',
-                        unsafe_allow_html=True,
-                    )
+
+            verified_abnormal = matrix_df[
+                matrix_df["Condition"].isin(["CRITICAL", "ATTENTION", "DETERIORATING"])
+            ]
+            if not verified_abnormal.empty:
+                top = verified_abnormal.iloc[0]
+                st.markdown(
+                    f'<div class="eh25-focus">'
+                    f'<b>ENGINEERING FOCUS:</b> {top["Parameter"]} ({top["PLC Tag"]}) — '
+                    f'{top["Condition"]}, {top["Deviation"]:.2f}σ deviation, '
+                    f'{top["Shift"]:+.1f}% recent shift.</div>',
+                    unsafe_allow_html=True,
+                )
+            elif unverified_count:
+                st.markdown(
+                    f'<div class="eh25-focus neutral">'
+                    f'<b>DATA FOCUS:</b> {unverified_count} parameter(s) are unverified. '
+                    f'Historical flags must not be interpreted as current equipment abnormality.</div>',
+                    unsafe_allow_html=True,
+                )
 
             # -----------------------------------------------------------------
             # Stage 3 — Operating Context
             # -----------------------------------------------------------------
-            op_state, op_state_note = _eh_context_operating_state(health)
+            op_state, op_state_note = _eh_context_operating_state(health, eq_name)
+            context_stale = freshness["state"] in {"STALE", "NO RECENT DATA", "NO DATA"}
 
-            flow_row = _eh_find_context_signal(
-                health, [("flow", 10), ("rate", 5), ("throughput", 5), ("feed", 4)]
-            )
-            load_row = _eh_find_context_signal(
-                health, [("motor current", 10), ("current", 7), ("load", 8), ("power", 7), ("torque", 6)]
-            )
-            speed_row = _eh_find_context_signal(
-                health, [("speed", 10), ("rpm", 10), ("frequency", 7), ("hz", 5)]
-            )
-            pressure_row = _eh_find_context_signal(
-                health, [("pressure", 10), ("discharge pressure", 12), ("suction pressure", 10)]
-            )
+            flow_row = _eh_find_context_signal(health, "feed", eq_name)
+            load_row = _eh_find_context_signal(health, "load", eq_name)
+            speed_row = _eh_find_context_signal(health, "speed", eq_name)
+            pressure_row = _eh_find_context_signal(health, "pressure", eq_name)
 
             context_note = (
-                "Context evidence is current enough for screening."
-                if freshness["state"] not in {"STALE", "NO RECENT DATA", "NO DATA"}
-                else "Context evidence is stale; verify actual equipment operating state."
+                "Values are current screening evidence."
+                if not context_stale
+                else "Values below are last-valid historical evidence only; they are not the present operating state."
             )
 
             st.markdown(
                 '<div class="eh26-section-title">⚙️ OPERATING CONTEXT</div>'
-                '<div class="eh26-section-sub">Interpret equipment signals in operating state before deciding whether a deviation is equipment-driven</div>',
+                '<div class="eh26-section-sub">Use operating context to distinguish equipment behaviour from process/load effects</div>',
                 unsafe_allow_html=True,
             )
 
+            state_title = "OPERATING STATE" if not context_stale else "OPERATING STATE · NOT VERIFIED"
             cards = [
                 _eh_context_card(
-                    "OPERATING STATE", op_state, op_state_note,
-                    "running" if op_state == "RUNNING" else "stopped" if op_state.startswith("STOPPED") else "neutral"
+                    state_title,
+                    op_state if not context_stale else "NOT VERIFIED",
+                    op_state_note,
+                    "running" if op_state == "RUNNING" and not context_stale else "stopped" if op_state.startswith("STOPPED") and not context_stale else "neutral"
                 ),
                 _eh_context_card(
-                    "FLOW / FEED", _eh_context_value(flow_row),
-                    str(flow_row.get("Parameter")) if flow_row is not None else "No monitored flow/feed signal"
+                    "MILL FEED / PROCESS FEED" if ("mill" in eq_name.lower()) else "FLOW / FEED",
+                    _eh_context_value(flow_row, context_stale),
+                    str(flow_row.get("Parameter")) if flow_row is not None else "No relevant feed/flow signal mapped",
                 ),
                 _eh_context_card(
-                    "LOAD / CURRENT", _eh_context_value(load_row),
-                    str(load_row.get("Parameter")) if load_row is not None else "No monitored load/current signal"
+                    "MAIN MOTOR LOAD" if ("mill" in eq_name.lower() or "crusher" in eq_name.lower()) else "LOAD / CURRENT",
+                    _eh_context_value(load_row, context_stale),
+                    str(load_row.get("Parameter")) if load_row is not None else "No relevant motor/load signal mapped",
                 ),
                 _eh_context_card(
-                    "SPEED", _eh_context_value(speed_row),
-                    str(speed_row.get("Parameter")) if speed_row is not None else "No monitored speed signal"
+                    "MILL SPEED" if "mill" in eq_name.lower() else "SPEED",
+                    _eh_context_value(speed_row, context_stale),
+                    str(speed_row.get("Parameter")) if speed_row is not None else "No relevant speed signal mapped",
                 ),
                 _eh_context_card(
-                    "PRESSURE", _eh_context_value(pressure_row),
-                    str(pressure_row.get("Parameter")) if pressure_row is not None else "No monitored pressure signal"
+                    "DISCHARGE PRESSURE" if ("mill" in eq_name.lower() or "pump" in eq_name.lower()) else "PRESSURE",
+                    _eh_context_value(pressure_row, context_stale),
+                    str(pressure_row.get("Parameter")) if pressure_row is not None else "No relevant pressure signal mapped",
                 ),
             ]
 
@@ -2578,7 +2674,7 @@ elif page == "Equipment Health":
             )
             st.markdown(
                 f'<div class="eh26-context-note">ⓘ <b>{freshness["state"]}</b> · {context_note} '
-                f'Zero/constant signals are not interpreted as stopped equipment unless an explicit operating-state signal confirms it.</div>',
+                f'Context signals are selected using equipment-aware semantic matching; a broad keyword match is not treated as a valid engineering mapping.</div>',
                 unsafe_allow_html=True,
             )
 
@@ -2659,8 +2755,8 @@ elif page == "Equipment Health":
                 else:
                     read_title = str(primary["Parameter"])
                     read_text = (
-                        f'{primary["Direction"]} behaviour · current '
-                        f'{primary["Current"]:.3f} {primary["Unit"]} versus historical '
+                        f'Historical screening: {primary["Condition"]} · {primary["Direction"]} behaviour · '
+                        f'last valid value {primary["Current"]:.3f} {primary["Unit"]} versus historical '
                         f'P05–P95 {primary["Baseline Low"]:.3f}–{primary["Baseline High"]:.3f}.'
                     )
                 st.markdown(
@@ -2692,9 +2788,16 @@ elif page == "Equipment Health":
                 )
             selected_row = health[health["PLC Tag"] == selected_tag].iloc[0]
             with i2:
+                selected_q = _eh_parameter_quality(df, selected_tag)
+                selected_current_state = (
+                    str(selected_row["Condition"])
+                    if selected_q.get("verified", False) and not quality_gate and not parameter_quality_gate
+                    else "UNVERIFIED"
+                )
                 st.markdown(
                     f'<div class="eh22-evidence-chip"><span>SELECTED SIGNAL</span>'
-                    f'<b>{selected_row["Condition"]}</b><small>{selected_row["Confidence"]} confidence · {(_eh_parameter_quality(df, selected_tag)["status"])}</small></div>',
+                    f'<b>{selected_current_state}</b>'
+                    f'<small>Historical screening: {selected_row["Condition"]} · {selected_row["Confidence"]} confidence · {selected_q["label"]}</small></div>',
                     unsafe_allow_html=True,
                 )
 
