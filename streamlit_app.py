@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 import re
+from urllib.parse import quote
 
 st.set_page_config(page_title="OPP Engineering Monitoring", page_icon="⚙️", layout="wide")
 ROOT = Path(__file__).resolve().parent
@@ -296,6 +297,44 @@ st.markdown("""<style>
     .health-v8-banner{flex-direction:column}
     .health-v8-banner-right{text-align:left}
 }
+
+
+/* ===== Dashboard v16 — whole-card navigation ===== */
+.v16-click{
+    display:block;text-decoration:none!important;color:inherit!important;
+    cursor:pointer;position:relative;
+}
+.v16-click:hover{text-decoration:none!important}
+.v16-click .v15-kpi,.v16-click .v15-condition,.v16-click .v15-action-main,
+.v16-click .v15-priority,.v16-click .v15-dq{
+    transition:transform .14s ease,box-shadow .14s ease,filter .14s ease;
+}
+.v16-click:hover .v15-kpi,.v16-click:hover .v15-condition,
+.v16-click:hover .v15-action-main,.v16-click:hover .v15-priority,.v16-click:hover .v15-dq{
+    transform:translateY(-2px);
+    box-shadow:0 7px 18px rgba(16,24,40,.16);
+    filter:saturate(1.04);
+}
+.v16-arrow{
+    position:absolute;right:.7rem;bottom:.55rem;font-size:1.05rem;font-weight:900;
+    color:rgba(255,255,255,.95);pointer-events:none;
+}
+.v16-condition-arrow{color:#667085}
+.v16-mini-link{
+    display:block;text-decoration:none!important;color:inherit!important;cursor:pointer;
+}
+.v16-panel-link{
+    display:block;text-decoration:none!important;color:inherit!important;cursor:pointer;
+}
+.v16-panel-link:hover{color:inherit!important}
+.v16-linkbar{
+    margin-top:.55rem;border:1px solid #d9e0e8;background:#fff;border-radius:7px;
+    min-height:36px;display:flex;align-items:center;justify-content:center;gap:.35rem;
+    color:#344054;font-size:.68rem;font-weight:750;box-sizing:border-box;
+    transition:transform .14s ease,box-shadow .14s ease,border-color .14s ease;
+}
+.v16-linkbar b{font-size:1rem;color:#175cd3}
+.v16-panel-link:hover .v16-linkbar{transform:translateY(-1px);box-shadow:0 4px 10px rgba(16,24,40,.08);border-color:#8db7ef}
 
 
 /* ===== Dashboard v15 — bright, solid-color executive UI ===== */
@@ -1062,6 +1101,32 @@ for col in required:
 # This removes duplicate Area options such as 130 / 130.0 / Area 130.
 master["Area"] = master["Area"].apply(normalize_area_label)
 
+def _dashboard_href(nav_label, value=None):
+    """Build a browser link so the entire dashboard block is clickable."""
+    params = f"?opp_nav={quote(nav_label)}"
+    if value:
+        params += f"&opp_value={quote(str(value))}"
+    return params
+
+_dashboard_targets = {
+    "⌂  Dashboard", "〽  Equipment Health", "⚠  Maintenance Priority",
+    "✓  Action Center", "⌑  Tag Master", "↗  Engineering Trend", "⇧  Data Import"
+}
+if "opp_nav" in st.query_params:
+    _qnav = str(st.query_params.get("opp_nav", ""))
+    _qval = str(st.query_params.get("opp_value", "")) or None
+    if _qnav in _dashboard_targets:
+        st.session_state["main_navigation"] = _qnav
+        if _qnav == "⚠  Maintenance Priority" and _qval:
+            if _qval in {"P1", "P2", "P3", "P4"}:
+                st.session_state["priority_level_v2"] = _qval
+                st.session_state["priority_condition_v2"] = "All"
+            else:
+                st.session_state["priority_condition_v2"] = _qval
+        elif _qnav == "〽  Equipment Health" and _qval:
+            st.session_state["health_area"] = _qval
+        st.query_params.clear()
+
 def _navigate_dashboard(nav_label, value=None):
     """Navigate immediately and optionally prepare a destination filter."""
     st.session_state["main_navigation"] = nav_label
@@ -1164,10 +1229,19 @@ if page == "Dashboard":
             (k4, "#E63950", "●", "P1 IMMEDIATE REVIEW", p1n, "Highest screening urgency"),
             (k5, "#6246C9", "🛠", "OPEN ENGINEERING FINDINGS", open_count, "Awaiting engineering follow-up"),
         ]
-        for col, color, icon, title, value, small in kpi_data:
+        kpi_targets = [
+            "〽  Equipment Health", "⚠  Maintenance Priority", "⚠  Maintenance Priority",
+            "⚠  Maintenance Priority", "✓  Action Center"
+        ]
+        kpi_values = [None, "P4", "ATTENTION", "P1", None]
+        for col, color, icon, title, value, small, target, target_value in [
+            (*item, kpi_targets[i], kpi_values[i]) for i, item in enumerate(kpi_data)
+        ]:
             col.markdown(
+                f'<a class="v16-click" href="{_dashboard_href(target, target_value)}">'
                 f'<div class="v15-kpi" style="background:{color}"><div class="v15-kpi-top"><span>{icon}</span>{title}</div>'
-                f'<div class="v15-kpi-value">{value:,}</div><div class="v15-kpi-small">{small}</div></div>', unsafe_allow_html=True)
+                f'<div class="v15-kpi-value">{value:,}</div><div class="v15-kpi-small">{small}</div><div class="v16-arrow">›</div></div></a>',
+                unsafe_allow_html=True)
 
         # ---------------- Plant Condition + Action Center ----------------
         left, right = st.columns([1.55, 1], gap="medium")
@@ -1192,24 +1266,32 @@ if page == "Dashboard":
                     (c4,"#E63950","CRITICAL",critical,"Highest concern", "CRITICAL"),
                 ]
                 for col,color,label,n,desc,target in cards:
-                    col.markdown(f'<div class="v15-condition"><div class="v15-dot" style="background:{color}"></div><div class="v15-condition-label">{label}</div><div class="v15-condition-count">{n:,}</div><div class="v15-condition-small">{n/max(total_eq,1)*100:.1f}% · {desc}</div></div>', unsafe_allow_html=True)
-                    if target:
-                        col.button(f"🔎 View {label.title()}", key=f"dash_v15_cond_{target}", use_container_width=True,
-                                   on_click=_navigate_dashboard, args=("⚠  Maintenance Priority", target))
+                    target_nav = "⚠  Maintenance Priority" if target else "〽  Equipment Health"
+                    target_val = target if target else None
+                    col.markdown(
+                        f'<a class="v16-click" href="{_dashboard_href(target_nav, target_val)}">'
+                        f'<div class="v15-condition"><div class="v15-dot" style="background:{color}"></div>'
+                        f'<div class="v15-condition-label">{label}</div><div class="v15-condition-count">{n:,}</div>'
+                        f'<div class="v15-condition-small">{n/max(total_eq,1)*100:.1f}% · {desc}</div>'
+                        f'<div class="v16-arrow v16-condition-arrow">›</div></div></a>',
+                        unsafe_allow_html=True)
                 st.markdown(f'<div class="v15-interpret"><b>Engineering read:</b> {nonhealthy:,} of {total_eq:,} screened equipment are outside the healthy screening state. Priority attention is concentrated in P1/P2 items.</div>', unsafe_allow_html=True)
 
         with right:
             with st.container(border=True, key="dash_v15_actions"):
                 st.markdown('<div class="v15-panel-head">🛠 ACTION CENTER <span>• engineering follow-up</span></div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="v15-action-main" style="background:#6246C9"><div class="v15-action-number">{open_count:,}</div><div><div class="v15-action-title">OPEN ENGINEERING FINDINGS</div><div class="v15-action-small">Findings awaiting investigation, action or verification.</div></div><div class="v15-action-icon">☑</div></div>', unsafe_allow_html=True)
+                st.markdown(
+                    f'<a class="v16-click" href="{_dashboard_href("✓  Action Center")}">'
+                    f'<div class="v15-action-main" style="background:#6246C9"><div class="v15-action-number">{open_count:,}</div>'
+                    f'<div><div class="v15-action-title">OPEN ENGINEERING FINDINGS</div><div class="v15-action-small">Findings awaiting investigation, action or verification.</div></div>'
+                    f'<div class="v15-action-icon">☑</div><div class="v16-arrow">›</div></div></a>',
+                    unsafe_allow_html=True)
                 a1,a2,a3,a4 = st.columns(4, gap="medium")
                 status_counts = {s:int((action_df["Status"]==s).sum()) if not action_df.empty and "Status" in action_df else 0 for s in ACTION_STATUSES}
                 for col, label, n, color, icon in [
                     (a1,"OPEN",status_counts["OPEN"],"#1769E0","🔎"),(a2,"INVESTIGATION",status_counts["INVESTIGATION"],"#F28C00","🧭"),
                     (a3,"ACTION",status_counts["ACTION"],"#E63950","🔧"),(a4,"VERIFICATION",status_counts["VERIFICATION"],"#6246C9","✓")]:
                     col.markdown(f'<div class="v15-mini" style="border-top:4px solid {color}"><div>{icon} {label}</div><strong>{n:,}</strong></div>', unsafe_allow_html=True)
-                st.button("🛠 Open Action Center →", key="dash_v15_action", use_container_width=True,
-                          on_click=_navigate_dashboard, args=("✓  Action Center", None))
 
         st.markdown('<div class="v15-row-gap"></div>', unsafe_allow_html=True)
 
@@ -1224,9 +1306,11 @@ if page == "Dashboard":
                 for col, p, n, desc, color in [
                     (q1,"P1",p1n,"Immediate Review","#E63950"),(q2,"P2",p2n,"Planned Inspection","#F79009"),
                     (q3,"P3",p3n,"Monitoring","#D9A514"),(q4,"P4",p4n,"Routine","#12A66F")]:
-                    col.markdown(f'<div class="v15-priority" style="background:{color}"><div class="vp-top">● {p}</div><div class="vp-count">{n:,}</div><div class="vp-desc">{desc}</div></div>', unsafe_allow_html=True)
-                    col.button(f"View {p}", key=f"dash_v15_{p}", use_container_width=True, on_click=_navigate_dashboard,
-                               args=("⚠  Maintenance Priority", p))
+                    col.markdown(
+                        f'<a class="v16-click" href="{_dashboard_href("⚠  Maintenance Priority", p)}">'
+                        f'<div class="v15-priority" style="background:{color}"><div class="vp-top">● {p}</div>'
+                        f'<div class="vp-count">{n:,}</div><div class="vp-desc">{desc}</div><div class="v16-arrow">›</div></div></a>',
+                        unsafe_allow_html=True)
 
         with right:
             with st.container(border=True, key="dash_v15_quality"):
@@ -1236,8 +1320,10 @@ if page == "Dashboard":
                     col.markdown(f'<div class="v15-dq {cls}"><div>{label}</div><strong>{n:,}</strong></div>', unsafe_allow_html=True)
                 cov = f"{coverage_pct:.1f}%" if coverage_pct is not None else "—"
                 st.markdown(f'<div class="v15-coverage"><div><span>Historical data coverage</span><b>{cov}</b></div><div class="v15-cover-track"><div style="width:{min(100,max(0,coverage_pct or 0)):.1f}%"></div></div><small>{data_days:,} calendar days in history • coverage is based on days containing PLC records</small></div>', unsafe_allow_html=True)
-                st.button("📊 Open Data Import / Coverage →", key="dash_v15_data", use_container_width=True,
-                          on_click=_navigate_dashboard, args=("⇧  Data Import", None))
+                st.markdown(
+                    f'<a class="v16-panel-link" href="{_dashboard_href("⇧  Data Import")}">'
+                    f'<div class="v16-linkbar">📊 Open Data Import / Coverage <b>›</b></div></a>',
+                    unsafe_allow_html=True)
 
         st.markdown('<div class="v15-row-gap"></div>', unsafe_allow_html=True)
 
@@ -1258,8 +1344,10 @@ if page == "Dashboard":
                     rows.append(f'<tr><td><b>{r["Equipment Code"]}</b><br><span>{str(r["Equipment"])[:28]}</span></td><td>{str(r.get("Area",""))}</td><td><b>{int(r["Health"])}%</b></td><td><span class="v15-status" style="color:{color}">{r["Condition"]}</span></td><td><b style="color:{color}">{r["Screening Priority"]}</b></td></tr>')
                 table = '<table class="v15-table"><thead><tr><th>Equipment</th><th>Area</th><th>Health</th><th>Condition</th><th>Priority</th></tr></thead><tbody>' + ''.join(rows) + '</tbody></table>'
                 st.markdown(table, unsafe_allow_html=True)
-                st.button("🔧 View All Equipment Health →", key="dash_v15_health", use_container_width=True,
-                          on_click=_navigate_dashboard, args=("〽  Equipment Health", None))
+                st.markdown(
+                    f'<a class="v16-panel-link" href="{_dashboard_href("〽  Equipment Health")}">'
+                    f'<div class="v16-linkbar">🔧 Open Equipment Health <b>›</b></div></a>',
+                    unsafe_allow_html=True)
 
         with right:
             with st.container(border=True, key="dash_v15_trend_panel"):
@@ -1276,8 +1364,10 @@ if page == "Dashboard":
                         st.info("No recent historical record series available.")
                 else:
                     st.info("No historical data available.")
-                st.button("📈 Open Engineering Trend →", key="dash_v15_trend", use_container_width=True,
-                          on_click=_navigate_dashboard, args=("↗  Engineering Trend", None))
+                st.markdown(
+                    f'<a class="v16-panel-link" href="{_dashboard_href("↗  Engineering Trend")}">'
+                    f'<div class="v16-linkbar">📈 Open Engineering Trend <b>›</b></div></a>',
+                    unsafe_allow_html=True)
 
         # Footer status strip.
         st.markdown(
