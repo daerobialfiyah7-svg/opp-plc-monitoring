@@ -1310,6 +1310,362 @@ st.markdown("""<style>
     letter-spacing:.02em!important;
 }
 
+
+/* ================================================================
+   v33 — RESPONSIVE TYPOGRAPHY & BLOCK-FIT
+   Prinsip:
+   1) Tidak ada teks penting yang boleh keluar dari block.
+   2) Nilai panjang boleh wrap; status/pill tetap terbaca.
+   3) Ukuran font menyesuaikan lebar viewport.
+   4) Hero, KPI, context, diagnosis, evidence, recommendation,
+      dan tabel mendapat perlakuan yang konsisten.
+   ================================================================ */
+
+/* Global text safety inside the Equipment Health workspace */
+.eh22-hero *,
+.eh22-kpi *,
+.eh22-panel *,
+.eh22-decision *,
+.eh25-matrix *,
+.eh26-context-card *,
+.eh29-card *,
+.eh29-evidence-item *,
+.eh29-strength *,
+.eh29-correlation *,
+.eh29-group-title *,
+.eh29-evidence-badge *{
+    min-width:0;
+    box-sizing:border-box;
+}
+
+/* ---------- Hero equipment ---------- */
+.eh22-hero{
+    min-width:0;
+    overflow:hidden;
+}
+.eh22-hero-left{
+    min-width:0;
+    flex:1 1 auto;
+}
+.eh22-hero-right{
+    min-width:0;
+    flex:0 1 42%;
+    white-space:normal;
+    overflow-wrap:anywhere;
+}
+.eh22-code{
+    font-size:clamp(1.05rem,1.7vw,1.45rem);
+    overflow-wrap:anywhere;
+}
+.eh22-name{
+    max-width:100%;
+    white-space:normal;
+    overflow-wrap:anywhere;
+    line-height:1.25;
+}
+.eh22-status{
+    white-space:normal;
+    overflow-wrap:anywhere;
+    line-height:1.15;
+    max-width:100%;
+}
+.eh22-last{
+    white-space:normal;
+    overflow-wrap:anywhere;
+    line-height:1.3;
+}
+
+/* ---------- KPI cards ---------- */
+.eh22-kpi{
+    min-width:0;
+    overflow:hidden;
+}
+.eh22-kpi-label{
+    line-height:1.25;
+    overflow-wrap:anywhere;
+    word-break:normal;
+}
+.eh22-kpi-value{
+    font-size:clamp(1.05rem,1.65vw,1.36rem);
+    line-height:1.08;
+    white-space:normal;
+    overflow-wrap:anywhere;
+    word-break:break-word;
+    hyphens:auto;
+}
+.eh22-kpi-value small{
+    display:inline;
+    white-space:normal;
+    overflow-wrap:anywhere;
+}
+.eh22-kpi-small{
+    white-space:normal;
+    overflow-wrap:anywhere;
+    word-break:normal;
+}
+
+/* ---------- Decision / alert blocks ---------- */
+.eh22-decision{
+    min-width:0;
+    align-items:flex-start;
+}
+.eh22-decision > div:last-child{
+    min-width:0;
+    flex:1 1 auto;
+}
+.eh22-decision-title,
+.eh22-decision-text{
+    white-space:normal;
+    overflow-wrap:anywhere;
+    word-break:normal;
+}
+
+/* ---------- Generic panels / headings ---------- */
+.eh22-panel-head,
+.eh22-panel-sub{
+    white-space:normal;
+    overflow-wrap:anywhere;
+}
+.eh22-panel-head{
+    line-height:1.25;
+}
+
+/* ---------- Parameter matrix ---------- */
+.eh25-matrix,
+.eh25-matrix table,
+.eh25-matrix td,
+.eh25-matrix th{
+    max-width:100%;
+}
+.eh25-matrix td,
+.eh25-matrix th{
+    white-space:normal !important;
+    overflow-wrap:anywhere;
+    word-break:normal;
+    line-height:1.25;
+}
+.eh25-matrix td:first-child,
+.eh25-matrix th:first-child{
+    min-width:0;
+}
+
+/* ---------- Operating context cards ---------- */
+.eh26-context-card{
+    min-width:0;
+    overflow:hidden;
+}
+.eh26-context-label,
+.eh26-context-value,
+.eh26-context-sub{
+    white-space:normal !important;
+    overflow-wrap:anywhere;
+    word-break:normal;
+}
+.eh26-context-value{
+    font-size:clamp(.82rem,1.25vw,1.08rem) !important;
+    line-height:1.18 !important;
+}
+.eh26-context-sub{
+    max-width:100%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+/* ---------- Maintenance / diagnosis cards ---------- */
+.eh29-card{
+    min-width:0;
+    overflow:hidden;
+}
+.eh29-card *,
+.eh29-rule *,
+.eh29-diagnosis-card *{
+    overflow-wrap:anywhere;
+}
+.eh29-card-title,
+.eh29-title,
+.eh29-diagnosis-title{
+    white-space:normal !important;
+    line-height:1.2 !important;
+}
+.eh29-card-sub,
+.eh29-caution,
+.eh29-evidence-reason{
+    white-space:normal !important;
+    line-height:1.4 !important;
+    overflow-wrap:anywhere;
+}
+
+/* ---------- Evidence blocks ---------- */
+.eh29-evidence-item{
+    min-width:0;
+    overflow:hidden;
+}
+.eh29-evidence-item *{
+    max-width:100%;
+}
+.eh29-evidence-item.support,
+.eh29-evidence-item.contradict,
+.eh29-evidence-item.context{
+    white-space:normal;
+}
+.eh29-evidence-meta{
+    white-space:normal !important;
+    overflow-wrap:anywhere;
+    line-height:1.35 !important;
+}
+.eh29-evidence-badge{
+    float:none !important;
+    display:inline-block;
+    max-width:100%;
+    white-space:normal !important;
+    overflow-wrap:anywhere;
+}
+.eh29-group-title{
+    line-height:1.25 !important;
+    white-space:normal !important;
+    overflow-wrap:anywhere;
+}
+.eh29-group-title span{
+    float:none !important;
+    display:inline-block;
+    margin-left:.25rem;
+}
+
+/* ---------- Strength banner ---------- */
+.eh29-strength{
+    min-width:0;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:.5rem;
+    flex-wrap:wrap;
+}
+.eh29-strength span,
+.eh29-strength b{
+    white-space:normal !important;
+    overflow-wrap:anywhere;
+}
+
+/* ---------- Correlation table ---------- */
+.eh29-correlation table,
+.eh29-correlation td,
+.eh29-correlation th{
+    max-width:100%;
+}
+.eh29-correlation td,
+.eh29-correlation th{
+    white-space:normal !important;
+    overflow-wrap:anywhere;
+    line-height:1.25;
+}
+
+/* ---------- Engineering recommendation / next action ---------- */
+.eh22-read-card *,
+.eh22-recommendation *,
+.eh22-next-action *,
+.eh29-recommendation *{
+    white-space:normal !important;
+    overflow-wrap:anywhere;
+}
+.eh22-read-card,
+.eh22-recommendation,
+.eh22-next-action,
+.eh29-recommendation{
+    min-width:0;
+    overflow:hidden;
+}
+
+/* ---------- Older health classes still present in the file ---------- */
+.health-kpi,
+.health-kpi *,
+.health-v8-banner,
+.health-v8-banner *,
+.health-v8-table td,
+.health-v8-table th{
+    min-width:0;
+}
+.health-kpi-value{
+    white-space:normal !important;
+    overflow-wrap:anywhere;
+    word-break:break-word;
+}
+.health-v8-banner-right{
+    white-space:normal !important;
+    overflow-wrap:anywhere;
+}
+
+/* ---------- Responsive breakpoints ---------- */
+@media (max-width: 1100px){
+    .eh22-hero{
+        flex-direction:column;
+        align-items:stretch;
+    }
+    .eh22-hero-right{
+        flex:1 1 auto;
+        text-align:left;
+    }
+    .eh22-status{
+        display:inline-block;
+    }
+}
+
+@media (max-width: 760px){
+    .eh22-kpi{
+        min-height:88px;
+        padding:.62rem .68rem;
+    }
+    .eh22-kpi-label{
+        font-size:.56rem;
+    }
+    .eh22-kpi-value{
+        font-size:1.02rem;
+    }
+    .eh22-kpi-small{
+        font-size:.57rem;
+    }
+    .eh22-hero{
+        padding:.85rem .9rem;
+    }
+    .eh22-code{
+        font-size:1.05rem;
+    }
+    .eh22-name{
+        font-size:.70rem;
+    }
+    .eh22-status{
+        font-size:.65rem;
+    }
+}
+
+@media (max-width: 520px){
+    .eh22-kpi{
+        min-height:82px;
+    }
+    .eh22-kpi-value{
+        font-size:.96rem;
+    }
+    .eh22-kpi-value small{
+        font-size:.60rem;
+    }
+    .eh22-decision{
+        gap:.5rem;
+        padding:.58rem .62rem;
+    }
+}
+
+/* Prevent long numeric values from visually escaping cards */
+.eh22-kpi-value,
+.eh26-context-value,
+.eh29-evidence-item,
+.eh29-card,
+.eh22-decision-text,
+.eh22-read-card,
+.eh22-recommendation,
+.eh22-next-action{
+    overflow-wrap:anywhere;
+    word-break:break-word;
+}
+
 </style>""",unsafe_allow_html=True)
 
 DB_PATH = ROOT / "data" / "plc_history.sqlite"
