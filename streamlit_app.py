@@ -1257,6 +1257,59 @@ st.markdown("""<style>
 .eh29-corr-pill.negative{background:#fff0f0;color:#b42318}
 .eh29-correlation table td{vertical-align:middle!important}
 
+
+/* v32 Evidence Intelligence */
+.eh29-strength.strength-historical,
+.eh29-strength.strength-historical-weak,
+.eh29-strength.strength-not-verifiable{
+    background:linear-gradient(90deg,#fff7e8,#f8fafc)!important;
+    border-color:#f4b860!important;
+    color:#a15c00!important;
+}
+.eh29-evidence-badge{
+    float:right!important;
+    border-radius:999px!important;
+    padding:.25rem .55rem!important;
+    background:#f1f5f9!important;
+    color:#64748b!important;
+    font-size:.58rem!important;
+    letter-spacing:.04em!important;
+}
+.eh29-evidence-item.support{
+    border-left-color:#f79009!important;
+    background:linear-gradient(180deg,#fffdf9,#ffffff)!important;
+}
+.eh29-evidence-item.contradict{
+    border-left-color:#12b76a!important;
+    background:linear-gradient(180deg,#f9fffc,#ffffff)!important;
+}
+.eh29-evidence-item.context{
+    border-left-color:#94a3b8!important;
+    background:linear-gradient(180deg,#fafbfc,#ffffff)!important;
+}
+.eh29-group-title{
+    font-size:.68rem!important;
+    font-weight:900!important;
+    letter-spacing:.025em!important;
+    margin:.9rem 0 .48rem!important;
+}
+.eh29-group-title span{
+    float:right!important;
+    min-width:22px!important;
+    text-align:center!important;
+    border-radius:999px!important;
+    padding:.16rem .35rem!important;
+    background:#eef2f7!important;
+}
+.eh29-evidence-reason{
+    font-size:.70rem!important;
+    line-height:1.48!important;
+}
+.eh29-evidence-meta{
+    font-size:.57rem!important;
+    letter-spacing:.02em!important;
+}
+
 </style>""",unsafe_allow_html=True)
 
 DB_PATH = ROOT / "data" / "plc_history.sqlite"
@@ -2583,145 +2636,355 @@ def _eh29_evidence_reason(row, dx_id, relation):
     return f"{p} memberikan operating context tambahan; belum cukup untuk mengonfirmasi mekanisme."
 
 
-def _eh29_build_evidence(health, df, diagnosis, quality_map=None, freshness_state="VERIFIED"):
-    """Build supporting, contradicting and context evidence for a diagnosis.
+def _eh32_equipment_role(equipment_name="", equipment_code=""):
+    """Return a conservative equipment role from explicit equipment naming.
 
-    This is a decision-support layer, not a root-cause classifier. It uses the
-    existing historical screening fields and explicitly separates evidence
-    that supports a mechanism from evidence that weakens it.
+    This is a semantic routing aid, not an equipment master replacement.
+    Unknown equipment remains 'generic' rather than being guessed.
     """
-    if health is None or health.empty:
-        return {"supporting":[],"contradicting":[],"context":[],"strength":"LOW"}
+    txt = f"{equipment_name} {equipment_code}".upper()
+    if any(k in txt for k in ["PUMP", "PMP"]):
+        return "pump"
+    if any(k in txt for k in ["SAG MILL", "BALL MILL", "MILL"]):
+        return "mill"
+    if any(k in txt for k in ["CRUSHER", "JAW", "CONE CRUSH"]):
+        return "crusher"
+    if any(k in txt for k in ["CONVEYOR", "CV-", "BELT"]):
+        return "conveyor"
+    if any(k in txt for k in ["THICKENER"]):
+        return "thickener"
+    if any(k in txt for k in ["FILTER PRESS", "FILTERPRESS"]):
+        return "filter_press"
+    if any(k in txt for k in ["COMPRESSOR"]):
+        return "compressor"
+    if any(k in txt for k in ["FAN", "BLOWER"]):
+        return "fan"
+    return "generic"
 
-    dx_id=diagnosis.get("id","")
-    fams=next((r["families"] for r in EH29_RULES if r["id"]==dx_id),set())
-    rows=[]
-    for _,rr in health.iterrows():
-        fam=_eh29_family(rr.get("Parameter",""),rr.get("PLC Tag",""))
-        if dx_id!="INSTRUMENTATION" and fam not in fams:
+
+def _eh32_signal_role(parameter="", tag="", equipment_role="generic"):
+    """Map a signal to an engineering role without assuming service from
+    generic words alone. The original parameter family remains authoritative.
+    """
+    p = str(parameter or "").upper()
+    t = str(tag or "").upper()
+    fam = _eh29_family(parameter, tag)
+
+    service = "other"
+    if "PROCESS WATER" in p or "WATER" in p:
+        service = "process_water"
+    elif any(k in p for k in ["ORE FEED", "MILL FEED", "FEED RATE", "ORE"]):
+        service = "ore_feed"
+    elif "SLURRY" in p:
+        service = "slurry"
+    elif "DISCHARGE" in p and fam == "pressure":
+        service = "discharge_pressure"
+    elif "SUCTION" in p and fam == "pressure":
+        service = "suction_pressure"
+
+    return {"family": fam, "service": service}
+
+
+def _eh32_diagnosis_factor(dx_id, equipment_role):
+    """Conservative equipment-role weighting for diagnosis ranking."""
+    factors = {
+        "mill": {
+            "MECH_BEARING": 1.15, "MECH_LOAD": 1.20, "FLOW_RESTRICTION": 0.90,
+            "PUMP_PERFORMANCE": 0.45, "DRIVE_CONTROL": 1.10,
+            "THERMAL": 1.05, "INSTRUMENTATION": 1.00,
+        },
+        "pump": {
+            "MECH_BEARING": 1.05, "MECH_LOAD": 0.95, "FLOW_RESTRICTION": 1.15,
+            "PUMP_PERFORMANCE": 1.35, "DRIVE_CONTROL": 1.10,
+            "THERMAL": 1.00, "INSTRUMENTATION": 1.00,
+        },
+        "crusher": {
+            "MECH_BEARING": 1.15, "MECH_LOAD": 1.25, "FLOW_RESTRICTION": 0.95,
+            "PUMP_PERFORMANCE": 0.40, "DRIVE_CONTROL": 1.05,
+            "THERMAL": 1.00, "INSTRUMENTATION": 1.00,
+        },
+        "conveyor": {
+            "MECH_BEARING": 1.15, "MECH_LOAD": 1.20, "FLOW_RESTRICTION": 0.55,
+            "PUMP_PERFORMANCE": 0.30, "DRIVE_CONTROL": 1.15,
+            "THERMAL": 1.00, "INSTRUMENTATION": 1.00,
+        },
+        "filter_press": {
+            "MECH_BEARING": 1.00, "MECH_LOAD": 1.10, "FLOW_RESTRICTION": 1.00,
+            "PUMP_PERFORMANCE": 0.70, "DRIVE_CONTROL": 1.00,
+            "THERMAL": 0.90, "INSTRUMENTATION": 1.00,
+        },
+    }
+    return factors.get(equipment_role, {}).get(dx_id, 1.0)
+
+
+def _eh32_is_meaningful_abnormal(rec):
+    """A signal is abnormal only when the existing screening says so.
+
+    Deviation alone is not enough: small positive sigma inside a historical
+    envelope must not become 'supporting evidence'.
+    """
+    return str(rec.get("Condition", "Normal")) in {"Critical", "Attention", "Deteriorating"}
+
+
+def _eh32_trend_support(rec, minimum_shift=5.0):
+    direction = str(rec.get("Direction", "Stable"))
+    shift = float(rec.get("Shift %", 0.0) or 0.0)
+    return direction != "Stable" and abs(shift) >= minimum_shift
+
+
+def _eh32_build_evidence(health, df, diagnosis, quality_map=None,
+                         freshness_state="VERIFIED", equipment_name="",
+                         equipment_code=""):
+    """Build strict evidence classes for a diagnostic hypothesis.
+
+    Supporting evidence must contain an observed abnormal pattern that is
+    mechanically/process-relevant to the hypothesis. Relevant-but-normal
+    signals are context, not support. Contradicting evidence is used only
+    when the signal provides a meaningful counter-pattern.
+
+    If the equipment evidence is stale, the result is explicitly historical
+    and the strength is capped so it cannot be presented as current evidence.
+    """
+    empty = {"supporting": [], "contradicting": [], "context": [],
+             "strength": "LOW", "current_verifiable": False}
+    if health is None or health.empty:
+        return empty
+
+    dx_id = diagnosis.get("id", "")
+    fams = next((r["families"] for r in EH29_RULES if r["id"] == dx_id), set())
+    eq_role = _eh32_equipment_role(equipment_name, equipment_code)
+    stale = freshness_state in {"STALE", "NO RECENT DATA", "NO DATA"}
+
+    rows = []
+    for _, rr in health.iterrows():
+        fam = _eh29_family(rr.get("Parameter", ""), rr.get("PLC Tag", ""))
+        if dx_id != "INSTRUMENTATION" and fam not in fams:
             continue
-        q=(quality_map or {}).get(str(rr.get("PLC Tag","")),{})
-        rec=dict(rr)
-        rec["Family"]=fam
-        rec["Quality Label"]=q.get("label",q.get("status","UNKNOWN"))
-        rec["Verified"]=bool(q.get("verified",False)) and freshness_state not in {"STALE","NO RECENT DATA","NO DATA"}
-        rec["Timestamp"]=q.get("latest",pd.NaT)
+        q = (quality_map or {}).get(str(rr.get("PLC Tag", "")), {})
+        rec = dict(rr)
+        rec["Family"] = fam
+        rec["SignalRole"] = _eh32_signal_role(
+            rr.get("Parameter", ""), rr.get("PLC Tag", ""), eq_role
+        )
+        rec["Quality Label"] = q.get("label", q.get("status", "UNKNOWN"))
+        rec["Verified"] = bool(q.get("verified", False)) and not stale
+        rec["Timestamp"] = q.get("latest", pd.NaT)
         rows.append(rec)
 
-    # If the hypothesis is instrumentation/signal quality, include all signal
-    # quality evidence rather than only physical parameter families.
-    if dx_id=="INSTRUMENTATION":
-        rows=[]
-        for _,rr in health.iterrows():
-            q=(quality_map or {}).get(str(rr.get("PLC Tag","")),{})
-            rec=dict(rr)
-            rec["Family"]=_eh29_family(rr.get("Parameter",""),rr.get("PLC Tag",""))
-            rec["Quality Label"]=q.get("label",q.get("status","UNKNOWN"))
-            rec["Verified"]=bool(q.get("verified",False)) and freshness_state not in {"STALE","NO RECENT DATA","NO DATA"}
-            rec["Timestamp"]=q.get("latest",pd.NaT)
-            rows.append(rec)
+    supporting, contradicting, context = [], [], []
 
-    supporting=[]; contradicting=[]; context=[]
-
-    def add(rec, relation, reason, strength=2):
-        item={
-            "Parameter":str(rec.get("Parameter","Signal")),
-            "Tag":str(rec.get("PLC Tag","")),
-            "Current":float(rec.get("Current",0.0) or 0.0),
-            "Unit":str(rec.get("Unit","")),
-            "Condition":str(rec.get("Condition","Normal")),
-            "Direction":str(rec.get("Direction","Stable")),
-            "Shift":float(rec.get("Shift %",0.0) or 0.0),
-            "Deviation":float(rec.get("Deviation Sigma",0.0) or 0.0),
-            "Outside":float(rec.get("Outside Fraction",0.0) or 0.0)*100.0,
-            "Quality":str(rec.get("Quality Label","UNKNOWN")),
-            "Verified":bool(rec.get("Verified",False)),
-            "Timestamp":rec.get("Timestamp", pd.NaT),
-            "Reason":reason,
-            "Strength":strength,
+    def add(rec, relation, reason, strength=1):
+        item = {
+            "Parameter": str(rec.get("Parameter", "Signal")),
+            "Tag": str(rec.get("PLC Tag", "")),
+            "Current": float(rec.get("Current", 0.0) or 0.0),
+            "Unit": str(rec.get("Unit", "")),
+            "Condition": str(rec.get("Condition", "Normal")),
+            "Direction": str(rec.get("Direction", "Stable")),
+            "Shift": float(rec.get("Shift %", 0.0) or 0.0),
+            "Deviation": float(rec.get("Deviation Sigma", 0.0) or 0.0),
+            "Outside": float(rec.get("Outside Fraction", 0.0) or 0.0) * 100.0,
+            "Quality": str(rec.get("Quality Label", "UNKNOWN")),
+            "Verified": bool(rec.get("Verified", False)),
+            "Timestamp": rec.get("Timestamp", pd.NaT),
+            "Reason": reason,
+            "Strength": strength,
+            "Service": rec.get("SignalRole", {}).get("service", "other"),
         }
-        {"SUPPORTING":supporting,"CONTRADICTING":contradicting,"CONTEXT":context}[relation].append(item)
+        target = {
+            "SUPPORTING": supporting,
+            "CONTRADICTING": contradicting,
+            "CONTEXT": context,
+        }.get(relation)
+        if target is not None:
+            target.append(item)
 
-    abnormal={"Critical","Attention","Deteriorating"}
+    abnormal = {"Critical", "Attention", "Deteriorating"}
+
     for rec in rows:
-        fam=rec["Family"]; cond=str(rec.get("Condition","Normal")); direction=str(rec.get("Direction","Stable"))
-        dev=float(rec.get("Deviation Sigma",0.0) or 0.0); shift=float(rec.get("Shift %",0.0) or 0.0)
-        is_abnormal=cond in abnormal or dev>0
+        fam = rec["Family"]
+        cond = str(rec.get("Condition", "Normal"))
+        direction = str(rec.get("Direction", "Stable"))
+        shift = float(rec.get("Shift %", 0.0) or 0.0)
+        abnormal_now = cond in abnormal
+        trend_now = _eh32_trend_support(rec)
+        service = rec.get("SignalRole", {}).get("service", "other")
 
-        rel=None; strength=1
-        if dx_id=="PUMP_PERFORMANCE":
-            if fam=="flow" and is_abnormal:
-                rel="SUPPORTING"; strength=3
-            elif fam=="pressure" and (str(rec.get("Deviation Side"))=="Above baseline" or (direction=="Increasing" and shift>=5)):
-                rel="SUPPORTING"; strength=3
-            elif fam=="load" and (direction=="Increasing" and shift>=5):
-                rel="SUPPORTING"; strength=2
-            elif fam in {"flow","pressure","load"} and cond=="Normal" and direction=="Stable":
-                rel="CONTRADICTING"; strength=1
+        rel = "CONTEXT"
+        strength = 1
+
+        if dx_id == "PUMP_PERFORMANCE":
+            # Pump performance is strong only for actual pump equipment.
+            role_penalty = eq_role not in {"pump"}
+            if role_penalty and eq_role in {"mill", "crusher", "conveyor"}:
+                rel = "CONTEXT"
+            elif fam == "flow" and abnormal_now:
+                rel, strength = "SUPPORTING", 3
+            elif fam == "pressure" and abnormal_now and (
+                str(rec.get("Deviation Side")) == "Above baseline"
+                or direction == "Increasing"
+            ):
+                rel, strength = "SUPPORTING", 3
+            elif fam == "load" and trend_now and shift >= 5:
+                rel, strength = "SUPPORTING", 2
+            elif fam in {"flow", "pressure", "load"} and abnormal_now:
+                rel, strength = "CONTEXT", 1
             else:
-                rel="CONTEXT"
-        elif dx_id=="FLOW_RESTRICTION":
-            if fam=="flow" and (str(rec.get("Deviation Side"))=="Below baseline" or direction=="Decreasing" or is_abnormal):
-                rel="SUPPORTING"; strength=3
-            elif fam=="pressure" and (str(rec.get("Deviation Side"))=="Above baseline" or direction=="Increasing"):
-                rel="SUPPORTING"; strength=3
-            elif fam in {"flow","pressure"} and cond=="Normal" and direction=="Stable":
-                rel="CONTRADICTING"; strength=1
-            else: rel="CONTEXT"
-        elif dx_id=="MECH_BEARING":
-            if fam in {"vibration","temperature"} and is_abnormal:
-                rel="SUPPORTING"; strength=3
-            elif fam in {"vibration","temperature"} and cond=="Normal" and direction=="Stable":
-                rel="CONTRADICTING"; strength=1
-            else: rel="CONTEXT"
-        elif dx_id=="MECH_LOAD":
-            if (fam=="load" and direction=="Increasing" and shift>=5) or (fam=="vibration" and direction=="Increasing" and shift>=5) or (fam=="speed" and direction=="Decreasing" and abs(shift)>=5):
-                rel="SUPPORTING"; strength=3
-            elif fam in {"load","vibration","speed"} and cond=="Normal" and direction=="Stable": rel="CONTRADICTING"
-            else: rel="CONTEXT"
-        elif dx_id=="DRIVE_CONTROL":
-            if fam=="speed" and (is_abnormal or direction!="Stable"): rel="SUPPORTING"; strength=3
-            elif fam in {"load","flow"} and (is_abnormal or direction!="Stable"): rel="SUPPORTING"; strength=2
-            elif fam in {"speed","load","flow"} and cond=="Normal" and direction=="Stable": rel="CONTRADICTING"
-            else: rel="CONTEXT"
-        elif dx_id=="THERMAL":
-            if fam=="temperature" and is_abnormal: rel="SUPPORTING"; strength=3
-            elif fam=="load" and direction=="Increasing" and shift>=5: rel="SUPPORTING"; strength=2
-            elif fam in {"temperature","load"} and cond=="Normal" and direction=="Stable": rel="CONTRADICTING"
-            else: rel="CONTEXT"
-        elif dx_id=="INSTRUMENTATION":
-            qlabel=str(rec.get("Quality Label","UNKNOWN")).upper()
-            if qlabel in {"STALE","NO RECENT DATA","NO VALID DATA","MISSING TAG","FLATLINE","INSUFFICIENT"} or not rec.get("Verified",False):
-                rel="SUPPORTING"; strength=3
-            else: rel="CONTEXT"
-        else:
-            rel="CONTEXT"
+                rel = "CONTEXT"
 
-        add(rec,rel,_eh29_evidence_reason(rec,dx_id,rel),strength)
+        elif dx_id == "FLOW_RESTRICTION":
+            if fam == "flow" and abnormal_now and (
+                str(rec.get("Deviation Side")) == "Below baseline"
+                or direction == "Decreasing"
+            ):
+                rel, strength = "SUPPORTING", 3
+            elif fam == "pressure" and abnormal_now and (
+                str(rec.get("Deviation Side")) == "Above baseline"
+                or direction == "Increasing"
+            ):
+                rel, strength = "SUPPORTING", 3
+            elif fam in {"flow", "pressure"} and abnormal_now:
+                rel, strength = "CONTEXT", 1
+            elif fam in {"flow", "pressure"} and cond == "Normal" and direction == "Stable":
+                rel, strength = "CONTEXT", 1
 
-    # For hydraulic diagnosis, explicitly strengthen/annotate the paired
-    # low-flow/high-pressure pattern when it exists.
-    if dx_id in {"PUMP_PERFORMANCE","FLOW_RESTRICTION"}:
-        low_flow=any(r["Family"]=="flow" and (str(r.get("Deviation Side"))=="Below baseline" or r["Direction"]=="Decreasing" or r["Condition"] in abnormal) for r in rows)
-        high_pressure=any(r["Family"]=="pressure" and (str(r.get("Deviation Side"))=="Above baseline" or r["Direction"]=="Increasing") for r in rows)
+        elif dx_id == "MECH_BEARING":
+            if fam in {"vibration", "temperature"} and abnormal_now:
+                rel, strength = "SUPPORTING", 3
+            elif fam in {"vibration", "temperature"} and trend_now:
+                rel, strength = "SUPPORTING", 2
+            else:
+                rel = "CONTEXT"
+
+        elif dx_id == "MECH_LOAD":
+            if fam == "load" and trend_now and shift >= 5:
+                rel, strength = "SUPPORTING", 3
+            elif fam == "vibration" and trend_now and shift >= 5:
+                rel, strength = "SUPPORTING", 2
+            elif fam == "speed" and trend_now and shift <= -5:
+                rel, strength = "SUPPORTING", 2
+            else:
+                rel = "CONTEXT"
+
+        elif dx_id == "DRIVE_CONTROL":
+            if fam == "speed" and (abnormal_now or trend_now):
+                rel, strength = "SUPPORTING", 3
+            elif fam in {"load", "flow"} and (abnormal_now or trend_now):
+                rel, strength = "SUPPORTING", 2
+            else:
+                rel = "CONTEXT"
+
+        elif dx_id == "THERMAL":
+            if fam == "temperature" and abnormal_now:
+                rel, strength = "SUPPORTING", 3
+            elif fam == "temperature" and trend_now:
+                rel, strength = "SUPPORTING", 2
+            elif fam == "load" and trend_now and shift >= 5:
+                rel, strength = "SUPPORTING", 2
+            else:
+                rel = "CONTEXT"
+
+        elif dx_id == "INSTRUMENTATION":
+            qlabel = str(rec.get("Quality Label", "UNKNOWN")).upper()
+            if qlabel in {
+                "STALE", "NO RECENT DATA", "NO VALID DATA", "MISSING TAG",
+                "FLATLINE", "INSUFFICIENT"
+            } or not rec.get("Verified", False):
+                rel, strength = "SUPPORTING", 3
+            else:
+                rel = "CONTEXT"
+
+        add(rec, rel, _eh29_evidence_reason(rec, dx_id, rel), strength)
+
+    # Hydraulic paired-pattern enhancement is only valid when the signal
+    # directions actually form low-flow/high-pressure behaviour.
+    if dx_id in {"PUMP_PERFORMANCE", "FLOW_RESTRICTION"}:
+        low_flow = any(
+            r["Family"] == "flow" and
+            _eh32_is_meaningful_abnormal(r) and
+            (
+                str(r.get("Deviation Side")) == "Below baseline"
+                or str(r.get("Direction")) == "Decreasing"
+            )
+            for r in rows
+        )
+        high_pressure = any(
+            r["Family"] == "pressure" and
+            _eh32_is_meaningful_abnormal(r) and
+            (
+                str(r.get("Deviation Side")) == "Above baseline"
+                or str(r.get("Direction")) == "Increasing"
+            )
+            for r in rows
+        )
         if low_flow and high_pressure:
             for r in supporting:
-                if r["Parameter"] and _eh29_family(r["Parameter"],r["Tag"]) in {"flow","pressure"}:
-                    r["Reason"]="Muncul pola low-flow / high-pressure yang mendukung investigasi hydraulic resistance."
-                    r["Strength"]=3
+                if r["Family"] in {"flow", "pressure"}:
+                    r["Reason"] = "Pola low-flow / high-pressure mendukung investigasi hydraulic resistance."
+                    r["Strength"] = max(r["Strength"], 3)
 
-    # Keep the UI focused: strongest evidence first, then a small context set.
-    supporting.sort(key=lambda x:(-x["Strength"],-abs(x["Deviation"]),-abs(x["Shift"])))
-    contradicting.sort(key=lambda x:(-x["Strength"],-abs(x["Deviation"])))
-    context.sort(key=lambda x:(-abs(x["Deviation"]),-abs(x["Shift"])))
-    supporting=supporting[:5]; contradicting=contradicting[:4]; context=context[:3]
-    score=sum(x["Strength"] for x in supporting)
-    oppose=sum(x["Strength"] for x in contradicting)
-    if score>=7 and score>oppose+2: strength="STRONG"
-    elif score>=4 and score>=oppose: strength="MODERATE"
-    elif score>0: strength="WEAK"
-    else: strength="LOW"
-    return {"supporting":supporting,"contradicting":contradicting,"context":context,"strength":strength}
+    # Contradicting evidence should be rare and meaningful. For hydraulic
+    # hypotheses, an explicitly abnormal counter-pattern is stronger than a
+    # normal signal. Normal/stable signals stay in context.
+    if dx_id == "PUMP_PERFORMANCE":
+        if not any(x["Family"] == "pressure" for x in supporting):
+            for r in rows:
+                if r["Family"] == "pressure" and _eh32_is_meaningful_abnormal(r):
+                    add(
+                        r, "CONTEXT",
+                        "Pressure menunjukkan kondisi abnormal, tetapi pola ini belum cukup spesifik untuk pump performance.",
+                        1,
+                    )
+
+    # Unique evidence rows by tag, keeping the strongest relation.
+    def dedupe(items):
+        best = {}
+        for x in items:
+            key = x["Tag"] or x["Parameter"]
+            if key not in best or x["Strength"] > best[key]["Strength"]:
+                best[key] = x
+        return list(best.values())
+
+    supporting = dedupe(supporting)
+    contradicting = dedupe(contradicting)
+    context = dedupe(context)
+
+    supporting.sort(key=lambda x: (-x["Strength"], -abs(x["Deviation"]), -abs(x["Shift"])))
+    contradicting.sort(key=lambda x: (-x["Strength"], -abs(x["Deviation"]), -abs(x["Shift"])))
+    context.sort(key=lambda x: (-abs(x["Deviation"]), -abs(x["Shift"])))
+
+    supporting = supporting[:5]
+    contradicting = contradicting[:4]
+    context = context[:4]
+
+    score = sum(x["Strength"] for x in supporting)
+    oppose = sum(x["Strength"] for x in contradicting)
+
+    if stale:
+        # Never represent stale evidence as current STRONG/MODERATE evidence.
+        if score >= 4:
+            strength = "HISTORICAL"
+        elif score > 0:
+            strength = "HISTORICAL-WEAK"
+        else:
+            strength = "NOT VERIFIABLE"
+    else:
+        if score >= 7 and score > oppose + 2:
+            strength = "STRONG"
+        elif score >= 4 and score >= oppose:
+            strength = "MODERATE"
+        elif score > 0:
+            strength = "WEAK"
+        else:
+            strength = "LOW"
+
+    return {
+        "supporting": supporting,
+        "contradicting": contradicting,
+        "context": context,
+        "strength": strength,
+        "current_verifiable": not stale,
+    }
 
 
 def _eh29_build_context(health):
@@ -2732,82 +2995,108 @@ def _eh29_build_context(health):
     return ctx
 
 
-def _eh29_rank_diagnoses(health, quality_gate=False, parameter_quality_gate=False):
+def _eh29_rank_diagnoses(health, quality_gate=False, parameter_quality_gate=False,
+                          equipment_name="", equipment_code=""):
     """Rank differential mechanisms from available evidence.
 
-    Scores are evidence-ranking scores, not probabilities.
+    Scores are evidence-ranking scores, not probabilities. Equipment-aware
+    weighting prevents generic flow/pressure signals from making a pump
+    diagnosis dominate a mill/crusher/conveyor without a service relationship.
     """
     if health is None or health.empty:
         return []
 
-    ctx=_eh29_build_context(health)
-    bad=health[health["Condition"].isin(["Critical","Attention","Deteriorating"])].copy()
-    abnormal_fams=set(_eh29_family(r.get("Parameter",""),r.get("PLC Tag","")) for _,r in bad.iterrows())
+    ctx = _eh29_build_context(health)
+    bad = health[health["Condition"].isin(["Critical", "Attention", "Deteriorating"])].copy()
+    abnormal_fams = set(
+        _eh29_family(r.get("Parameter", ""), r.get("PLC Tag", ""))
+        for _, r in bad.iterrows()
+    )
+    eq_role = _eh32_equipment_role(equipment_name, equipment_code)
 
-    # Signal quality is itself a diagnostic hypothesis.
-    flatline_n=0
-    for _,r in health.iterrows():
-        tag=str(r.get("PLC Tag",""))
-        q=_eh_parameter_quality(df,tag) if "df" in globals() else {}
-        if q.get("flatline",False) or q.get("status") in {"STALE","NO RECENT DATA","NO VALID DATA","MISSING TAG"}:
-            flatline_n+=1
+    flatline_n = 0
+    for _, r in health.iterrows():
+        tag = str(r.get("PLC Tag", ""))
+        q = _eh_parameter_quality(df, tag) if "df" in globals() else {}
+        if q.get("flatline", False) or q.get("status") in {
+            "STALE", "NO RECENT DATA", "NO VALID DATA", "MISSING TAG"
+        }:
+            flatline_n += 1
 
-    results=[]
+    results = []
     for rule in EH29_RULES:
-        score=0.0
-        evidence=[]
-        families=rule["families"]
+        dx_id = rule["id"]
+        score = 0.0
+        evidence = []
+        families = rule["families"]
 
-        present=families & set(ctx.keys())
-        abnormal=families & abnormal_fams
-        score += 18*len(abnormal) + 5*len(present)
+        present = families & set(ctx.keys())
+        abnormal = families & abnormal_fams
+        score += 18 * len(abnormal) + 5 * len(present)
 
-        # Stronger paired-pattern evidence.
-        if rule["id"]=="MECH_BEARING" and "vibration" in ctx and "temperature" in ctx:
-            v=ctx["vibration"]; tm=ctx["temperature"]
-            if any(str(x.get("Condition")) in {"Critical","Attention","Deteriorating"} for x in v):
-                score+=22; evidence.append("abnormal vibration signal")
-            if any(str(x.get("Condition")) in {"Critical","Attention","Deteriorating"} for x in tm):
-                score+=18; evidence.append("abnormal temperature signal")
+        if dx_id == "MECH_BEARING" and "vibration" in ctx and "temperature" in ctx:
+            if any(str(x.get("Condition")) in {"Critical", "Attention", "Deteriorating"} for x in ctx["vibration"]):
+                score += 22; evidence.append("abnormal vibration signal")
+            if any(str(x.get("Condition")) in {"Critical", "Attention", "Deteriorating"} for x in ctx["temperature"]):
+                score += 18; evidence.append("abnormal temperature signal")
 
-        elif rule["id"]=="MECH_LOAD":
-            if "load" in ctx and any(_eh29_direction_value(x)>0 for x in ctx["load"]):
-                score+=18; evidence.append("increasing load/current")
-            if "vibration" in ctx and any(_eh29_direction_value(x)>0 for x in ctx["vibration"]):
-                score+=15; evidence.append("increasing vibration")
-            if "speed" in ctx and any(_eh29_direction_value(x)<0 for x in ctx["speed"]):
-                score+=10; evidence.append("decreasing speed")
+        elif dx_id == "MECH_LOAD":
+            if "load" in ctx and any(_eh29_direction_value(x) > 0 and abs(float(x.get("Shift %",0) or 0)) >= 5 for x in ctx["load"]):
+                score += 18; evidence.append("increasing load/current")
+            if "vibration" in ctx and any(_eh29_direction_value(x) > 0 and abs(float(x.get("Shift %",0) or 0)) >= 5 for x in ctx["vibration"]):
+                score += 15; evidence.append("increasing vibration")
+            if "speed" in ctx and any(_eh29_direction_value(x) < 0 and abs(float(x.get("Shift %",0) or 0)) >= 5 for x in ctx["speed"]):
+                score += 10; evidence.append("decreasing speed")
 
-        elif rule["id"]=="FLOW_RESTRICTION":
+        elif dx_id == "FLOW_RESTRICTION":
             if "flow" in ctx and "pressure" in ctx:
-                score+=12; evidence.append("flow + pressure context available")
-                low_flow=any(_eh29_direction_value(x)<0 or x.get("Deviation Side")=="Below baseline" for x in ctx["flow"])
-                high_press=any(_eh29_direction_value(x)>0 or x.get("Deviation Side")=="Above baseline" for x in ctx["pressure"])
+                score += 8; evidence.append("flow + pressure context available")
+                low_flow = any(
+                    _eh32_is_meaningful_abnormal(x) and
+                    (_eh29_direction_value(x) < 0 or x.get("Deviation Side") == "Below baseline")
+                    for x in ctx["flow"]
+                )
+                high_press = any(
+                    _eh32_is_meaningful_abnormal(x) and
+                    (_eh29_direction_value(x) > 0 or x.get("Deviation Side") == "Above baseline")
+                    for x in ctx["pressure"]
+                )
                 if low_flow and high_press:
-                    score+=30; evidence.append("low-flow / high-pressure pattern")
+                    score += 30; evidence.append("low-flow / high-pressure pattern")
 
-        elif rule["id"]=="PUMP_PERFORMANCE":
-            if {"flow","pressure"}.issubset(ctx):
-                score+=14; evidence.append("flow + pressure available")
-            if "load" in ctx:
-                score+=5; evidence.append("load context available")
+        elif dx_id == "PUMP_PERFORMANCE":
+            if eq_role == "pump":
+                if {"flow", "pressure"}.issubset(ctx):
+                    score += 22; evidence.append("pump flow + pressure context")
+                if "load" in ctx:
+                    score += 6; evidence.append("pump load context")
+            elif eq_role in {"mill", "crusher", "conveyor"}:
+                # A mill having flow/pressure signals does not make it a pump.
+                score *= 0.45
+                evidence.append("equipment is not identified as a pump; hydraulic signals treated as context")
+            else:
+                if {"flow", "pressure"}.issubset(ctx):
+                    score += 10; evidence.append("flow + pressure context")
 
-        elif rule["id"]=="DRIVE_CONTROL":
+        elif dx_id == "DRIVE_CONTROL":
             if "speed" in ctx:
-                score+=14; evidence.append("speed feedback available")
+                score += 14; evidence.append("speed feedback available")
             if "load" in ctx:
-                score+=8; evidence.append("load feedback available")
+                score += 8; evidence.append("load feedback available")
             if "flow" in ctx:
-                score+=7; evidence.append("process response signal available")
+                score += 7; evidence.append("process response signal available")
 
-        elif rule["id"]=="THERMAL":
-            if "temperature" in ctx and any(str(x.get("Condition"))!="Normal" for x in ctx["temperature"]):
-                score+=22; evidence.append("temperature deviation")
-            if "load" in ctx and any(_eh29_direction_value(x)>0 for x in ctx["load"]):
-                score+=14; evidence.append("increasing load context")
+        elif dx_id == "THERMAL":
+            if "temperature" in ctx and any(str(x.get("Condition")) != "Normal" for x in ctx["temperature"]):
+                score += 22; evidence.append("temperature deviation")
+            if "load" in ctx and any(
+                _eh29_direction_value(x) > 0 and abs(float(x.get("Shift %",0) or 0)) >= 5
+                for x in ctx["load"]
+            ):
+                score += 14; evidence.append("increasing load context")
 
-        elif rule["id"]=="INSTRUMENTATION":
-            score += min(flatline_n*12,36)
+        elif dx_id == "INSTRUMENTATION":
+            score += min(flatline_n * 12, 36)
             if quality_gate:
                 score += 25; evidence.append("equipment data is stale/unverified")
             if parameter_quality_gate:
@@ -2815,80 +3104,108 @@ def _eh29_rank_diagnoses(health, quality_gate=False, parameter_quality_gate=Fals
             if flatline_n:
                 evidence.append(f"{flatline_n} signal(s) require quality verification")
 
-        # Remove weak diagnoses that have no usable evidence.
-        if score>=18:
-            evidence=list(dict.fromkeys(evidence))
+        score *= _eh32_diagnosis_factor(dx_id, eq_role)
+
+        if score >= 18:
+            evidence = list(dict.fromkeys(evidence))
             results.append({
-                "id":rule["id"], "title":rule["title"], "score":min(100,int(round(score))),
-                "evidence":evidence, "checks":rule["checks"], "caution":rule["caution"],
+                "id": dx_id,
+                "title": rule["title"],
+                "score": min(100, int(round(score))),
+                "evidence": evidence,
+                "checks": rule["checks"],
+                "caution": rule["caution"],
             })
 
-    results.sort(key=lambda x:(-x["score"], x["title"]))
+    results.sort(key=lambda x: (-x["score"], x["title"]))
     return results[:5]
 
 
 def _eh29_correlation_evidence(health, df, max_pairs=5):
     """Find useful co-movement among distinct engineering signal families.
 
-    Same-signal and same-family correlations are excluded because they often
-    create visually impressive but maintenance-unhelpful results such as
-    Temperature ↔ Temperature. Correlation is supporting evidence only.
+    Pairs are unique (A,B is the same as B,A), same-signal/same-family
+    relationships are excluded, and ranking favors engineering-relevant
+    relationships. Correlation remains supporting evidence, not causality.
     """
     if health is None or health.empty or df is None or df.empty or "ArchiveTime" not in df.columns:
         return []
 
-    tags=[str(x) for x in health["PLC Tag"].tolist() if str(x) in df.columns]
-    tags=list(dict.fromkeys(tags))
-    if len(tags)<2:
+    tags = [str(x) for x in health["PLC Tag"].tolist() if str(x) in df.columns]
+    tags = list(dict.fromkeys(tags))
+    if len(tags) < 2:
         return []
 
-    meta={}
-    for _,r in health.iterrows():
-        tag=str(r.get("PLC Tag",""))
-        meta[tag]={
-            "parameter":str(r.get("Parameter",tag)),
-            "family":_eh29_family(r.get("Parameter",""),tag),
-            "condition":str(r.get("Condition","Normal")),
-            "shift":float(r.get("Shift %",0.0) or 0.0),
-            "deviation":float(r.get("Deviation Sigma",0.0) or 0.0),
+    meta = {}
+    for _, r in health.iterrows():
+        tag = str(r.get("PLC Tag", ""))
+        meta[tag] = {
+            "parameter": str(r.get("Parameter", tag)),
+            "family": _eh29_family(r.get("Parameter", ""), tag),
+            "condition": str(r.get("Condition", "Normal")),
+            "shift": float(r.get("Shift %", 0.0) or 0.0),
+            "deviation": float(r.get("Deviation Sigma", 0.0) or 0.0),
         }
 
-    work=pd.DataFrame({"ArchiveTime":pd.to_datetime(df["ArchiveTime"],errors="coerce")})
+    work = pd.DataFrame({"ArchiveTime": pd.to_datetime(df["ArchiveTime"], errors="coerce")})
     for tag in tags:
-        work[tag]=pd.to_numeric(df[tag],errors="coerce")
+        work[tag] = pd.to_numeric(df[tag], errors="coerce")
 
-    # Prefer engineering-relevant cross-family relationships.
-    preferred={
-        frozenset({"flow","pressure"}):1.35,
-        frozenset({"load","vibration"}):1.30,
-        frozenset({"vibration","temperature"}):1.25,
-        frozenset({"load","speed"}):1.20,
-        frozenset({"flow","load"}):1.10,
-        frozenset({"pressure","load"}):1.05,
-        frozenset({"flow","speed"}):1.00,
-        frozenset({"pressure","speed"}):.95,
+    preferred = {
+        frozenset({"flow", "pressure"}): 1.35,
+        frozenset({"load", "vibration"}): 1.30,
+        frozenset({"vibration", "temperature"}): 1.25,
+        frozenset({"load", "speed"}): 1.20,
+        frozenset({"flow", "load"}): 1.10,
+        frozenset({"pressure", "load"}): 1.05,
+        frozenset({"flow", "speed"}): 1.00,
+        frozenset({"pressure", "speed"}): .95,
     }
-    pairs=[]
-    for i,a in enumerate(tags):
-        fa=meta.get(a,{}).get("family","other")
-        for b in tags[i+1:]:
-            fb=meta.get(b,{}).get("family","other")
-            if a==b or fa==fb or fa=="other" or fb=="other":
+
+    pairs = []
+    seen_pairs = set()
+
+    for i, a in enumerate(tags):
+        fa = meta.get(a, {}).get("family", "other")
+        for b in tags[i + 1:]:
+            fb = meta.get(b, {}).get("family", "other")
+            if a == b or fa == fb or fa == "other" or fb == "other":
                 continue
-            pair=work[[a,b]].dropna()
-            if len(pair)<30:
+
+            # Canonical tag pair prevents A-B / B-A duplicates even if input
+            # order changes in the future.
+            key = tuple(sorted((a, b)))
+            if key in seen_pairs:
                 continue
-            corr=float(pair[a].corr(pair[b]))
-            if not np.isfinite(corr) or abs(corr)<0.70:
+            seen_pairs.add(key)
+
+            pair = work[[a, b]].dropna()
+            if len(pair) < 30:
                 continue
-            pref=preferred.get(frozenset({fa,fb}),0.85)
-            abnormal_bonus=1.0
-            if meta.get(a,{}).get("condition") in {"Critical","Attention","Deteriorating"}: abnormal_bonus+=.20
-            if meta.get(b,{}).get("condition") in {"Critical","Attention","Deteriorating"}: abnormal_bonus+=.20
-            rank=abs(corr)*pref*abnormal_bonus
-            pairs.append((rank,corr,meta[a]["parameter"],meta[b]["parameter"],a,b,len(pair),fa,fb))
-    pairs.sort(key=lambda x:(-x[0],-abs(x[1])))
+            if pair[a].nunique() < 2 or pair[b].nunique() < 2:
+                continue
+
+            corr = float(pair[a].corr(pair[b]))
+            if not np.isfinite(corr) or abs(corr) < 0.70:
+                continue
+
+            pref = preferred.get(frozenset({fa, fb}), 0.85)
+            abnormal_bonus = 1.0
+            if meta.get(a, {}).get("condition") in {"Critical", "Attention", "Deteriorating"}:
+                abnormal_bonus += .20
+            if meta.get(b, {}).get("condition") in {"Critical", "Attention", "Deteriorating"}:
+                abnormal_bonus += .20
+
+            rank = abs(corr) * pref * abnormal_bonus
+            pairs.append((
+                rank, corr,
+                meta[a]["parameter"], meta[b]["parameter"],
+                a, b, len(pair), fa, fb
+            ))
+
+    pairs.sort(key=lambda x: (-x[0], -abs(x[1])))
     return pairs[:max_pairs]
+
 
 
 if page == "Dashboard":
@@ -3774,6 +4091,8 @@ elif page == "Equipment Health":
                 health,
                 quality_gate=quality_gate,
                 parameter_quality_gate=parameter_quality_gate,
+                equipment_name=eq_name,
+                equipment_code=str(selected_eq),
             )
             corr_pairs = _eh29_correlation_evidence(health, df)
 
@@ -3828,8 +4147,12 @@ elif page == "Equipment Health":
                 )
                 dx=next(d for d in diagnoses if d["id"]==selected_dx)
 
-                evidence = _eh29_build_evidence(
-                    health, df, dx, quality_map=quality_map, freshness_state=freshness["state"]
+                evidence = _eh32_build_evidence(
+                    health, df, dx,
+                    quality_map=quality_map,
+                    freshness_state=freshness["state"],
+                    equipment_name=eq_name,
+                    equipment_code=str(selected_eq),
                 )
 
                 dx1,dx2=st.columns([1.15,1.0],gap="medium")
