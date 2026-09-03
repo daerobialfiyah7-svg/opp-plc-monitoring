@@ -521,6 +521,67 @@ st.markdown("""<style>
 .eh22-empty{background:#f8fafc;border:1px solid #dfe5ee;border-radius:12px;padding:1.5rem;text-align:center;margin-top:.8rem}.eh22-empty-icon{font-size:2rem;color:#98a2b3}.eh22-empty b{display:block;color:#344054;font-size:.82rem;margin-top:.3rem}.eh22-empty span{display:block;color:#98a2b3;font-size:.64rem;margin-top:.25rem}
 @media(max-width:900px){.eh22-header{align-items:flex-start;flex-direction:column}.eh22-hero{align-items:flex-start;flex-direction:column}.eh22-hero-right{text-align:left}.eh22-name{max-width:75vw}}
 
+/* ===== Equipment Health v25 — Parameter Health Matrix ===== */
+.eh25-section-title{
+    font-size:.78rem;font-weight:900;color:#25364d;margin:.95rem 0 .08rem;
+    letter-spacing:.01em
+}
+.eh25-section-sub{
+    font-size:.61rem;color:#98a2b3;margin-bottom:.5rem
+}
+.eh25-matrix{
+    border:1px solid #dfe5ee;border-radius:10px;background:#fff;
+    overflow:hidden;box-shadow:0 2px 6px rgba(16,24,40,.035)
+}
+.eh25-matrix-head,.eh25-matrix-row{
+    display:grid;
+    grid-template-columns:1.55fr .78fr .86fr 1fr .88fr 1.25fr .5fr;
+    align-items:center;gap:.5rem;padding:.58rem .65rem
+}
+.eh25-matrix-head{
+    background:#f8fafc;border-bottom:1px solid #e6e9ef;
+    font-size:.53rem;font-weight:900;color:#667085;letter-spacing:.025em
+}
+.eh25-matrix-row{
+    min-height:48px;border-bottom:1px solid #edf0f4;
+    font-size:.62rem;color:#344054
+}
+.eh25-matrix-row:last-child{border-bottom:0}
+.eh25-param b{display:block;font-size:.64rem;color:#25364d}
+.eh25-param small,.eh25-current small,.eh25-direction small,.eh25-deviation small{
+    display:block;font-size:.52rem;color:#98a2b3;margin-top:.12rem
+}
+.eh25-current b{font-size:.66rem;color:#172b4d}
+.eh25-direction b{font-size:.58rem;color:#475467}
+.eh25-deviation b{font-size:.62rem;color:#172b4d}
+.eh25-confidence b{font-size:.56rem;color:#667085}
+.eh25-pill,.eh25-quality{
+    display:inline-block;border-radius:999px;padding:.2rem .4rem;
+    font-size:.49rem;font-weight:900;white-space:nowrap
+}
+.eh25-pill.normal{background:#ecfdf3;color:#07895a}
+.eh25-pill.deteriorating{background:#fffbeb;color:#a16207}
+.eh25-pill.attention{background:#fff7ed;color:#c2410c}
+.eh25-pill.critical{background:#fff1f2;color:#c81e1e}
+.eh25-pill.unverified{background:#f2f4f7;color:#667085}
+.eh25-quality.valid{background:#ecfdf3;color:#07895a}
+.eh25-quality.warn{background:#fffbeb;color:#a16207}
+.eh25-quality.flatline{background:#fff7ed;color:#9a5b00}
+.eh25-quality.bad{background:#fff1f2;color:#c81e1e}
+.eh25-focus{
+    margin:.5rem 0 .75rem;padding:.55rem .68rem;border-radius:8px;
+    border:1px solid #fed7aa;border-left:4px solid #f79009;
+    background:#fff7ed;color:#9a5b00;font-size:.61rem;line-height:1.35
+}
+.eh25-focus.neutral{
+    background:#f8fafc;border-color:#dfe5ee;border-left-color:#98a2b3;color:#667085
+}
+.eh25-empty{padding:.8rem;color:#98a2b3;font-size:.62rem;text-align:center}
+@media(max-width:900px){
+    .eh25-matrix{overflow-x:auto}
+    .eh25-matrix-head,.eh25-matrix-row{min-width:760px}
+}
+
 /* ===== Equipment Health v7 ===== */
 .health-selector-grid{display:grid;grid-template-columns:1fr 2fr;gap:.7rem;margin:.65rem 0 1rem}
 .health-equipment-banner{background:linear-gradient(135deg,#172b4d,#274c77);color:#fff;border-radius:10px;padding:1rem 1.1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;box-shadow:0 4px 12px rgba(16,24,40,.12);margin:.35rem 0 .8rem}
@@ -2211,6 +2272,138 @@ elif page == "Equipment Health":
                     '<div class="eh22-decision-text"><b>Routine monitoring.</b> Current PLC behaviour remains within the historical screening envelope.</div></div></div>',
                     unsafe_allow_html=True,
                 )
+
+            # -----------------------------------------------------------------
+            # Stage 2 — Parameter Health Matrix
+            # Gives the engineer one compact view of every monitored signal:
+            # current value, screening condition, trend direction, magnitude
+            # of deviation and data quality. This is intentionally separate
+            # from the condition mix so "Unverified" is not confused with
+            # "Normal".
+            # -----------------------------------------------------------------
+            st.markdown(
+                '<div class="eh25-section-title">📋 PARAMETER HEALTH MATRIX</div>'
+                '<div class="eh25-section-sub">Engineer view — identify which signal needs attention and why</div>',
+                unsafe_allow_html=True,
+            )
+
+            matrix_rows = []
+            for _, rr in health.iterrows():
+                tag = str(rr["PLC Tag"])
+                q = quality_map.get(tag, {})
+                qlabel = q.get("label", q.get("status", "UNKNOWN"))
+                if not q.get("verified", False):
+                    display_condition = "UNVERIFIED"
+                else:
+                    display_condition = str(rr["Condition"]).upper()
+
+                shift = float(rr.get("Shift %", 0.0))
+                sigma = float(rr.get("Deviation Sigma", 0.0))
+                outside = float(rr.get("Outside Fraction", 0.0)) * 100.0
+                direction = str(rr.get("Direction", "Stable"))
+
+                matrix_rows.append({
+                    "PLC Tag": tag,
+                    "Parameter": str(rr["Parameter"]),
+                    "Current": float(rr["Current"]),
+                    "Unit": str(rr["Unit"]),
+                    "Condition": display_condition,
+                    "Direction": direction,
+                    "Shift": shift,
+                    "Deviation": sigma,
+                    "Outside": outside,
+                    "Confidence": str(rr["Confidence"]),
+                    "Data Quality": qlabel,
+                })
+
+            matrix_df = pd.DataFrame(matrix_rows)
+
+            # Rank abnormal verified signals first, then unverified signals,
+            # then normal signals. This makes the table useful at a glance.
+            condition_rank = {
+                "CRITICAL": 0, "ATTENTION": 1, "DETERIORATING": 2,
+                "UNVERIFIED": 3, "NORMAL": 4
+            }
+            matrix_df["_rank"] = matrix_df["Condition"].map(condition_rank).fillna(9)
+            matrix_df["_sigma"] = matrix_df["Deviation"].abs()
+            matrix_df = matrix_df.sort_values(
+                ["_rank", "_sigma", "Outside"],
+                ascending=[True, False, False]
+            ).drop(columns=["_rank", "_sigma"])
+
+            def _matrix_condition_badge(value):
+                v = str(value).upper()
+                cls = {
+                    "CRITICAL": "critical",
+                    "ATTENTION": "attention",
+                    "DETERIORATING": "deteriorating",
+                    "NORMAL": "normal",
+                    "UNVERIFIED": "unverified",
+                }.get(v, "unverified")
+                return f'<span class="eh25-pill {cls}">{v}</span>'
+
+            def _matrix_quality_badge(value):
+                v = str(value).upper()
+                if v == "VALID":
+                    cls = "valid"
+                elif "FLATLINE" in v:
+                    cls = "flatline"
+                elif "NO DATA" in v or "MISSING" in v:
+                    cls = "bad"
+                else:
+                    cls = "warn"
+                return f'<span class="eh25-quality {cls}">{v}</span>'
+
+            html_rows = []
+            for _, rr in matrix_df.iterrows():
+                shift_txt = f'{rr["Shift"]:+.1f}%'
+                sigma_txt = f'{rr["Deviation"]:.2f}σ'
+                outside_txt = f'{rr["Outside"]:.0f}%'
+                html_rows.append(
+                    '<div class="eh25-matrix-row">'
+                    f'<div class="eh25-param"><b>{rr["Parameter"]}</b><small>{rr["PLC Tag"]}</small></div>'
+                    f'<div class="eh25-current"><b>{rr["Current"]:.3f}</b><small>{rr["Unit"]}</small></div>'
+                    f'<div>{_matrix_condition_badge(rr["Condition"])}</div>'
+                    f'<div class="eh25-direction"><b>{rr["Direction"]}</b><small>Shift {shift_txt}</small></div>'
+                    f'<div class="eh25-deviation"><b>{sigma_txt}</b><small>Outside {outside_txt}</small></div>'
+                    f'<div>{_matrix_quality_badge(rr["Data Quality"])}</div>'
+                    f'<div class="eh25-confidence"><b>{rr["Confidence"]}</b></div>'
+                    '</div>'
+                )
+
+            matrix_header = (
+                '<div class="eh25-matrix">'
+                '<div class="eh25-matrix-head">'
+                '<div>PARAMETER / TAG</div><div>CURRENT</div><div>CONDITION</div>'
+                '<div>TREND</div><div>DEVIATION</div><div>DATA QUALITY</div><div>CONF.</div>'
+                '</div>'
+            )
+            matrix_body = ''.join(html_rows) if html_rows else (
+                '<div class="eh25-empty">No parameter evidence is available.</div>'
+            )
+            st.markdown(matrix_header + matrix_body + '</div>', unsafe_allow_html=True)
+
+            if not matrix_df.empty:
+                verified_abnormal = matrix_df[
+                    (matrix_df["Condition"].isin(["CRITICAL", "ATTENTION", "DETERIORATING"]))
+                ]
+                if not verified_abnormal.empty:
+                    top = verified_abnormal.iloc[0]
+                    st.markdown(
+                        f'<div class="eh25-focus">'
+                        f'<b>ENGINEERING FOCUS:</b> {top["Parameter"]} '
+                        f'({top["PLC Tag"]}) is the highest-ranked verified signal — '
+                        f'{top["Condition"]}, {top["Deviation"]:.2f}σ deviation, '
+                        f'{top["Shift"]:+.1f}% recent shift.</div>',
+                        unsafe_allow_html=True,
+                    )
+                elif unverified_count:
+                    st.markdown(
+                        f'<div class="eh25-focus neutral">'
+                        f'<b>DATA FOCUS:</b> {unverified_count} parameter(s) are unverified. '
+                        f'Validate equipment operating state and signal quality before interpreting condition.</div>',
+                        unsafe_allow_html=True,
+                    )
 
             # -----------------------------------------------------------------
             # Diagnostic overview
