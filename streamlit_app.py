@@ -15,8 +15,6 @@ st.markdown("""<style>
 [data-testid="stSidebar"]{
     background:#fbfcfe!important;
     border-right:1px solid #e4e8ef!important;
-    min-width:205px!important;
-    max-width:205px!important;
 }
 [data-testid="stSidebar"] > div:first-child{padding-top:.55rem!important}
 [data-testid="stSidebar"] .block-container{padding:.45rem .55rem 1rem!important}
@@ -49,6 +47,15 @@ st.markdown("""<style>
 }
 [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label > div:first-child{
     margin-right:.38rem!important;
+}
+
+
+/* V20 — visible but subtle sidebar boundary. No fixed width. */
+[data-testid="stSidebar"]{
+    box-shadow:1px 0 0 #e5e7eb;
+}
+[data-testid="stSidebar"] > div:first-child{
+    border-right:1px solid #e5e7eb;
 }
 
 /* V19 SIDEBAR — clean, compact, professional */
