@@ -521,6 +521,45 @@ st.markdown("""<style>
 .eh22-empty{background:#f8fafc;border:1px solid #dfe5ee;border-radius:12px;padding:1.5rem;text-align:center;margin-top:.8rem}.eh22-empty-icon{font-size:2rem;color:#98a2b3}.eh22-empty b{display:block;color:#344054;font-size:.82rem;margin-top:.3rem}.eh22-empty span{display:block;color:#98a2b3;font-size:.64rem;margin-top:.25rem}
 @media(max-width:900px){.eh22-header{align-items:flex-start;flex-direction:column}.eh22-hero{align-items:flex-start;flex-direction:column}.eh22-hero-right{text-align:left}.eh22-name{max-width:75vw}}
 
+/* ===== Equipment Health v28 — Maintenance Context ===== */
+.eh28-section-title{
+    font-size:.78rem;font-weight:900;color:#25364d;margin:.95rem 0 .08rem;
+    letter-spacing:.01em
+}
+.eh28-section-sub{
+    font-size:.61rem;color:#98a2b3;margin-bottom:.5rem
+}
+.eh28-maint-grid{
+    display:grid;grid-template-columns:1.15fr 1fr 1fr 1.35fr;
+    gap:.55rem;margin-bottom:.45rem
+}
+.eh28-maint-note{
+    border:1px solid #dfe5ee;border-left:4px solid #98a2b3;
+    background:#f8fafc;border-radius:8px;padding:.5rem .65rem;
+    color:#667085;font-size:.57rem;line-height:1.4;margin-bottom:.5rem
+}
+.eh28-maint-note.active{
+    border-color:#fed7aa;border-left-color:#f79009;
+    background:#fff7ed;color:#9a5b00
+}
+.eh28-decision{
+    border-radius:9px;padding:.62rem .7rem;margin:.45rem 0 .7rem;
+    border:1px solid #dfe5ee;background:#fff
+}
+.eh28-decision.blocked{border-left:4px solid #f79009;background:#fffaf5}
+.eh28-decision.review{border-left:4px solid #f59e0b;background:#fffaf5}
+.eh28-decision.active{border-left:4px solid #2563eb;background:#f5f9ff}
+.eh28-decision.normal{border-left:4px solid #12b76a;background:#f6fffa}
+.eh28-decision-title{
+    font-size:.61rem;font-weight:900;color:#25364d;letter-spacing:.01em
+}
+.eh28-decision-text{
+    font-size:.57rem;color:#667085;margin-top:.18rem;line-height:1.4
+}
+@media(max-width:1000px){
+    .eh28-maint-grid{grid-template-columns:repeat(2,1fr)}
+}
+
 /* ===== Equipment Health v27 refinements ===== */
 .eh26-context-card{min-width:0}
 .eh26-context-value{font-size:.69rem}
@@ -2675,6 +2714,150 @@ elif page == "Equipment Health":
             st.markdown(
                 f'<div class="eh26-context-note">ⓘ <b>{freshness["state"]}</b> · {context_note} '
                 f'Context signals are selected using equipment-aware semantic matching; a broad keyword match is not treated as a valid engineering mapping.</div>',
+                unsafe_allow_html=True,
+            )
+
+            # -----------------------------------------------------------------
+            # Stage 4 — Maintenance Context
+            # -----------------------------------------------------------------
+            # This section deliberately distinguishes:
+            #   1) validated criticality,
+            #   2) PLC-derived historical findings,
+            #   3) Action Center workflow state,
+            #   4) actual maintenance history.
+            # The app does not invent PM/breakdown/running-hour history when
+            # those sources are not connected.
+            # -----------------------------------------------------------------
+            criticality_df_ctx = st.session_state.get("validated_criticality", pd.DataFrame())
+            criticality_value = "NOT CONFIGURED"
+            criticality_basis = "No validated criticality master loaded"
+            if (
+                isinstance(criticality_df_ctx, pd.DataFrame)
+                and not criticality_df_ctx.empty
+                and {"Equipment Code", "Criticality"}.issubset(criticality_df_ctx.columns)
+            ):
+                _crit_rows = criticality_df_ctx[
+                    criticality_df_ctx["Equipment Code"].apply(normalize_equipment_code)
+                    == normalize_equipment_code(selected_eq)
+                ]
+                if not _crit_rows.empty:
+                    _crit_val = str(_crit_rows.iloc[0]["Criticality"]).strip()
+                    if _crit_val:
+                        criticality_value = _crit_val.upper()
+                        if "Criticality Basis" in _crit_rows.columns:
+                            criticality_basis = str(_crit_rows.iloc[0].get("Criticality Basis", "")).strip() or "Validated criticality master"
+                        else:
+                            criticality_basis = "Validated criticality master"
+
+            try:
+                eq_findings_ctx = build_action_findings(
+                    master[master["Equipment Code"].astype(str) == str(selected_eq)],
+                    df,
+                    criticality_df_ctx
+                )
+            except Exception:
+                eq_findings_ctx = pd.DataFrame()
+
+            open_action_count = 0
+            action_status_summary = "NO ACTIVE FINDING"
+            if not eq_findings_ctx.empty:
+                action_store_ctx = ensure_action_store(eq_findings_ctx)
+                eq_ids = set(eq_findings_ctx["Finding ID"].astype(str))
+                eq_actions = [
+                    v for k, v in action_store_ctx.items()
+                    if str(k) in eq_ids
+                ]
+                open_action_count = sum(
+                    1 for a in eq_actions
+                    if str(a.get("Status", "OPEN")).upper() != "CLOSED"
+                )
+                if open_action_count:
+                    statuses = pd.Series(
+                        [str(a.get("Status", "OPEN")).upper() for a in eq_actions]
+                    ).value_counts()
+                    action_status_summary = " · ".join(
+                        f"{k}: {int(v)}" for k, v in statuses.items()
+                    )
+
+            historical_finding_count = int(len(eq_findings_ctx))
+            maintenance_history_connected = bool(
+                st.session_state.get("maintenance_history_connected", False)
+            )
+
+            st.markdown(
+                '<div class="eh28-section-title">🛠️ MAINTENANCE CONTEXT</div>'
+                '<div class="eh28-section-sub">Connect condition evidence with maintenance priority and workflow — without inventing maintenance history</div>',
+                unsafe_allow_html=True,
+            )
+
+            maintenance_cards = [
+                _eh_context_card(
+                    "EQUIPMENT CRITICALITY",
+                    criticality_value,
+                    criticality_basis,
+                    "running" if criticality_value in {"CRITICAL", "VERY HIGH", "HIGH"} else "neutral"
+                ),
+                _eh_context_card(
+                    "HISTORICAL FINDINGS",
+                    f"{historical_finding_count}",
+                    "PLC screening findings available for this equipment",
+                    "stopped" if historical_finding_count else "neutral"
+                ),
+                _eh_context_card(
+                    "OPEN ACTIONS",
+                    f"{open_action_count}",
+                    action_status_summary,
+                    "stopped" if open_action_count else "neutral"
+                ),
+                _eh_context_card(
+                    "MAINTENANCE HISTORY",
+                    "CONNECTED" if maintenance_history_connected else "NOT CONNECTED",
+                    "Source available to this screen" if maintenance_history_connected else "PM / breakdown / work-order history is not yet linked",
+                    "running" if maintenance_history_connected else "neutral"
+                ),
+            ]
+            st.markdown(
+                '<div class="eh28-maint-grid">' + ''.join(maintenance_cards) + '</div>',
+                unsafe_allow_html=True,
+            )
+
+            if not maintenance_history_connected:
+                st.markdown(
+                    '<div class="eh28-maint-note">ⓘ <b>Maintenance history gap:</b> this screen currently cannot confirm '
+                    'last PM, last breakdown, running hours, work order age or repeat-failure history. '
+                    'Those items should be connected before using maintenance history as evidence.</div>',
+                    unsafe_allow_html=True,
+                )
+            elif open_action_count:
+                st.markdown(
+                    f'<div class="eh28-maint-note active">⚡ <b>Action Center:</b> {open_action_count} active finding(s) '
+                    f'are already associated with this equipment. Review the existing investigation/action status before creating duplicate work.</div>',
+                    unsafe_allow_html=True,
+                )
+
+            # Maintenance decision bridge — concise and explicit.
+            if freshness["state"] in {"STALE", "NO RECENT DATA", "NO DATA"}:
+                maint_decision_title = "REFRESH EVIDENCE FIRST"
+                maint_decision_text = "Current PLC condition is unverified. Do not escalate maintenance solely from historical screening."
+                maint_decision_cls = "blocked"
+            elif historical_finding_count and open_action_count:
+                maint_decision_title = "CONTINUE EXISTING INVESTIGATION"
+                maint_decision_text = "A historical PLC finding already has an active Action Center record. Verify the existing investigation before opening another action."
+                maint_decision_cls = "active"
+            elif historical_finding_count:
+                maint_decision_title = "VERIFY HISTORICAL FINDING"
+                maint_decision_text = "A PLC-derived historical finding exists. Confirm persistence, operating context and field condition before maintenance intervention."
+                maint_decision_cls = "review"
+            else:
+                maint_decision_title = "ROUTINE MAINTENANCE PATH"
+                maint_decision_text = "No PLC-derived historical finding is currently generated for this equipment. Continue the approved maintenance strategy."
+                maint_decision_cls = "normal"
+
+            st.markdown(
+                f'<div class="eh28-decision {maint_decision_cls}">'
+                f'<div class="eh28-decision-title">{maint_decision_title}</div>'
+                f'<div class="eh28-decision-text">{maint_decision_text}</div>'
+                f'</div>',
                 unsafe_allow_html=True,
             )
 
