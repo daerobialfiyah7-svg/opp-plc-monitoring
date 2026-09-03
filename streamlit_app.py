@@ -905,6 +905,323 @@ st.markdown("""<style>
 .v15-table{background:#fff;border:1px solid #e4e7ec;border-radius:7px;overflow:hidden}
 .v15-header{padding:.15rem 0 .7rem}.v15-title{font-size:1.72rem;font-weight:850;color:#14213d;line-height:1.12}.v15-live{display:inline-block;margin-left:.35rem;padding:.22rem .48rem;border-radius:999px;background:#e7f8ee;color:#07895a;font-size:.62rem;font-weight:850;vertical-align:middle}.v15-subtitle{font-size:.78rem;color:#667085;margin-top:.32rem;line-height:1.4}.v15-period{border:1px solid #dce3ec;background:#f8fafc;border-radius:9px;padding:.55rem .7rem;min-height:68px;box-sizing:border-box}.v15-period-label{font-size:.59rem;font-weight:800;color:#667085}.v15-period-value{font-size:.79rem;font-weight:800;color:#172b4d;margin-top:.18rem}.v15-period-small{font-size:.59rem;color:#98a2b3;margin-top:.1rem}.v15-kpi{border-radius:8px;min-height:104px;padding:.82rem .85rem;box-sizing:border-box;color:#fff;box-shadow:0 3px 8px rgba(16,24,40,.13);margin-bottom:.68rem}.v15-kpi-top{font-size:.67rem;font-weight:800;display:flex;align-items:center;gap:.35rem;line-height:1.2}.v15-kpi-value{font-size:1.72rem;font-weight:900;line-height:1.05;margin-top:.38rem}.v15-kpi-small{font-size:.61rem;font-weight:600;margin-top:.35rem;opacity:.95}.v15-panel-head{height:38px;margin:-.65rem -.7rem .58rem;padding:0 .7rem;display:flex;align-items:center;background:#edf2f7;border-bottom:1px solid #dfe5ee;color:#25364d;font-size:.78rem;font-weight:850}.v15-panel-head span{font-size:.62rem;font-weight:600;color:#98a2b3;margin-left:.4rem}.v15-panel-sub{font-size:.68rem;color:#7b8798;margin-bottom:.55rem}.v15-stack{height:14px;display:flex;border-radius:5px;overflow:hidden;background:#eef1f5;border:1px solid #e1e6ec;margin:.25rem 0 .72rem}.v15-stack>div{height:100%}.v15-condition{background:#f8fafc;border:1px solid #e1e6ee;border-radius:7px;padding:.58rem .62rem;min-height:92px;box-sizing:border-box}.v15-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:.3rem}.v15-condition-label{font-size:.59rem;font-weight:850;color:#475467;display:inline}.v15-condition-count{font-size:1.35rem;font-weight:900;color:#172b4d;line-height:1.1;margin-top:.32rem}.v15-condition-small{font-size:.58rem;color:#98a2b3;margin-top:.2rem;line-height:1.2}.v15-interpret{background:#eef6ff;border:1px solid #bfdbfe;border-radius:7px;padding:.55rem .62rem;margin-top:.55rem;color:#175cd3;font-size:.65rem;line-height:1.35}.v15-action-main{color:#fff;border-radius:8px;padding:.72rem .72rem;display:flex;align-items:center;gap:.65rem;min-height:86px;box-sizing:border-box}.v15-action-number{font-size:2.25rem;font-weight:900;line-height:1}.v15-action-title{font-size:.73rem;font-weight:850}.v15-action-small{font-size:.59rem;margin-top:.18rem;opacity:.92;line-height:1.25}.v15-action-icon{font-size:1.9rem;margin-left:auto;opacity:.95}.v15-mini{background:#f8fafc;border:1px solid #e2e8f0;border-radius:7px;padding:.5rem .48rem;min-height:70px;box-sizing:border-box;font-size:.54rem;color:#667085}.v15-mini strong{display:block;font-size:1.05rem;color:#172b4d;margin-top:.25rem}.v15-focus{background:#eef6ff;border:1px solid #bfdbfe;border-radius:7px;padding:.58rem .65rem;color:#175cd3;font-size:.68rem;line-height:1.35;margin-bottom:.55rem}.v15-priority{color:#fff;border-radius:8px;min-height:100px;padding:.62rem .65rem;box-sizing:border-box;box-shadow:0 2px 6px rgba(16,24,40,.12)}.v15-priority .vp-top{font-size:.65rem;font-weight:850}.v15-priority .vp-count{font-size:1.65rem;font-weight:900;line-height:1;margin-top:.28rem}.v15-priority .vp-desc{font-size:.58rem;margin-top:.3rem;line-height:1.15}.v15-dq{border:1px solid #dfe5ee;border-radius:7px;background:#f8fafc;min-height:76px;padding:.52rem .5rem;box-sizing:border-box}.v15-dq>div{font-size:.55rem;font-weight:800;color:#667085}.v15-dq strong{display:block;font-size:1.25rem;color:#172b4d;margin-top:.22rem}.v15-dq.high{background:#f0fdf4;border-color:#bbf7d0}.v15-dq.high strong{color:#07895a}.v15-dq.medium{background:#fff7ed;border-color:#fed7aa}.v15-dq.medium strong{color:#dc6803}.v15-dq.low{background:#fff5f5;border-color:#fecaca}.v15-dq.low strong{color:#d92d20}.v15-coverage{margin-top:.58rem}.v15-coverage>div:first-child{display:flex;justify-content:space-between;font-size:.61rem;color:#667085}.v15-coverage b{color:#07895a;font-size:.76rem}.v15-cover-track{height:8px;background:#e8edf3;border-radius:6px;overflow:hidden;margin:.3rem 0}.v15-cover-track>div{height:100%;background:#12b76a}.v15-coverage small{font-size:.55rem;color:#98a2b3}.v15-table{width:100%;border-collapse:collapse;font-size:.59rem;color:#344054}.v15-table th{background:#f4f7fa;color:#667085;text-align:left;font-weight:800;padding:.38rem .35rem;border-bottom:1px solid #dfe5ee}.v15-table td{padding:.4rem .35rem;border-bottom:1px solid #edf0f4;vertical-align:middle}.v15-table td span{color:#98a2b3;font-size:.53rem}.v15-status{font-weight:850}.v15-footer{display:flex;gap:1.1rem;flex-wrap:wrap;align-items:center;background:#f8fafc;border:1px solid #dfe5ee;border-radius:8px;padding:.58rem .7rem;margin-top:.7rem;font-size:.57rem;color:#667085}.v15-footer b{color:#172b4d}.v15-footer span:first-child{color:#07895a;font-weight:750}.v15-panel-head+div{box-sizing:border-box}@media(max-width:900px){.v15-title{font-size:1.35rem}.v15-period{margin-top:.2rem}.v15-action-main{min-height:78px}.v15-footer{gap:.6rem}}
 
+
+/* =========================================================================
+   Equipment Health v30 — VISUAL REFRESH
+   Tujuan: hierarchy lebih besar, iconography lebih kuat, contextual colors,
+   nuansa engineering condition/aging, tetap mempertahankan whitespace.
+   Tidak mengubah kalkulasi, scoring, gate, atau data logic.
+   ========================================================================= */
+
+.eh22-header{margin-top:.25rem!important;margin-bottom:1.05rem!important}
+.eh22-title{font-size:2.05rem!important;letter-spacing:-.025em!important}
+.eh22-subtitle{font-size:.92rem!important;max-width:900px!important}
+.eh22-live{font-size:.72rem!important;padding:.46rem .72rem!important}
+
+/* Equipment hero — stronger engineering identity */
+.eh22-hero{
+    min-height:132px!important;
+    border-radius:18px!important;
+    padding:1.25rem 1.35rem!important;
+    background:
+      linear-gradient(135deg,#102b55 0%,#1e4f86 68%,#2b6ea6 100%)!important;
+    box-shadow:0 10px 26px rgba(16,43,85,.16)!important;
+    border:1px solid rgba(255,255,255,.08)!important;
+    position:relative!important;
+    overflow:hidden!important;
+}
+.eh22-hero:after{
+    content:"";position:absolute;right:-70px;bottom:-85px;width:250px;height:250px;
+    border:1px solid rgba(255,255,255,.10);border-radius:50%;
+    box-shadow:0 0 0 26px rgba(255,255,255,.025),0 0 0 52px rgba(255,255,255,.018);
+}
+.eh22-eq-icon{
+    width:68px!important;height:68px!important;border-radius:17px!important;
+    font-size:2.05rem!important;background:rgba(255,255,255,.14)!important;
+    border:1px solid rgba(255,255,255,.10)!important;
+}
+.eh22-code{font-size:1.55rem!important}
+.eh22-name{font-size:.92rem!important}
+.eh22-tags span{font-size:.65rem!important;padding:.27rem .52rem!important}
+.eh22-status{font-size:.82rem!important;padding:.50rem .82rem!important}
+.eh22-last{font-size:.70rem!important}
+
+/* KPI strip — bigger, readable, unmistakable */
+.eh22-kpi{
+    min-height:128px!important;
+    padding:1rem 1.05rem!important;
+    border-radius:15px!important;
+    box-shadow:0 5px 14px rgba(16,24,40,.055)!important;
+    position:relative!important;
+    overflow:hidden!important;
+}
+.eh22-kpi:before{
+    content:"";position:absolute;left:0;top:0;bottom:0;width:5px;border-radius:15px 0 0 15px;
+    background:#cbd5e1;
+}
+.eh22-kpi.blue:before{background:#2563eb}
+.eh22-kpi.green:before,.eh22-kpi.healthy:before,.eh22-kpi.p4:before{background:#12b76a}
+.eh22-kpi.orange:before,.eh22-kpi.attention:before,.eh22-kpi.p2:before{background:#f79009}
+.eh22-kpi.deteriorating:before,.eh22-kpi.p3:before{background:#eab308}
+.eh22-kpi.critical:before,.eh22-kpi.p1:before{background:#ef4444}
+.eh22-kpi-label{font-size:.73rem!important}
+.eh22-kpi-value{font-size:1.72rem!important;margin-top:.42rem!important}
+.eh22-kpi-value small{font-size:.78rem!important}
+.eh22-kpi-small{font-size:.72rem!important;line-height:1.35!important}
+
+/* Decision / data quality blocks */
+.eh22-decision{
+    padding:.9rem 1rem!important;
+    border-radius:13px!important;
+    margin:.9rem 0!important;
+}
+.eh22-decision-icon{font-size:1.55rem!important}
+.eh22-decision-title{font-size:.72rem!important}
+.eh22-decision-text{font-size:.80rem!important}
+
+/* Major section titles */
+.eh25-section-title,.eh26-section-title,.eh28-section-title,.eh29-section-title{
+    display:flex!important;align-items:center!important;gap:.68rem!important;
+    font-size:1.08rem!important;font-weight:950!important;
+    color:#172b4d!important;margin:1.35rem 0 .16rem!important;
+    letter-spacing:.005em!important;
+}
+.eh25-section-sub,.eh26-section-sub,.eh28-section-sub,.eh29-section-sub{
+    font-size:.76rem!important;color:#7a8699!important;
+    line-height:1.45!important;margin-bottom:.72rem!important;
+}
+.eh-section-icon{
+    width:36px;height:36px;min-width:36px;border-radius:11px;
+    display:inline-flex;align-items:center;justify-content:center;
+    font-size:1.12rem;box-shadow:0 4px 10px rgba(16,24,40,.08);
+}
+.eh-section-icon.blue{background:#e8f1ff;border:1px solid #c7dcff}
+.eh-section-icon.teal{background:#e7f8f5;border:1px solid #b8ebe3}
+.eh-section-icon.orange{background:#fff1df;border:1px solid #ffd7a3}
+.eh-section-icon.purple{background:#f1eaff;border:1px solid #d9c8ff}
+
+/* Parameter matrix — readable but still compact */
+.eh25-matrix{
+    border-radius:15px!important;
+    box-shadow:0 7px 18px rgba(16,24,40,.055)!important;
+    border-color:#d9e1eb!important;
+}
+.eh25-matrix-head,.eh25-matrix-row{
+    padding:.78rem .85rem!important;
+    gap:.7rem!important;
+}
+.eh25-matrix-head{
+    font-size:.64rem!important;
+    background:linear-gradient(180deg,#f7faff,#f1f5fa)!important;
+}
+.eh25-matrix-row{
+    min-height:62px!important;
+    font-size:.72rem!important;
+}
+.eh25-param b{font-size:.77rem!important}
+.eh25-param small,.eh25-current small,.eh25-direction small,.eh25-deviation small{
+    font-size:.62rem!important
+}
+.eh25-current b{font-size:.78rem!important}
+.eh25-direction b{font-size:.68rem!important}
+.eh25-deviation b{font-size:.73rem!important}
+.eh25-confidence b{font-size:.65rem!important}
+.eh25-pill,.eh25-quality{
+    font-size:.61rem!important;padding:.28rem .52rem!important
+}
+.eh25-focus{
+    margin:.7rem 0 1rem!important;padding:.72rem .82rem!important;
+    border-radius:12px!important;font-size:.72rem!important
+}
+
+/* Operating Context — visual cards like a condition-monitoring cockpit */
+.eh26-context-grid{
+    gap:.78rem!important;margin-bottom:.6rem!important;
+}
+.eh26-context-card{
+    min-height:126px!important;
+    padding:.82rem .88rem!important;
+    border-radius:15px!important;
+    background:linear-gradient(180deg,#ffffff,#f8fbfd)!important;
+    box-shadow:0 6px 16px rgba(16,24,40,.055)!important;
+    border-color:#dce4ee!important;
+    position:relative!important;
+    overflow:hidden!important;
+}
+.eh26-context-card:after{
+    content:"";position:absolute;right:-22px;top:-22px;width:82px;height:82px;
+    border-radius:50%;border:1px solid rgba(37,99,235,.08);
+}
+.eh26-context-card.running{
+    border-top:4px solid #12b76a!important;background:linear-gradient(180deg,#f9fffc,#effbf5)!important;
+}
+.eh26-context-card.stopped{
+    border-top:4px solid #f79009!important;background:linear-gradient(180deg,#fffdf9,#fff6ea)!important;
+}
+.eh26-context-card.neutral{
+    border-top:4px solid #64748b!important;background:linear-gradient(180deg,#fbfcfe,#f4f7fa)!important;
+}
+.eh26-context-top{display:flex;align-items:center;gap:.48rem}
+.eh26-context-icon{
+    width:30px;height:30px;min-width:30px;border-radius:9px;
+    display:inline-flex;align-items:center;justify-content:center;
+    background:#eaf1fb;border:1px solid #d7e3f3;font-size:.95rem;
+}
+.eh26-context-card.running .eh26-context-icon{background:#e5f8ee;border-color:#c3efd6}
+.eh26-context-card.stopped .eh26-context-icon{background:#fff0dd;border-color:#ffd6a0}
+.eh26-context-label{font-size:.61rem!important;letter-spacing:.035em!important}
+.eh26-context-value{font-size:.98rem!important;margin-top:.48rem!important}
+.eh26-context-sub{font-size:.63rem!important;margin-top:.28rem!important}
+.eh26-context-note{
+    padding:.68rem .8rem!important;border-radius:11px!important;
+    font-size:.68rem!important;line-height:1.45!important
+}
+
+/* Maintenance Context — warm operational/aging color language */
+.eh28-maint-grid{gap:.78rem!important;margin-bottom:.6rem!important}
+.eh28-maint-grid .eh26-context-card:nth-child(1){border-top-color:#64748b!important}
+.eh28-maint-grid .eh26-context-card:nth-child(2){border-top-color:#f79009!important}
+.eh28-maint-grid .eh26-context-card:nth-child(3){border-top-color:#f97316!important}
+.eh28-maint-grid .eh26-context-card:nth-child(4){border-top-color:#2563eb!important}
+.eh28-maint-note{
+    padding:.72rem .82rem!important;border-radius:12px!important;
+    font-size:.68rem!important;line-height:1.45!important
+}
+.eh28-decision{
+    padding:.82rem .9rem!important;border-radius:12px!important;margin:.62rem 0 .85rem!important;
+}
+.eh28-decision-title{font-size:.72rem!important}
+.eh28-decision-text{font-size:.68rem!important}
+
+/* Diagnosis — purple engineering-analysis identity */
+.eh29-gate{
+    padding:.78rem .9rem!important;border-radius:12px!important;
+    font-size:.70rem!important;line-height:1.5!important;
+}
+.eh29-dx-card{
+    min-height:205px!important;padding:.9rem!important;border-radius:15px!important;
+    box-shadow:0 7px 18px rgba(16,24,40,.055)!important;
+    border-top-width:4px!important;
+}
+.eh29-dx-card:nth-child(1){border-top-color:#2563eb!important;background:linear-gradient(180deg,#fff,#f7fbff)!important}
+.eh29-dx-card:nth-child(2){border-top-color:#7c3aed!important;background:linear-gradient(180deg,#fff,#faf7ff)!important}
+.eh29-dx-card:nth-child(3){border-top-color:#0f766e!important;background:linear-gradient(180deg,#fff,#f4fcfb)!important}
+.eh29-dx-top{display:flex;align-items:center;gap:.45rem}
+.eh29-dx-icon{
+    width:34px;height:34px;min-width:34px;border-radius:10px;
+    display:inline-flex;align-items:center;justify-content:center;
+    background:#f0ebff;border:1px solid #ded2ff;font-size:1rem;
+}
+.eh29-dx-rank{font-size:.59rem!important}
+.eh29-dx-title{font-size:.90rem!important;line-height:1.25!important;margin:.42rem 0 .45rem!important}
+.eh29-dx-card li{font-size:.67rem!important;line-height:1.45!important;margin:.18rem 0!important}
+.eh29-dx-caution{font-size:.62rem!important;padding:.5rem!important;line-height:1.4!important}
+.eh29-panel{
+    min-height:300px!important;padding:.9rem!important;border-radius:15px!important;
+    box-shadow:0 6px 16px rgba(16,24,40,.045)!important;
+}
+.eh29-panel-title{font-size:.78rem!important}
+.eh29-panel-sub{font-size:.64rem!important;line-height:1.4!important}
+.eh29-check{font-size:.67rem!important;padding:.55rem 0!important}
+.eh29-check span{font-size:.82rem!important}
+.eh29-caution{font-size:.62rem!important}
+.eh29-correlation{
+    padding:.9rem!important;border-radius:15px!important;
+    box-shadow:0 6px 16px rgba(16,24,40,.045)!important
+}
+.eh29-correlation table{font-size:.64rem!important}
+
+/* Overview panels — each context gets its own subtle visual language */
+.eh22-panel{
+    border-radius:15px!important;
+    padding:1rem 1.05rem!important;
+    box-shadow:0 6px 16px rgba(16,24,40,.045)!important;
+    border-color:#dce4ee!important;
+}
+.eh22-panel-head{
+    font-size:.94rem!important;
+    padding-bottom:.62rem!important;
+    letter-spacing:.005em!important;
+}
+.eh22-panel-sub{font-size:.72rem!important;line-height:1.4!important;margin:.38rem 0 .62rem!important}
+.eh-panel-condition{background:linear-gradient(180deg,#f7fffb,#ffffff)!important;border-top:4px solid #12b76a!important}
+.eh-panel-alert{background:linear-gradient(180deg,#fffaf4,#ffffff)!important;border-top:4px solid #f79009!important}
+.eh-panel-read{background:linear-gradient(180deg,#f7f9ff,#ffffff)!important;border-top:4px solid #4f46e5!important}
+.eh-panel-trend{background:linear-gradient(180deg,#f4fbff,#ffffff)!important;border-top:4px solid #0284c7!important}
+.eh-panel-evidence{background:linear-gradient(180deg,#f8fafc,#ffffff)!important;border-top:4px solid #64748b!important}
+.eh-panel-action{background:linear-gradient(180deg,#fff9f0,#ffffff)!important;border-top:4px solid #f97316!important}
+
+.eh22-dist-row{font-size:.73rem!important;padding:.58rem .45rem!important}
+.eh22-dist-row strong{font-size:1.02rem!important}
+.eh22-abnormal-row{padding:.62rem .45rem!important}
+.eh22-abnormal-main>b{font-size:.75rem!important}
+.eh22-tag{font-size:.61rem!important}
+.eh22-status-pill{font-size:.58rem!important;padding:.22rem .4rem!important}
+.eh22-abnormal-value b{font-size:.78rem!important}
+.eh22-abnormal-value small{font-size:.58rem!important}
+.eh22-read-card{padding:.8rem!important;border-radius:11px!important}
+.eh22-read-title{font-size:.88rem!important}
+.eh22-read-text{font-size:.72rem!important;line-height:1.5!important}
+.eh22-read-small{font-size:.64rem!important}
+.eh22-evidence-chip{min-height:78px!important;padding:.7rem .75rem!important;border-radius:11px!important}
+.eh22-evidence-chip span{font-size:.59rem!important}
+.eh22-evidence-chip b{font-size:.80rem!important}
+.eh22-evidence-chip small{font-size:.62rem!important}
+.eh22-evidence-row{font-size:.70rem!important;padding:.55rem 0!important}
+.eh22-recommendation{
+    min-height:145px!important;padding:1rem 1.05rem!important;border-radius:15px!important;
+    box-shadow:0 6px 16px rgba(16,24,40,.04)!important
+}
+.eh22-rec-head{font-size:.72rem!important}
+.eh22-rec-title{font-size:.88rem!important;line-height:1.45!important}
+.eh22-rec-note{font-size:.67rem!important;line-height:1.45!important}
+.eh22-panel .stButton>button{
+    min-height:42px!important;border-radius:10px!important;font-size:.72rem!important
+}
+.eh22-disclaimer{font-size:.65rem!important;padding:.68rem .8rem!important;border-radius:11px!important}
+
+/* Trend warning is intentionally prominent when evidence is stale */
+.eh22-panel-trend + *{}
+[data-testid="stAlert"]{
+    border-radius:13px!important;
+}
+[data-testid="stAlert"] p{
+    font-size:.78rem!important;line-height:1.5!important;
+}
+
+/* Streamlit selectors / inputs — make the controls easier to read */
+.eh22-header + div{}
+[data-testid="stTextInput"] input,
+[data-testid="stSelectbox"] div[data-baseweb="select"]{
+    min-height:48px!important;
+    font-size:.88rem!important;
+}
+[data-testid="stTextInput"] input{padding-left:.85rem!important}
+[data-testid="stSelectbox"] div[data-baseweb="select"] > div{
+    font-size:.86rem!important;
+}
+
+/* Keep the intentional whitespace between blocks */
+.eh22-hero{margin:.8rem 0 1rem!important}
+.eh22-decision{margin:1rem 0 1.1rem!important}
+.eh25-section-title{margin-top:1.45rem!important}
+.eh26-section-title{margin-top:1.5rem!important}
+.eh28-section-title{margin-top:1.5rem!important}
+.eh29-section-title{margin-top:1.5rem!important}
+.eh22-panel,.eh22-recommendation,.eh29-panel,.eh29-correlation{margin-bottom:.2rem!important}
+
+/* Responsive: retain larger type without breaking the matrix */
+@media(max-width:1100px){
+    .eh22-title{font-size:1.8rem!important}
+    .eh26-context-grid{grid-template-columns:repeat(2,1fr)!important}
+}
+@media(max-width:700px){
+    .eh22-title{font-size:1.55rem!important}
+    .eh22-hero{min-height:0!important}
+    .eh26-context-grid,.eh28-maint-grid{grid-template-columns:1fr!important}
+    .eh22-kpi{min-height:112px!important}
+}
+
 </style>""",unsafe_allow_html=True)
 
 DB_PATH = ROOT / "data" / "plc_history.sqlite"
@@ -2046,9 +2363,24 @@ def _eh_context_operating_state(health_df, equipment_name=""):
 
 
 def _eh_context_card(title, value, subtitle, cls="neutral"):
+    title_u = str(title).upper()
+    icon_map = {
+        "OPERATING STATE": "⚙️",
+        "MILL FEED / PROCESS FEED": "⛏️",
+        "MAIN MOTOR LOAD": "⚡",
+        "MILL SPEED": "🌀",
+        "DISCHARGE PRESSURE": "💧",
+        "PRESSURE": "💧",
+        "CRITICALITY EQUIPMENT": "🎯",
+        "HISTORICAL FINDINGS": "🔎",
+        "ACTION TERBUKA": "🛠️",
+        "RIWAYAT MAINTENANCE": "📋",
+    }
+    icon = next((v for k, v in icon_map.items() if k in title_u), "●")
     return (
         f'<div class="eh26-context-card {cls}">'
-        f'<div class="eh26-context-label">{title}</div>'
+        f'<div class="eh26-context-top"><span class="eh26-context-icon">{icon}</span>'
+        f'<div class="eh26-context-label">{title}</div></div>'
         f'<div class="eh26-context-value">{value}</div>'
         f'<div class="eh26-context-sub">{subtitle}</div>'
         f'</div>'
@@ -2862,7 +3194,7 @@ elif page == "Equipment Health":
             # Stage 2 — Parameter Health Matrix
             # -----------------------------------------------------------------
             st.markdown(
-                '<div class="eh25-section-title">📋 MATRIX HEALTH PARAMETER</div>'
+                '<div class="eh25-section-title"><span class="eh-section-icon blue">📋</span><span>MATRIX HEALTH PARAMETER</span></div>'
                 '<div class="eh25-section-sub">Engineer view — top signals first; current condition is separated from historical screening</div>',
                 unsafe_allow_html=True,
             )
@@ -3004,7 +3336,7 @@ elif page == "Equipment Health":
             )
 
             st.markdown(
-                '<div class="eh26-section-title">⚙️ KONTEKS OPERASI</div>'
+                '<div class="eh26-section-title"><span class="eh-section-icon teal">⚙️</span><span>KONTEKS OPERASI</span></div>'
                 '<div class="eh26-section-sub">Use operating context to distinguish equipment behaviour from process/load effects</div>',
                 unsafe_allow_html=True,
             )
@@ -3117,7 +3449,7 @@ elif page == "Equipment Health":
             )
 
             st.markdown(
-                '<div class="eh28-section-title">🛠️ MAINTENANCE CONTEXT</div>'
+                '<div class="eh28-section-title"><span class="eh-section-icon orange">🛠️</span><span>MAINTENANCE CONTEXT</span></div>'
                 '<div class="eh28-section-sub">Connect condition evidence with maintenance priority and workflow — without inventing maintenance history</div>',
                 unsafe_allow_html=True,
             )
@@ -3204,7 +3536,7 @@ elif page == "Equipment Health":
             corr_pairs = _eh29_correlation_evidence(health, df)
 
             st.markdown(
-                '<div class="eh29-section-title">🧠 DIAGNOSIS ENGINEERING</div>'
+                '<div class="eh29-section-title"><span class="eh-section-icon purple">🧠</span><span>DIAGNOSIS ENGINEERING</span></div>'
                 '<div class="eh29-section-sub">Differential diagnosis — peringkat kemungkinan mekanisme berdasarkan signal evidence; lakukan Field Verification sebelum intervention</div>',
                 unsafe_allow_html=True,
             )
@@ -3226,9 +3558,19 @@ elif page == "Equipment Health":
                 dcols=st.columns(min(3,len(diagnoses)), gap="medium")
                 for j,diag in enumerate(diagnoses[:3]):
                     evidence_html="".join(f'<li>{x}</li>' for x in diag["evidence"]) or "<li>Context evidence available</li>"
+                    dx_icon = {
+                        "MECH_BEARING": "🔩",
+                        "MECH_LOAD": "⚙️",
+                        "FLOW_RESTRICTION": "💧",
+                        "PUMP_HYDRAULIC": "🚿",
+                        "DRIVE_CONTROL": "⚡",
+                        "THERMAL_LUBE": "🌡️",
+                        "INSTRUMENTATION": "📡",
+                    }.get(diag.get("id"), "🧠")
                     dcols[j].markdown(
                         f'<div class="eh29-dx-card">'
-                        f'<div class="eh29-dx-rank">#{j+1} · EVIDENCE SCORE {diag["score"]}/100</div>'
+                        f'<div class="eh29-dx-top"><span class="eh29-dx-icon">{dx_icon}</span>'
+                        f'<div class="eh29-dx-rank">#{j+1} · EVIDENCE SCORE {diag["score"]}/100</div></div>'
                         f'<div class="eh29-dx-title">{diag["title"]}</div>'
                         f'<ul>{evidence_html}</ul>'
                         f'<div class="eh29-dx-caution">⚠ {diag["caution"]}</div>'
@@ -3307,7 +3649,7 @@ elif page == "Equipment Health":
 
             with d_left:
                 st.markdown(
-                    '<div class="eh22-panel"><div class="eh22-panel-head">📊 CONDITION MIX</div>'
+                    '<div class="eh22-panel eh-panel-condition"><div class="eh22-panel-head">📊 CONDITION MIX</div>'
                     '<div class="eh22-panel-sub">Parameter-level screening state</div>',
                     unsafe_allow_html=True,
                 )
@@ -3333,7 +3675,7 @@ elif page == "Equipment Health":
 
             with d_mid:
                 st.markdown(
-                    '<div class="eh22-panel"><div class="eh22-panel-head">⚠ ABNORMAL PARAMETERS</div>'
+                    '<div class="eh22-panel eh-panel-alert"><div class="eh22-panel-head">⚠ ABNORMAL PARAMETERS</div>'
                     '<div class="eh22-panel-sub">Ranked by condition severity and deviation</div>',
                     unsafe_allow_html=True,
                 )
@@ -3361,7 +3703,7 @@ elif page == "Equipment Health":
 
             with d_right:
                 st.markdown(
-                    '<div class="eh22-panel"><div class="eh22-panel-head">🧠 ENGINEERING READ</div>'
+                    '<div class="eh22-panel eh-panel-read"><div class="eh22-panel-head">🧠 ENGINEERING READ</div>'
                     '<div class="eh22-panel-sub">What the screening suggests</div>',
                     unsafe_allow_html=True,
                 )
@@ -3437,7 +3779,7 @@ elif page == "Equipment Health":
                 trend_quality_text = selected_quality_for_trend["label"].lower()
 
                 st.markdown(
-                    f'<div class="eh22-panel"><div class="eh22-panel-head">📈 PARAMETER TREND</div>'
+                    f'<div class="eh22-panel eh-panel-trend"><div class="eh22-panel-head">📈 PARAMETER TREND</div>'
                     f'<div class="eh22-panel-sub">{selected_row["Parameter"]} · historical screening envelope P05–P95 · data {trend_quality_text}</div>',
                     unsafe_allow_html=True,
                 )
@@ -3474,7 +3816,7 @@ elif page == "Equipment Health":
 
             with evidence:
                 st.markdown(
-                    '<div class="eh22-panel"><div class="eh22-panel-head">📐 ENGINEERING EVIDENCE</div>'
+                    '<div class="eh22-panel eh-panel-evidence"><div class="eh22-panel-head">📐 ENGINEERING EVIDENCE</div>'
                     '<div class="eh22-panel-sub">Latest signal versus historical behaviour</div>',
                     unsafe_allow_html=True,
                 )
@@ -3519,7 +3861,7 @@ elif page == "Equipment Health":
                 )
             with rec_right:
                 st.markdown(
-                    '<div class="eh22-panel"><div class="eh22-panel-head">⚡ NEXT ACTION</div>',
+                    '<div class="eh22-panel eh-panel-action"><div class="eh22-panel-head">⚡ NEXT ACTION</div>',
                     unsafe_allow_html=True,
                 )
                 ac1, ac2 = st.columns(2, gap="small")
