@@ -1222,6 +1222,41 @@ st.markdown("""<style>
     .eh22-kpi{min-height:112px!important}
 }
 
+
+/* v31 Evidence Engine visual layer */
+.eh29-evidence-badge{float:right;font-size:.56rem!important;padding:.26rem .48rem;border-radius:999px;background:#eef2f7;color:#64748b;border:1px solid #dbe3ec;letter-spacing:.04em}
+.eh29-strength{display:flex;align-items:center;justify-content:space-between;margin:.65rem 0 .75rem;padding:.62rem .72rem;border-radius:10px;background:#f7f9fc;border:1px solid #e2e8f0;font-size:.62rem;color:#64748b}
+.eh29-strength b{font-size:.72rem;letter-spacing:.04em}
+.eh29-strength-strong{border-color:#b7e7cb;background:#effbf4;color:#087443}
+.eh29-strength-moderate{border-color:#ffd59c;background:#fff8ed;color:#a85b00}
+.eh29-strength-weak{border-color:#ffe2b7;background:#fffaf2;color:#9a6700}
+.eh29-strength-low{border-color:#dce3ec;background:#f8fafc;color:#64748b}
+.eh29-evidence-group{margin:.65rem 0 .8rem}
+.eh29-group-title{display:flex;align-items:center;gap:.35rem;font-size:.62rem;font-weight:900;letter-spacing:.035em;color:#334155;margin-bottom:.45rem}
+.eh29-group-title span{margin-left:auto;border-radius:999px;padding:.15rem .38rem;background:#eef2f7;color:#64748b;font-size:.55rem}
+.eh29-evidence-item{padding:.62rem .68rem;margin:.42rem 0;border-radius:11px;border:1px solid #e2e8f0;background:#fff}
+.eh29-evidence-item.support{border-left:4px solid #f79009;background:linear-gradient(90deg,#fffaf2,#fff)}
+.eh29-evidence-item.contradict{border-left:4px solid #12b76a;background:linear-gradient(90deg,#f4fcf7,#fff)}
+.eh29-evidence-item.context{border-left:4px solid #94a3b8;background:#fafbfd}
+.eh29-evidence-item-top{display:flex;align-items:center;gap:.45rem}
+.eh29-evidence-icon{width:27px;height:27px;min-width:27px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;background:#f1f5f9;font-size:.78rem}
+.eh29-evidence-item-top b{display:block;font-size:.72rem;color:#23395d;line-height:1.2}
+.eh29-evidence-item-top small{display:block;font-size:.57rem;color:#94a3b8;margin-top:.12rem}
+.eh29-evidence-state{margin-left:auto;font-size:.52rem;font-weight:900;padding:.23rem .38rem;border-radius:999px;background:#eef2f7;color:#64748b}
+.eh29-evidence-value{display:flex;align-items:baseline;gap:.25rem;margin:.42rem 0 .22rem;padding-left:2.05rem}
+.eh29-evidence-value strong{font-size:.86rem;color:#172b4d}
+.eh29-evidence-value span{font-size:.58rem;color:#64748b}
+.eh29-evidence-metrics{margin-left:auto!important;font-size:.55rem!important;color:#64748b!important}
+.eh29-evidence-reason{padding-left:2.05rem;font-size:.62rem;line-height:1.42;color:#475569}
+.eh29-evidence-meta{padding-left:2.05rem;margin-top:.32rem;font-size:.53rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.025em}
+.eh29-no-evidence{padding:.55rem .65rem;border-radius:9px;background:#f8fafc;color:#94a3b8;font-size:.60rem}
+.eh29-evidence-foot{margin-top:.65rem;padding:.62rem .7rem;border-radius:10px;background:#fff8ed;border:1px solid #ffe0b5;color:#8a5a16;font-size:.58rem;line-height:1.45}
+.eh29-correlation td small{display:block;color:#94a3b8;font-size:.53rem;margin-top:.12rem}
+.eh29-corr-pill{display:inline-block;padding:.24rem .45rem;border-radius:999px;font-weight:900;font-size:.61rem}
+.eh29-corr-pill.positive{background:#eaf8ef;color:#087443}
+.eh29-corr-pill.negative{background:#fff0f0;color:#b42318}
+.eh29-correlation table td{vertical-align:middle!important}
+
 </style>""",unsafe_allow_html=True)
 
 DB_PATH = ROOT / "data" / "plc_history.sqlite"
@@ -2513,6 +2548,182 @@ def _eh29_direction_value(row):
     return 1 if d=="Increasing" else -1 if d=="Decreasing" else 0
 
 
+def _eh29_evidence_reason(row, dx_id, relation):
+    """Return a concise engineering explanation for one evidence row.
+
+    relation is one of SUPPORTING / CONTRADICTING / CONTEXT. The wording is
+    intentionally evidence-based: it describes the observed screening pattern
+    and does not claim a confirmed failure mechanism.
+    """
+    p=str(row.get("Parameter","Signal"))
+    cond=str(row.get("Condition","Normal"))
+    direction=str(row.get("Direction","Stable"))
+    shift=float(row.get("Shift %",0.0) or 0.0)
+    dev=float(row.get("Deviation Sigma",0.0) or 0.0)
+    side=str(row.get("Deviation Side","Within baseline"))
+    outside=float(row.get("Outside Fraction",0.0) or 0.0)*100.0
+
+    if relation=="SUPPORTING":
+        if dev>0:
+            side_txt="di bawah" if side=="Below baseline" else "di atas" if side=="Above baseline" else "di luar"
+            return f"{p} berada {side_txt} historical envelope ({dev:.2f}σ; outside {outside:.0f}%)."
+        if direction!="Stable" and abs(shift)>=5:
+            return f"{p} menunjukkan trend {direction.lower()} dengan recent shift {shift:+.1f}%."
+        return f"{p} memberikan context yang konsisten dengan hipotesis {dx_id.replace('_',' ').lower()}."
+
+    if relation=="CONTRADICTING":
+        if cond=="Normal" and direction=="Stable":
+            return f"{p} masih Normal dan Stable; pola pendukung untuk hipotesis belum terlihat pada signal ini."
+        if cond=="Normal":
+            return f"{p} masih dalam historical envelope meskipun terdapat shift {shift:+.1f}%; evidence terhadap hipotesis masih lemah."
+        return f"{p} tidak menunjukkan pola yang diharapkan untuk hipotesis ini."
+
+    if dev>0:
+        return f"{p} memiliki historical deviation {dev:.2f}σ; gunakan sebagai context, bukan bukti sebab-akibat."
+    return f"{p} memberikan operating context tambahan; belum cukup untuk mengonfirmasi mekanisme."
+
+
+def _eh29_build_evidence(health, df, diagnosis, quality_map=None, freshness_state="VERIFIED"):
+    """Build supporting, contradicting and context evidence for a diagnosis.
+
+    This is a decision-support layer, not a root-cause classifier. It uses the
+    existing historical screening fields and explicitly separates evidence
+    that supports a mechanism from evidence that weakens it.
+    """
+    if health is None or health.empty:
+        return {"supporting":[],"contradicting":[],"context":[],"strength":"LOW"}
+
+    dx_id=diagnosis.get("id","")
+    fams=next((r["families"] for r in EH29_RULES if r["id"]==dx_id),set())
+    rows=[]
+    for _,rr in health.iterrows():
+        fam=_eh29_family(rr.get("Parameter",""),rr.get("PLC Tag",""))
+        if dx_id!="INSTRUMENTATION" and fam not in fams:
+            continue
+        q=(quality_map or {}).get(str(rr.get("PLC Tag","")),{})
+        rec=dict(rr)
+        rec["Family"]=fam
+        rec["Quality Label"]=q.get("label",q.get("status","UNKNOWN"))
+        rec["Verified"]=bool(q.get("verified",False)) and freshness_state not in {"STALE","NO RECENT DATA","NO DATA"}
+        rec["Timestamp"]=q.get("latest",pd.NaT)
+        rows.append(rec)
+
+    # If the hypothesis is instrumentation/signal quality, include all signal
+    # quality evidence rather than only physical parameter families.
+    if dx_id=="INSTRUMENTATION":
+        rows=[]
+        for _,rr in health.iterrows():
+            q=(quality_map or {}).get(str(rr.get("PLC Tag","")),{})
+            rec=dict(rr)
+            rec["Family"]=_eh29_family(rr.get("Parameter",""),rr.get("PLC Tag",""))
+            rec["Quality Label"]=q.get("label",q.get("status","UNKNOWN"))
+            rec["Verified"]=bool(q.get("verified",False)) and freshness_state not in {"STALE","NO RECENT DATA","NO DATA"}
+            rec["Timestamp"]=q.get("latest",pd.NaT)
+            rows.append(rec)
+
+    supporting=[]; contradicting=[]; context=[]
+
+    def add(rec, relation, reason, strength=2):
+        item={
+            "Parameter":str(rec.get("Parameter","Signal")),
+            "Tag":str(rec.get("PLC Tag","")),
+            "Current":float(rec.get("Current",0.0) or 0.0),
+            "Unit":str(rec.get("Unit","")),
+            "Condition":str(rec.get("Condition","Normal")),
+            "Direction":str(rec.get("Direction","Stable")),
+            "Shift":float(rec.get("Shift %",0.0) or 0.0),
+            "Deviation":float(rec.get("Deviation Sigma",0.0) or 0.0),
+            "Outside":float(rec.get("Outside Fraction",0.0) or 0.0)*100.0,
+            "Quality":str(rec.get("Quality Label","UNKNOWN")),
+            "Verified":bool(rec.get("Verified",False)),
+            "Timestamp":rec.get("Timestamp", pd.NaT),
+            "Reason":reason,
+            "Strength":strength,
+        }
+        {"SUPPORTING":supporting,"CONTRADICTING":contradicting,"CONTEXT":context}[relation].append(item)
+
+    abnormal={"Critical","Attention","Deteriorating"}
+    for rec in rows:
+        fam=rec["Family"]; cond=str(rec.get("Condition","Normal")); direction=str(rec.get("Direction","Stable"))
+        dev=float(rec.get("Deviation Sigma",0.0) or 0.0); shift=float(rec.get("Shift %",0.0) or 0.0)
+        is_abnormal=cond in abnormal or dev>0
+
+        rel=None; strength=1
+        if dx_id=="PUMP_PERFORMANCE":
+            if fam=="flow" and is_abnormal:
+                rel="SUPPORTING"; strength=3
+            elif fam=="pressure" and (str(rec.get("Deviation Side"))=="Above baseline" or (direction=="Increasing" and shift>=5)):
+                rel="SUPPORTING"; strength=3
+            elif fam=="load" and (direction=="Increasing" and shift>=5):
+                rel="SUPPORTING"; strength=2
+            elif fam in {"flow","pressure","load"} and cond=="Normal" and direction=="Stable":
+                rel="CONTRADICTING"; strength=1
+            else:
+                rel="CONTEXT"
+        elif dx_id=="FLOW_RESTRICTION":
+            if fam=="flow" and (str(rec.get("Deviation Side"))=="Below baseline" or direction=="Decreasing" or is_abnormal):
+                rel="SUPPORTING"; strength=3
+            elif fam=="pressure" and (str(rec.get("Deviation Side"))=="Above baseline" or direction=="Increasing"):
+                rel="SUPPORTING"; strength=3
+            elif fam in {"flow","pressure"} and cond=="Normal" and direction=="Stable":
+                rel="CONTRADICTING"; strength=1
+            else: rel="CONTEXT"
+        elif dx_id=="MECH_BEARING":
+            if fam in {"vibration","temperature"} and is_abnormal:
+                rel="SUPPORTING"; strength=3
+            elif fam in {"vibration","temperature"} and cond=="Normal" and direction=="Stable":
+                rel="CONTRADICTING"; strength=1
+            else: rel="CONTEXT"
+        elif dx_id=="MECH_LOAD":
+            if (fam=="load" and direction=="Increasing" and shift>=5) or (fam=="vibration" and direction=="Increasing" and shift>=5) or (fam=="speed" and direction=="Decreasing" and abs(shift)>=5):
+                rel="SUPPORTING"; strength=3
+            elif fam in {"load","vibration","speed"} and cond=="Normal" and direction=="Stable": rel="CONTRADICTING"
+            else: rel="CONTEXT"
+        elif dx_id=="DRIVE_CONTROL":
+            if fam=="speed" and (is_abnormal or direction!="Stable"): rel="SUPPORTING"; strength=3
+            elif fam in {"load","flow"} and (is_abnormal or direction!="Stable"): rel="SUPPORTING"; strength=2
+            elif fam in {"speed","load","flow"} and cond=="Normal" and direction=="Stable": rel="CONTRADICTING"
+            else: rel="CONTEXT"
+        elif dx_id=="THERMAL":
+            if fam=="temperature" and is_abnormal: rel="SUPPORTING"; strength=3
+            elif fam=="load" and direction=="Increasing" and shift>=5: rel="SUPPORTING"; strength=2
+            elif fam in {"temperature","load"} and cond=="Normal" and direction=="Stable": rel="CONTRADICTING"
+            else: rel="CONTEXT"
+        elif dx_id=="INSTRUMENTATION":
+            qlabel=str(rec.get("Quality Label","UNKNOWN")).upper()
+            if qlabel in {"STALE","NO RECENT DATA","NO VALID DATA","MISSING TAG","FLATLINE","INSUFFICIENT"} or not rec.get("Verified",False):
+                rel="SUPPORTING"; strength=3
+            else: rel="CONTEXT"
+        else:
+            rel="CONTEXT"
+
+        add(rec,rel,_eh29_evidence_reason(rec,dx_id,rel),strength)
+
+    # For hydraulic diagnosis, explicitly strengthen/annotate the paired
+    # low-flow/high-pressure pattern when it exists.
+    if dx_id in {"PUMP_PERFORMANCE","FLOW_RESTRICTION"}:
+        low_flow=any(r["Family"]=="flow" and (str(r.get("Deviation Side"))=="Below baseline" or r["Direction"]=="Decreasing" or r["Condition"] in abnormal) for r in rows)
+        high_pressure=any(r["Family"]=="pressure" and (str(r.get("Deviation Side"))=="Above baseline" or r["Direction"]=="Increasing") for r in rows)
+        if low_flow and high_pressure:
+            for r in supporting:
+                if r["Parameter"] and _eh29_family(r["Parameter"],r["Tag"]) in {"flow","pressure"}:
+                    r["Reason"]="Muncul pola low-flow / high-pressure yang mendukung investigasi hydraulic resistance."
+                    r["Strength"]=3
+
+    # Keep the UI focused: strongest evidence first, then a small context set.
+    supporting.sort(key=lambda x:(-x["Strength"],-abs(x["Deviation"]),-abs(x["Shift"])))
+    contradicting.sort(key=lambda x:(-x["Strength"],-abs(x["Deviation"])))
+    context.sort(key=lambda x:(-abs(x["Deviation"]),-abs(x["Shift"])))
+    supporting=supporting[:5]; contradicting=contradicting[:4]; context=context[:3]
+    score=sum(x["Strength"] for x in supporting)
+    oppose=sum(x["Strength"] for x in contradicting)
+    if score>=7 and score>oppose+2: strength="STRONG"
+    elif score>=4 and score>=oppose: strength="MODERATE"
+    elif score>0: strength="WEAK"
+    else: strength="LOW"
+    return {"supporting":supporting,"contradicting":contradicting,"context":context,"strength":strength}
+
+
 def _eh29_build_context(health):
     ctx={}
     for _,r in health.iterrows():
@@ -2617,35 +2828,66 @@ def _eh29_rank_diagnoses(health, quality_gate=False, parameter_quality_gate=Fals
 
 
 def _eh29_correlation_evidence(health, df, max_pairs=5):
-    """Find useful co-movement among monitored signals; correlation is
-    presented only as supporting evidence, never as causality."""
+    """Find useful co-movement among distinct engineering signal families.
+
+    Same-signal and same-family correlations are excluded because they often
+    create visually impressive but maintenance-unhelpful results such as
+    Temperature ↔ Temperature. Correlation is supporting evidence only.
+    """
     if health is None or health.empty or df is None or df.empty or "ArchiveTime" not in df.columns:
         return []
 
     tags=[str(x) for x in health["PLC Tag"].tolist() if str(x) in df.columns]
+    tags=list(dict.fromkeys(tags))
     if len(tags)<2:
         return []
 
-    work=pd.DataFrame({"ArchiveTime":pd.to_datetime(df["ArchiveTime"],errors="coerce")})
-    pairs=[]
-    for tag in tags:
-        x=pd.to_numeric(df[tag],errors="coerce")
-        work[tag]=x
+    meta={}
+    for _,r in health.iterrows():
+        tag=str(r.get("PLC Tag",""))
+        meta[tag]={
+            "parameter":str(r.get("Parameter",tag)),
+            "family":_eh29_family(r.get("Parameter",""),tag),
+            "condition":str(r.get("Condition","Normal")),
+            "shift":float(r.get("Shift %",0.0) or 0.0),
+            "deviation":float(r.get("Deviation Sigma",0.0) or 0.0),
+        }
 
+    work=pd.DataFrame({"ArchiveTime":pd.to_datetime(df["ArchiveTime"],errors="coerce")})
+    for tag in tags:
+        work[tag]=pd.to_numeric(df[tag],errors="coerce")
+
+    # Prefer engineering-relevant cross-family relationships.
+    preferred={
+        frozenset({"flow","pressure"}):1.35,
+        frozenset({"load","vibration"}):1.30,
+        frozenset({"vibration","temperature"}):1.25,
+        frozenset({"load","speed"}):1.20,
+        frozenset({"flow","load"}):1.10,
+        frozenset({"pressure","load"}):1.05,
+        frozenset({"flow","speed"}):1.00,
+        frozenset({"pressure","speed"}):.95,
+    }
+    pairs=[]
     for i,a in enumerate(tags):
+        fa=meta.get(a,{}).get("family","other")
         for b in tags[i+1:]:
+            fb=meta.get(b,{}).get("family","other")
+            if a==b or fa==fb or fa=="other" or fb=="other":
+                continue
             pair=work[[a,b]].dropna()
             if len(pair)<30:
                 continue
             corr=float(pair[a].corr(pair[b]))
             if not np.isfinite(corr) or abs(corr)<0.70:
                 continue
-            ra=health[health["PLC Tag"]==a]
-            rb=health[health["PLC Tag"]==b]
-            pa=str(ra.iloc[0]["Parameter"]) if not ra.empty else a
-            pb=str(rb.iloc[0]["Parameter"]) if not rb.empty else b
-            pairs.append((abs(corr),corr,pa,pb,a,b,len(pair)))
-    pairs.sort(reverse=True)
+            pref=preferred.get(frozenset({fa,fb}),0.85)
+            abnormal_bonus=1.0
+            if meta.get(a,{}).get("condition") in {"Critical","Attention","Deteriorating"}: abnormal_bonus+=.20
+            if meta.get(b,{}).get("condition") in {"Critical","Attention","Deteriorating"}: abnormal_bonus+=.20
+            rank=abs(corr)*pref*abnormal_bonus
+            pairs.append((rank,corr,meta[a]["parameter"],meta[b]["parameter"],a,b,len(pair),fa,fb))
+    pairs.sort(key=lambda x:(-x[0],-abs(x[1])))
     return pairs[:max_pairs]
 
 
@@ -3586,33 +3828,56 @@ elif page == "Equipment Health":
                 )
                 dx=next(d for d in diagnoses if d["id"]==selected_dx)
 
+                evidence = _eh29_build_evidence(
+                    health, df, dx, quality_map=quality_map, freshness_state=freshness["state"]
+                )
+
                 dx1,dx2=st.columns([1.15,1.0],gap="medium")
                 with dx1:
+                    evidence_label = "HISTORICAL EVIDENCE" if quality_gate or parameter_quality_gate else "EVIDENCE"
                     st.markdown(
-                        '<div class="eh29-panel"><div class="eh29-panel-title">🔬 BUKTI PENDUKUNG</div>'
-                        '<div class="eh29-panel-sub">Signal yang mendukung atau menantang hipotesis yang dipilih</div>',
+                        f'<div class="eh29-panel eh29-evidence-panel">'
+                        f'<div class="eh29-panel-title">🔎 BUKTI PENDUKUNG <span class="eh29-evidence-badge">{evidence_label}</span></div>'
+                        f'<div class="eh29-panel-sub">Evidence yang mendukung, melemahkan, atau memberi context terhadap hipotesis <b>{dx["title"]}</b></div>'
+                        f'<div class="eh29-strength strength-{evidence["strength"].lower()}">'
+                        f'<span>KEKUATAN EVIDENCE</span><b>{evidence["strength"]}</b></div>',
                         unsafe_allow_html=True,
                     )
-                    support_rows=[]
-                    rule_fams=next((r["families"] for r in EH29_RULES if r["id"]==dx["id"]),set())
-                    for _,rr in health.iterrows():
-                        fam=_eh29_family(rr.get("Parameter",""),rr.get("PLC Tag",""))
-                        if fam not in rule_fams and dx["id"]!="INSTRUMENTATION":
-                            continue
-                        support_rows.append({
-                            "Parameter":str(rr["Parameter"]),
-                            "Tag":str(rr["PLC Tag"]),
-                            "Condition":str(rr["Condition"]),
-                            "Direction":str(rr["Direction"]),
-                            "Shift":float(rr["Shift %"]),
-                            "Deviation":float(rr["Deviation Sigma"]),
-                        })
-                    if support_rows:
-                        evdf=pd.DataFrame(support_rows).sort_values(["Deviation","Shift"],ascending=[False,False]).head(8)
-                        st.dataframe(evdf, width="stretch", hide_index=True, height=min(330,120+len(evdf)*32))
-                    else:
-                        st.markdown('<div class="eh29-empty">Tidak tersedia parameter family yang secara langsung mendukung.</div>',unsafe_allow_html=True)
-                    st.markdown('</div>',unsafe_allow_html=True)
+
+                    def render_evidence_group(title, items, cls, icon):
+                        if not items:
+                            return f'<div class="eh29-evidence-group {cls}"><div class="eh29-group-title">{icon} {title}</div><div class="eh29-no-evidence">Tidak ada signal yang cukup untuk kelompok ini.</div></div>'
+                        cards=[]
+                        for ev in items:
+                            verified_txt="VERIFIED" if ev["Verified"] else "HISTORICAL"
+                            dev_txt=f'{ev["Deviation"]:.2f}σ' if np.isfinite(ev["Deviation"]) else "—"
+                            shift_txt=f'{ev["Shift"]:+.1f}%'
+                            ts=ev.get("Timestamp",pd.NaT)
+                            ts_txt=pd.to_datetime(ts,errors="coerce").strftime("%d %b %Y · %H:%M") if pd.notna(ts) else "Timestamp tidak tersedia"
+                            cards.append(
+                                f'<div class="eh29-evidence-item {cls}">'
+                                f'<div class="eh29-evidence-item-top"><span class="eh29-evidence-icon">{icon}</span>'
+                                f'<div><b>{ev["Parameter"]}</b><small>{ev["Tag"]}</small></div>'
+                                f'<span class="eh29-evidence-state">{ev["Condition"].upper()}</span></div>'
+                                f'<div class="eh29-evidence-value"><strong>{ev["Current"]:,.3f}</strong> <span>{ev["Unit"]}</span>'
+                                f'<span class="eh29-evidence-metrics">Shift {shift_txt} · Dev {dev_txt}</span></div>'
+                                f'<div class="eh29-evidence-reason">{ev["Reason"]}</div>'
+                                f'<div class="eh29-evidence-meta">{verified_txt} · {ev["Quality"]} · PLC {ts_txt}</div>'
+                                f'</div>'
+                            )
+                        return f'<div class="eh29-evidence-group {cls}"><div class="eh29-group-title">{icon} {title} <span>{len(items)}</span></div>{"".join(cards)}</div>'
+
+                    evidence_html=(
+                        render_evidence_group("SUPPORTING EVIDENCE", evidence["supporting"], "support", "🟠")
+                        + render_evidence_group("CONTRADICTING EVIDENCE", evidence["contradicting"], "contradict", "🟢")
+                        + render_evidence_group("CONTEXT EVIDENCE", evidence["context"], "context", "⚪")
+                    )
+                    st.markdown(evidence_html,unsafe_allow_html=True)
+                    st.markdown(
+                        '<div class="eh29-evidence-foot">'
+                        '<b>Catatan engineering:</b> Evidence ini adalah decision-support. Ia tidak membuktikan root cause dan tidak menggantikan Field Verification, process condition check, OEM/design limit, atau maintenance history.'
+                        '</div></div>',unsafe_allow_html=True
+                    )
 
                 with dx2:
                     checks="".join(
@@ -3630,13 +3895,13 @@ elif page == "Equipment Health":
 
             if corr_pairs:
                 corr_html="".join(
-                    f'<tr><td>{a}</td><td>{b}</td><td>{corr:+.2f}</td><td>{n:,}</td></tr>'
-                    for _,corr,a,b,ta,tb,n in corr_pairs
+                    f'<tr><td><b>{a}</b><small>{ta}</small></td><td><b>{b}</b><small>{tb}</small></td><td><span class="eh29-corr-pill {"positive" if corr>=0 else "negative"}">{corr:+.2f}</span></td><td>{n:,}</td></tr>'
+                    for _,corr,a,b,ta,tb,n,fa,fb in corr_pairs
                 )
                 st.markdown(
                     '<div class="eh29-correlation">'
                     '<div class="eh29-panel-title">🔗 HUBUNGAN ANTAR-SIGNAL</div>'
-                    '<div class="eh29-panel-sub">Co-movement historis yang kuat (|r| ≥ 0.70). Correlation mendukung investigasi, tetapi tidak membuktikan hubungan sebab-akibat.</div>'
+                    '<div class="eh29-panel-sub">Co-movement historis antar <b>signal family yang berbeda</b> (|r| ≥ 0.70). Signal yang sama atau satu family tidak ditampilkan agar hubungan lebih relevan untuk maintenance.</div>'
                     '<table><thead><tr><th>Signal A</th><th>Signal B</th><th>Correlation r</th><th>Samples</th></tr></thead>'
                     f'<tbody>{corr_html}</tbody></table></div>',
                     unsafe_allow_html=True,
