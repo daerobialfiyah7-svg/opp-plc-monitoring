@@ -521,6 +521,46 @@ st.markdown("""<style>
 .eh22-empty{background:#f8fafc;border:1px solid #dfe5ee;border-radius:12px;padding:1.5rem;text-align:center;margin-top:.8rem}.eh22-empty-icon{font-size:2rem;color:#98a2b3}.eh22-empty b{display:block;color:#344054;font-size:.82rem;margin-top:.3rem}.eh22-empty span{display:block;color:#98a2b3;font-size:.64rem;margin-top:.25rem}
 @media(max-width:900px){.eh22-header{align-items:flex-start;flex-direction:column}.eh22-hero{align-items:flex-start;flex-direction:column}.eh22-hero-right{text-align:left}.eh22-name{max-width:75vw}}
 
+/* ===== Equipment Health v26 — Operating Context ===== */
+.eh26-section-title{
+    font-size:.78rem;font-weight:900;color:#25364d;margin:.95rem 0 .08rem;
+    letter-spacing:.01em
+}
+.eh26-section-sub{
+    font-size:.61rem;color:#98a2b3;margin-bottom:.5rem
+}
+.eh26-context-grid{
+    display:grid;grid-template-columns:1.15fr 1fr 1fr 1fr 1fr;
+    gap:.55rem;margin-bottom:.45rem
+}
+.eh26-context-card{
+    min-height:78px;border:1px solid #e1e7ef;border-radius:10px;
+    background:#fff;padding:.62rem .65rem;
+    box-shadow:0 2px 6px rgba(16,24,40,.03)
+}
+.eh26-context-card.running{border-top:3px solid #12b76a;background:#f6fffa}
+.eh26-context-card.stopped{border-top:3px solid #f79009;background:#fffaf5}
+.eh26-context-card.neutral{border-top:3px solid #cbd5e1}
+.eh26-context-label{
+    font-size:.51rem;font-weight:900;color:#667085;letter-spacing:.025em
+}
+.eh26-context-value{
+    margin-top:.22rem;font-size:.76rem;font-weight:900;color:#172b4d;
+    line-height:1.2
+}
+.eh26-context-sub{
+    margin-top:.18rem;font-size:.51rem;color:#98a2b3;
+    line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.eh26-context-note{
+    border:1px solid #e1e7ef;background:#f8fafc;border-radius:8px;
+    padding:.48rem .62rem;margin-bottom:.65rem;
+    color:#667085;font-size:.57rem;line-height:1.35
+}
+@media(max-width:1000px){
+    .eh26-context-grid{grid-template-columns:repeat(2,1fr)}
+}
+
 /* ===== Equipment Health v25 — Parameter Health Matrix ===== */
 .eh25-section-title{
     font-size:.78rem;font-weight:900;color:#25364d;margin:.95rem 0 .08rem;
@@ -1737,6 +1777,80 @@ high = int((master["Confidence"] == "High").sum())
 medium = int((master["Confidence"] == "Medium").sum())
 low = int((master["Confidence"] == "Low").sum())
 
+
+# -------------------------------------------------------------------------
+# Equipment Health v26 — Operating Context helpers
+# These helpers only use signals that actually exist in the selected
+# equipment's monitored parameter set. Missing context is never guessed.
+# -------------------------------------------------------------------------
+def _eh_find_context_signal(health_df, keywords):
+    """Find the best available monitored signal for an operating-context role."""
+    if health_df is None or health_df.empty:
+        return None
+    candidates = []
+    for _, r in health_df.iterrows():
+        p = str(r.get("Parameter", "")).lower()
+        tag = str(r.get("PLC Tag", "")).lower()
+        score = 0
+        for kw, weight in keywords:
+            if kw in p:
+                score += weight
+            if kw in tag:
+                score += max(1, weight // 2)
+        if score > 0:
+            candidates.append((score, r))
+    if not candidates:
+        return None
+    candidates.sort(key=lambda x: (-x[0], str(x[1].get("Parameter", ""))))
+    return candidates[0][1]
+
+
+def _eh_context_value(row):
+    if row is None:
+        return "NOT AVAILABLE"
+    try:
+        value = float(row.get("Current", np.nan))
+        if not np.isfinite(value):
+            return "NOT AVAILABLE"
+        unit = str(row.get("Unit", "") or "")
+        return f"{value:,.3f} {unit}".strip()
+    except Exception:
+        return "NOT AVAILABLE"
+
+
+def _eh_context_operating_state(health_df):
+    """Infer state only from an explicit status/run feedback signal."""
+    if health_df is None or health_df.empty:
+        return "NOT VERIFIED", "No operating-state signal available"
+    keywords = [
+        ("running", 10), ("run status", 10), ("equipment status", 10),
+        ("motor status", 10), ("pump status", 10), ("run feedback", 10),
+        ("run fb", 10), ("on/off", 10), ("status", 8),
+    ]
+    row = _eh_find_context_signal(health_df, keywords)
+    if row is None:
+        return "NOT VERIFIED", "No explicit run/status signal in monitored tags"
+    try:
+        value = float(row.get("Current", np.nan))
+        if not np.isfinite(value):
+            return "NOT VERIFIED", f'{row.get("Parameter", "Status")} has no valid current value'
+        if value > 0.5:
+            return "RUNNING", f'{row.get("Parameter", "Status")} = {value:g}'
+        return "STOPPED / OFF", f'{row.get("Parameter", "Status")} = {value:g}'
+    except Exception:
+        return "NOT VERIFIED", f'{row.get("Parameter", "Status")} could not be interpreted'
+
+
+def _eh_context_card(title, value, subtitle, cls="neutral"):
+    return (
+        f'<div class="eh26-context-card {cls}">'
+        f'<div class="eh26-context-label">{title}</div>'
+        f'<div class="eh26-context-value">{value}</div>'
+        f'<div class="eh26-context-sub">{subtitle}</div>'
+        f'</div>'
+    )
+
+
 if page == "Dashboard":
     # -------------------------------------------------------------------------
     # Dashboard v15 — executive engineering view.
@@ -2404,6 +2518,69 @@ elif page == "Equipment Health":
                         f'Validate equipment operating state and signal quality before interpreting condition.</div>',
                         unsafe_allow_html=True,
                     )
+
+            # -----------------------------------------------------------------
+            # Stage 3 — Operating Context
+            # -----------------------------------------------------------------
+            op_state, op_state_note = _eh_context_operating_state(health)
+
+            flow_row = _eh_find_context_signal(
+                health, [("flow", 10), ("rate", 5), ("throughput", 5), ("feed", 4)]
+            )
+            load_row = _eh_find_context_signal(
+                health, [("motor current", 10), ("current", 7), ("load", 8), ("power", 7), ("torque", 6)]
+            )
+            speed_row = _eh_find_context_signal(
+                health, [("speed", 10), ("rpm", 10), ("frequency", 7), ("hz", 5)]
+            )
+            pressure_row = _eh_find_context_signal(
+                health, [("pressure", 10), ("discharge pressure", 12), ("suction pressure", 10)]
+            )
+
+            context_note = (
+                "Context evidence is current enough for screening."
+                if freshness["state"] not in {"STALE", "NO RECENT DATA", "NO DATA"}
+                else "Context evidence is stale; verify actual equipment operating state."
+            )
+
+            st.markdown(
+                '<div class="eh26-section-title">⚙️ OPERATING CONTEXT</div>'
+                '<div class="eh26-section-sub">Interpret equipment signals in operating state before deciding whether a deviation is equipment-driven</div>',
+                unsafe_allow_html=True,
+            )
+
+            cards = [
+                _eh_context_card(
+                    "OPERATING STATE", op_state, op_state_note,
+                    "running" if op_state == "RUNNING" else "stopped" if op_state.startswith("STOPPED") else "neutral"
+                ),
+                _eh_context_card(
+                    "FLOW / FEED", _eh_context_value(flow_row),
+                    str(flow_row.get("Parameter")) if flow_row is not None else "No monitored flow/feed signal"
+                ),
+                _eh_context_card(
+                    "LOAD / CURRENT", _eh_context_value(load_row),
+                    str(load_row.get("Parameter")) if load_row is not None else "No monitored load/current signal"
+                ),
+                _eh_context_card(
+                    "SPEED", _eh_context_value(speed_row),
+                    str(speed_row.get("Parameter")) if speed_row is not None else "No monitored speed signal"
+                ),
+                _eh_context_card(
+                    "PRESSURE", _eh_context_value(pressure_row),
+                    str(pressure_row.get("Parameter")) if pressure_row is not None else "No monitored pressure signal"
+                ),
+            ]
+
+            st.markdown(
+                '<div class="eh26-context-grid">' + ''.join(cards) + '</div>',
+                unsafe_allow_html=True,
+            )
+            st.markdown(
+                f'<div class="eh26-context-note">ⓘ <b>{freshness["state"]}</b> · {context_note} '
+                f'Zero/constant signals are not interpreted as stopped equipment unless an explicit operating-state signal confirms it.</div>',
+                unsafe_allow_html=True,
+            )
 
             # -----------------------------------------------------------------
             # Diagnostic overview
