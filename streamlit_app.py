@@ -50,6 +50,65 @@ st.markdown("""<style>
 [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label > div:first-child{
     margin-right:.38rem!important;
 }
+
+/* V19 SIDEBAR — clean, compact, professional */
+.opp-brand-v19{padding:.15rem .15rem .95rem!important}
+.opp-brand-row{display:flex;align-items:center;gap:.62rem}
+.brand-gear-v19{
+    width:35px;height:35px;border-radius:10px;display:flex;align-items:center;
+    justify-content:center;background:#6738d4;color:#fff;font-size:1.18rem;
+    box-shadow:0 4px 10px rgba(103,56,212,.18);
+}
+.opp-brand-title-v19{font-size:1.15rem;font-weight:850;color:#182230;line-height:1.05}
+.opp-brand-sub-v19{margin-top:.16rem;color:#667085;font-size:.62rem;font-weight:550}
+.sidebar-divider-v19{height:1px;background:#e6e9ef;margin:.35rem -.25rem .75rem}
+.sidebar-divider-v19.compact{margin-top:1rem;margin-bottom:.7rem}
+.sidebar-section-title-v19{
+    color:#6738d4;font-size:.62rem;font-weight:850;letter-spacing:.055em;
+    text-transform:uppercase;margin:.45rem .05rem .55rem;
+}
+.coverage-date-v19>div{position:relative;padding:.28rem 0 .38rem 1.38rem;color:#344054;font-size:.61rem;line-height:1.1}
+.coverage-date-v19 b{font-size:.63rem;font-weight:750}
+.coverage-date-v19 small{position:absolute;right:0;top:.31rem;color:#98a2b3;font-size:.53rem}
+.coverage-icon-v19{position:absolute;left:0;top:.23rem;color:#667085;font-size:.72rem}
+.coverage-summary-v19{display:flex;align-items:center;gap:.65rem;padding:.25rem 0 .15rem}
+.sidebar-ring-v19{
+    width:51px;height:51px;border-radius:50%;display:flex;align-items:center;
+    justify-content:center;font-size:.66rem;font-weight:850;color:#344054;
+    background:conic-gradient(#12b76a var(--pct),#e9edf2 0);position:relative;flex:0 0 auto;
+}
+.sidebar-ring-v19:after{content:"";position:absolute;inset:6px;background:#fbfcfe;border-radius:50%}
+.sidebar-ring-v19 span{position:relative;z-index:1}
+.coverage-label-v19{color:#667085;font-size:.58rem;line-height:1.2}
+.coverage-value-v19{color:#344054;font-size:.73rem;font-weight:800;margin-top:.12rem}
+.coverage-note-v19{color:#98a2b3;font-size:.53rem;margin-top:.08rem}
+.system-status-v19{border:1px solid #e7ebf1;background:#fff;border-radius:9px;padding:.62rem .65rem}
+.status-row-v19{display:flex;align-items:center;gap:.38rem;color:#079455;font-size:.67rem}
+.status-dot-v19{width:7px;height:7px;border-radius:50%;background:#12b76a;box-shadow:0 0 0 3px rgba(18,183,106,.10)}
+.status-live-v19{margin-left:auto;font-size:.5rem;font-weight:850;color:#079455;background:#ecfdf3;border-radius:99px;padding:.16rem .34rem}
+.status-update-v19{color:#98a2b3;font-size:.54rem;margin-top:.42rem}
+.status-update-v19 b{color:#475467;font-weight:700}
+.sidebar-footer-v19{margin-top:1rem;padding:.7rem .05rem 0;border-top:1px solid #eef0f3;color:#98a2b3;font-size:.5rem;line-height:1.55}
+.sidebar-footer-v19 span{display:block}
+
+/* Hide obsolete V18 filter/quality/database elements. */
+.sidebar-filter-icon,.sidebar-filter-wrap,.sidebar-select,.sidebar-quality-btn,
+.sidebar-db-card,.sidebar-connected,.sidebar-meta-row,.sidebar-coverage{display:none!important}
+
+/* Clean navigation surface. */
+[data-testid="stSidebar"] [data-testid="stRadio"]{margin-top:.1rem!important}
+[data-testid="stSidebar"] [data-testid="stRadio"]>label{display:none!important}
+[data-testid="stSidebar"] [data-testid="stRadio"] [role="radiogroup"]{gap:.12rem!important}
+[data-testid="stSidebar"] [data-testid="stRadio"] [role="radio"]{
+    min-height:35px!important;padding:.43rem .55rem!important;border-radius:8px!important;
+    color:#344054!important;font-size:.68rem!important;font-weight:650!important;
+    border:1px solid transparent!important;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] [role="radio"]:hover{background:#f5f2ff!important}
+[data-testid="stSidebar"] [data-testid="stRadio"] [role="radio"][aria-checked="true"]{
+    background:#eee8ff!important;color:#4f24bd!important;border-color:#e4dbff!important;font-weight:800!important;
+}
+
 .opp-brand{
     padding:.05rem .15rem .85rem!important;
     border-bottom:0!important;
@@ -1254,116 +1313,92 @@ def _navigate_dashboard(nav_label, value=None):
         st.session_state["health_area"] = value
 
 # ===== LEFT SIDEBAR — reference design =====
+
+# V19 SIDEBAR — clean navigation and useful system context only.
+# The non-functional Quick Filter section has been removed.
 st.sidebar.markdown(
-    """<div class="opp-brand">
-        <div class="opp-brand-title"><span class="brand-gear">⚙</span>&nbsp; OPP</div>
-        <div class="opp-brand-sub">Engineering Monitoring</div>
-    </div>""",
+    '<div class="opp-brand-v19"><div class="opp-brand-row">'
+    '<div class="brand-gear-v19">⚙</div><div>'
+    '<div class="opp-brand-title-v19">OPP</div>'
+    '<div class="opp-brand-sub-v19">Engineering Monitoring</div>'
+    '</div></div></div>',
     unsafe_allow_html=True
 )
 
-nav_options={
-    "⌂  Dashboard":"Dashboard",
-    "♧  Equipment Health":"Equipment Health",
-    "⚠  Maintenance Priority":"Maintenance Priority",
-    "↗  Action Center":"Action Center",
-    "◆  Tag Master":"Tag Master",
-    "▥  Engineering Trend":"Engineering Trend",
-    "▣  Data Import":"Data Import"
+nav_options = {
+    "⌂  Dashboard": "Dashboard",
+    "♧  Equipment Health": "Equipment Health",
+    "⚠  Maintenance Priority": "Maintenance Priority",
+    "↗  Action Center": "Action Center",
+    "◆  Tag Master": "Tag Master",
+    "▥  Engineering Trend": "Engineering Trend",
+    "▣  Data Import": "Data Import",
 }
-selected_nav=st.sidebar.radio("NAVIGATION",list(nav_options.keys()),key="main_navigation")
-page=nav_options[selected_nav]
+selected_nav = st.sidebar.radio("NAVIGATION", list(nav_options.keys()), key="main_navigation")
+page = nav_options[selected_nav]
 
-# Quick filter controls — kept lightweight and independent from the screening engine.
-st.sidebar.markdown('<div class="sidebar-divider"></div><div class="sidebar-section-title">QUICK FILTER</div>', unsafe_allow_html=True)
-
-area_filter_options=["All Areas"] + sorted([str(x) for x in master["Area"].dropna().unique() if str(x).strip() and str(x).strip()!="nan"])
-equipment_type_options=["All Equipment Types"]
-for candidate in ["Equipment Type","Equipment Category","Instrument Type"]:
-    if candidate in master.columns:
-        vals=sorted([str(x) for x in master[candidate].dropna().unique() if str(x).strip() and str(x).strip()!="nan"])
-        if vals:
-            equipment_type_options += vals
-            break
-status_options=["All Screening Status","Healthy","Deteriorating","Attention","Critical"]
-
-sidebar_area=st.sidebar.selectbox(
-    "Area filter",area_filter_options,key="sidebar_area_filter",
-    format_func=lambda x: f"  ⌖   {x}",
-    label_visibility="collapsed"
-)
-sidebar_type=st.sidebar.selectbox(
-    "Equipment type filter",equipment_type_options,key="sidebar_type_filter",
-    format_func=lambda x: f"  ♟   {x}",
-    label_visibility="collapsed"
-)
-sidebar_status=st.sidebar.selectbox(
-    "Screening status filter",status_options,key="sidebar_status_filter",
-    format_func=lambda x: f"  ⚑   {x}",
-    label_visibility="collapsed"
-)
-
-# Data coverage block — derived from the actual historical ArchiveTime records.
-_sidebar_min_dt=_sidebar_max_dt=None
-_sidebar_data_days=0
-_sidebar_unique_days=0
+# Data coverage — useful context for the historical screening engine.
+_sidebar_min_dt = _sidebar_max_dt = None
+_sidebar_data_days = 0
+_sidebar_unique_days = 0
 if not df.empty and "ArchiveTime" in df.columns:
-    _sidebar_dt=pd.to_datetime(df["ArchiveTime"],errors="coerce").dropna()
+    _sidebar_dt = pd.to_datetime(df["ArchiveTime"], errors="coerce").dropna()
     if len(_sidebar_dt):
-        _sidebar_min_dt=_sidebar_dt.min()
-        _sidebar_max_dt=_sidebar_dt.max()
-        _sidebar_data_days=max(1,(_sidebar_max_dt.normalize()-_sidebar_min_dt.normalize()).days+1)
-        _sidebar_unique_days=_sidebar_dt.dt.normalize().nunique()
-_sidebar_cov=(_sidebar_unique_days/_sidebar_data_days*100) if _sidebar_data_days else 0
+        _sidebar_min_dt = _sidebar_dt.min()
+        _sidebar_max_dt = _sidebar_dt.max()
+        _sidebar_data_days = max(1, (_sidebar_max_dt.normalize() - _sidebar_min_dt.normalize()).days + 1)
+        _sidebar_unique_days = _sidebar_dt.dt.normalize().nunique()
+_sidebar_cov = (_sidebar_unique_days / _sidebar_data_days * 100) if _sidebar_data_days else 0
 
-st.sidebar.markdown('<div class="sidebar-section-title">DATA COVERAGE</div>', unsafe_allow_html=True)
 st.sidebar.markdown(
-    f'<div class="sidebar-meta-row"><span class="sicon">▣</span><span class="svalue">{_sidebar_min_dt.strftime("%d %b %Y %H:%M") if _sidebar_min_dt is not None else "—"}</span><span class="slabel">First Data</span></div>'
-    f'<div class="sidebar-meta-row"><span class="sicon">▣</span><span class="svalue">{_sidebar_max_dt.strftime("%d %b %Y %H:%M") if _sidebar_max_dt is not None else "—"}</span><span class="slabel">Latest Data</span></div>',
-    unsafe_allow_html=True
+    '<div class="sidebar-divider-v19"></div>'
+    '<div class="sidebar-section-title-v19">DATA COVERAGE</div>',
+    unsafe_allow_html=True,
 )
 st.sidebar.markdown(
-    f'<div class="sidebar-coverage"><div class="sidebar-ring" style="--pct:{min(100,max(0,_sidebar_cov)):.1f}%"><span>{_sidebar_cov:.1f}%</span></div>'
-    f'<div class="sidebar-coverage-text">Data Coverage<b>{_sidebar_unique_days:,} / {_sidebar_data_days:,} Days</b><span class="available">Data Available</span></div></div>',
-    unsafe_allow_html=True
+    f'<div class="coverage-date-v19">'
+    f'<div><span class="coverage-icon-v19">▣</span><b>{_sidebar_min_dt.strftime("%d %b %Y %H:%M") if _sidebar_min_dt is not None else "—"}</b><small>First Data</small></div>'
+    f'<div><span class="coverage-icon-v19">▣</span><b>{_sidebar_max_dt.strftime("%d %b %Y %H:%M") if _sidebar_max_dt is not None else "—"}</b><small>Latest Data</small></div>'
+    f'</div>'
+    f'<div class="coverage-summary-v19">'
+    f'<div class="sidebar-ring-v19" style="--pct:{min(100,max(0,_sidebar_cov)):.1f}%"><span>{_sidebar_cov:.1f}%</span></div>'
+    f'<div><div class="coverage-label-v19">Data Coverage</div>'
+    f'<div class="coverage-value-v19">{_sidebar_unique_days:,} / {_sidebar_data_days:,} Days</div>'
+    f'<div class="coverage-note-v19">Historical data available</div></div>'
+    f'</div>',
+    unsafe_allow_html=True,
 )
-if st.sidebar.button("View Data Quality",key="sidebar_data_quality",use_container_width=True):
-    st.session_state["main_navigation"]="⇧  Data Import"
-    st.rerun()
 
-# Last updated — prefer the latest import timestamp, otherwise latest PLC data.
-_sidebar_last_updated=None
+_sidebar_last_updated = None
 try:
-    _sidebar_log=recent_import_log(1)
+    _sidebar_log = recent_import_log(1)
     if not _sidebar_log.empty and "Imported At" in _sidebar_log.columns:
-        _sidebar_last_updated=pd.to_datetime(_sidebar_log.iloc[0]["Imported At"],errors="coerce")
+        _sidebar_last_updated = pd.to_datetime(_sidebar_log.iloc[0]["Imported At"], errors="coerce")
 except Exception:
     pass
 if _sidebar_last_updated is None or pd.isna(_sidebar_last_updated):
-    _sidebar_last_updated=_sidebar_max_dt
+    _sidebar_last_updated = _sidebar_max_dt
 
-st.sidebar.markdown('<div class="sidebar-section-title">LAST UPDATED</div>', unsafe_allow_html=True)
 st.sidebar.markdown(
-    f'<div class="sidebar-meta-row"><span class="sicon">◷</span><span class="svalue">{_sidebar_last_updated.strftime("%d %b %Y %H:%M") if _sidebar_last_updated is not None and pd.notna(_sidebar_last_updated) else "—"}</span></div>',
-    unsafe_allow_html=True
+    '<div class="sidebar-divider-v19 compact"></div>'
+    '<div class="sidebar-section-title-v19">SYSTEM STATUS</div>',
+    unsafe_allow_html=True,
 )
-st.sidebar.markdown('<div class="sidebar-connected"><span>⌁</span> Connected</div>', unsafe_allow_html=True)
-
-# Bottom database status card.
-try:
-    _db_rows,_db_first,_db_last,_db_imports=history_database_stats()
-except Exception:
-    _db_rows,_db_first,_db_last,_db_imports=0,None,None,0
 st.sidebar.markdown(
-    f'<div class="sidebar-db-card"><div class="sidebar-db-title">Database Status</div>'
-    f'<div class="sidebar-db-value"><span class="sidebar-db-dot"></span>Connected</div>'
-    f'<div class="sidebar-version">OPP Engineering Monitoring System<br>v2.0.0</div></div>',
-    unsafe_allow_html=True
+    f'<div class="system-status-v19">'
+    f'<div class="status-row-v19"><span class="status-dot-v19"></span><b>Connected</b>'
+    f'<span class="status-live-v19">LIVE</span></div>'
+    f'<div class="status-update-v19">Last updated&nbsp;&nbsp;'
+    f'<b>{_sidebar_last_updated.strftime("%d %b %Y %H:%M") if _sidebar_last_updated is not None and pd.notna(_sidebar_last_updated) else "—"}</b>'
+    f'</div></div>',
+    unsafe_allow_html=True,
 )
 
-if page != "Dashboard":
-    st.markdown('<div class="opp-page-title">OPP Engineering Monitoring</div>',unsafe_allow_html=True)
-    st.markdown('<div class="opp-page-sub">Engineering decision support for process monitoring, equipment health, abnormality screening and maintenance follow-up.</div>',unsafe_allow_html=True)
+st.sidebar.markdown(
+    '<div class="sidebar-footer-v19"><span>OPP Engineering Monitoring</span>'
+    '<span>Decision Support System</span></div>',
+    unsafe_allow_html=True,
+)
 
 high = int((master["Confidence"] == "High").sum())
 medium = int((master["Confidence"] == "Medium").sum())
