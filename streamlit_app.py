@@ -4,6 +4,8 @@ import numpy as np
 from pathlib import Path
 import re
 from urllib.parse import quote
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 st.set_page_config(page_title="OPP Engineering Monitoring", page_icon="⚙️", layout="wide")
 ROOT = Path(__file__).resolve().parent
@@ -476,7 +478,7 @@ st.markdown("""<style>
 .eh22-tags span{font-size:.56rem;font-weight:750;color:#e7f0fb;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);border-radius:999px;padding:.2rem .4rem}
 .eh22-hero-right{text-align:right;white-space:nowrap}
 .eh22-status{display:inline-block;padding:.42rem .7rem;border-radius:999px;font-size:.72rem;font-weight:900;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.12);color:#fff}
-.eh22-status.healthy{background:rgba(18,183,106,.20)}.eh22-status.deteriorating{background:rgba(245,184,46,.20)}.eh22-status.attention{background:rgba(247,144,9,.22)}.eh22-status.critical{background:rgba(240,68,56,.24)}
+.eh22-status.healthy{background:rgba(18,183,106,.20)}.eh22-status.data-stale,.eh22-status.no-data{background:rgba(247,144,9,.24)}.eh22-status.data-review{background:rgba(245,184,46,.24)}.eh22-status.deteriorating{background:rgba(245,184,46,.20)}.eh22-status.attention{background:rgba(247,144,9,.22)}.eh22-status.critical{background:rgba(240,68,56,.24)}
 .eh22-last{font-size:.61rem;color:#d7e5f5;margin-top:.3rem}
 .eh22-kpi{border:1px solid #dfe5ee;border-radius:9px;background:#f8fafc;min-height:100px;padding:.72rem .78rem;box-sizing:border-box;box-shadow:0 2px 6px rgba(16,24,40,.045)}
 .eh22-kpi-label{font-size:.61rem;font-weight:850;color:#667085;letter-spacing:.025em}
@@ -1030,6 +1032,85 @@ PARAM_RULES = [
     (r"^(LI|LIT|LT)", "Level", "Level", "%"),
 ]
 
+
+
+# --- Equipment Health v23: data freshness / quality helpers --------------------
+EH_SITE_TZ = ZoneInfo("Asia/Makassar")  # Sumbawa / WITA
+
+def _eh_now_local():
+    return datetime.now(EH_SITE_TZ)
+
+def _eh_freshness(ts):
+    """Classify recency of the latest PLC timestamp for engineering use."""
+    if pd.isna(ts):
+        return {"state": "NO DATA", "class": "nodata", "hours": np.nan, "label": "No timestamp"}
+    t = pd.Timestamp(ts)
+    if t.tzinfo is None:
+        t = t.tz_localize(EH_SITE_TZ)
+    else:
+        t = t.tz_convert(EH_SITE_TZ)
+    now = pd.Timestamp(_eh_now_local())
+    age_h = max(0.0, (now - t).total_seconds() / 3600.0)
+    if age_h <= 1:
+        state, cls = "LIVE", "live"
+    elif age_h <= 6:
+        state, cls = "RECENT", "recent"
+    elif age_h <= 24:
+        state, cls = "AGING", "aging"
+    elif age_h <= 168:
+        state, cls = "STALE", "stale"
+    else:
+        state, cls = "NO RECENT DATA", "nodata"
+    return {"state": state, "class": cls, "hours": age_h, "label": t.strftime("%d %b %Y · %H:%M WITA")}
+
+def _eh_parameter_quality(df, tag, min_points=20):
+    """Return transparent data-quality evidence for one PLC tag."""
+    if tag not in df.columns or "ArchiveTime" not in df.columns:
+        return {"status": "MISSING TAG", "class": "bad", "valid": 0, "unique": 0, "latest": pd.NaT, "fresh_pct": 0.0}
+    x = pd.DataFrame({
+        "ts": pd.to_datetime(df["ArchiveTime"], errors="coerce"),
+        "v": pd.to_numeric(df[tag], errors="coerce"),
+    }).replace([np.inf, -np.inf], np.nan).dropna(subset=["ts", "v"]).sort_values("ts")
+    n = len(x)
+    if n == 0:
+        return {"status": "NO VALID DATA", "class": "bad", "valid": 0, "unique": 0, "latest": pd.NaT, "fresh_pct": 0.0}
+    latest = x["ts"].iloc[-1]
+    freshness = _eh_freshness(latest)
+    unique = int(x["v"].nunique(dropna=True))
+    flatline = n >= min_points and unique <= 1
+    # Compare timestamps in UTC to avoid server-time / plant-time ambiguity.
+    ts_utc = pd.to_datetime(x["ts"], errors="coerce", utc=True)
+    now_utc = pd.Timestamp.now(tz="UTC")
+    recent_cut = now_utc - pd.Timedelta(hours=24)
+    fresh_pct = float((ts_utc >= recent_cut).mean() * 100)
+    if flatline:
+        status, cls = "FLATLINE SUSPECT", "warning"
+    elif n < min_points:
+        status, cls = f"INSUFFICIENT ({n} pts)", "warning"
+    elif freshness["state"] in {"STALE", "NO RECENT DATA"}:
+        status, cls = freshness["state"], "warning"
+    else:
+        status, cls = "VALID", "good"
+    return {"status": status, "class": cls, "valid": n, "unique": unique, "latest": latest, "fresh_pct": fresh_pct}
+
+def _eh_recommendation(row, quality, freshness_state):
+    """Recommendation must reflect condition AND evidence quality."""
+    if quality["status"] in {"NO VALID DATA", "MISSING TAG"} or freshness_state == "NO DATA":
+        return "Data unavailable — verify PLC tag, historian connection and instrument signal before assessing equipment condition."
+    if quality["status"] == "INSUFFICIENT ({} pts)".format(quality["valid"]):
+        return "Build sufficient historical evidence before intervention; verify signal availability and operating context."
+    if quality["status"] == "FLATLINE SUSPECT":
+        return "Verify instrument signal and equipment operating state; a flatline may indicate standby operation, signal freeze or instrumentation issue."
+    if freshness_state in {"STALE", "NO RECENT DATA", "AGING"}:
+        return "Refresh PLC data before making a maintenance decision; current evidence is not sufficiently recent."
+    condition = str(row.get("Condition", "Normal"))
+    if condition == "Normal":
+        return "No intervention required. Continue routine monitoring; no abnormal deviation is detected against the current historical screening envelope."
+    if condition == "Deteriorating":
+        return str(row.get("Action", "Monitor the trend and verify whether deterioration persists.")) + " Confirm persistence before intervention."
+    if condition == "Attention":
+        return str(row.get("Action", "Perform focused engineering verification."))
+    return "Immediate engineering verification. Validate the signal against field condition, process state and applicable OEM/design limits before maintenance action."
 
 def infer_parameter(tag, source_parameter="", source_unit="", instrument_type=""):
     """Display helper only. Source mapping is never overwritten.
@@ -1926,7 +2007,27 @@ elif page == "Equipment Health":
             abnormal = critical + attention + deteriorating
             total_params = len(health)
 
-            # Existing page score logic is preserved.
+            # -----------------------------------------------------------------
+            # Data freshness / quality gate. A historical envelope is not proof
+            # of current equipment health when the latest PLC evidence is old.
+            # -----------------------------------------------------------------
+            eq_tags = [str(x).strip() for x in ev.get("PLC Tag", pd.Series(dtype=str)).fillna("") if str(x).strip()]
+            eq_tags = list(dict.fromkeys(eq_tags))
+            quality_map = {tag: _eh_parameter_quality(df, tag) for tag in eq_tags}
+            latest_candidates = [q["latest"] for q in quality_map.values() if pd.notna(q["latest"])]
+            eq_latest = max(latest_candidates) if latest_candidates else pd.NaT
+            freshness = _eh_freshness(eq_latest)
+            quality_warnings = [
+                (tag, q) for tag, q in quality_map.items()
+                if q["status"] not in {"VALID"}
+            ]
+            analyzable = sum(1 for q in quality_map.values() if q["valid"] >= 20)
+            coverage_pct = analyzable / max(len(eq_tags), 1) * 100
+            quality_gate = freshness["state"] in {"STALE", "NO RECENT DATA", "NO DATA"}
+            parameter_quality_gate = any(q["status"] in {"NO VALID DATA", "MISSING TAG", "FLATLINE SUSPECT"} for q in quality_map.values())
+
+            # Existing page score logic is preserved only when current evidence
+            # is recent enough to justify a present-state screening statement.
             severity = {"Normal": 0, "Deteriorating": 12, "Attention": 25, "Critical": 50}
             conf_weight = {"High": 1.0, "Medium": .85, "Low": .65}
             health["Penalty"] = [
@@ -1941,22 +2042,29 @@ elif page == "Equipment Health":
             ]
             raw_score = 100 - float(health["Penalty"].mean())
 
-            if critical:
+            if quality_gate:
+                # Do not label stale historical evidence as HEALTHY.
+                overall = "DATA STALE" if freshness["state"] != "NO DATA" else "NO DATA"
+                risk, priority, icon, cap = "DATA QUALITY", "P4", "🟠", None
+                score = None
+            elif parameter_quality_gate:
+                overall, risk, priority, icon, cap = "DATA REVIEW", "DATA QUALITY", "P4", "🟡", None
+                score = None
+            elif critical:
                 overall, risk, priority, icon, cap = "CRITICAL", "HIGH", "P1", "🔴", 69
+                score = int(round(max(0, min(cap, raw_score))))
             elif attention:
                 overall, risk, priority, icon, cap = "ATTENTION", "MEDIUM", "P2", "🟠", 89
+                score = int(round(max(0, min(cap, raw_score))))
             elif deteriorating:
                 overall, risk, priority, icon, cap = "DETERIORATING", "MEDIUM-LOW", "P3", "🟡", 94
+                score = int(round(max(0, min(cap, raw_score))))
             else:
                 overall, risk, priority, icon, cap = "HEALTHY", "LOW", "P4", "🟢", 100
-            score = int(round(max(0, min(cap, raw_score))))
+                score = int(round(max(0, min(cap, raw_score))))
 
-            # Current data timestamp.
-            try:
-                last_dt = pd.to_datetime(df["ArchiveTime"], errors="coerce").max()
-                last_label = last_dt.strftime("%d %b %Y") if pd.notna(last_dt) else "—"
-            except Exception:
-                last_label = "—"
+            # Current data timestamp is equipment-specific, not plant-wide.
+            last_label = freshness["label"] if pd.notna(eq_latest) else "No valid PLC timestamp"
 
             # Primary abnormal signal.
             flagged = health[health["Condition"] != "Normal"].copy()
@@ -1974,15 +2082,15 @@ elif page == "Equipment Health":
             # -----------------------------------------------------------------
             # Equipment identity / status hero
             # -----------------------------------------------------------------
-            status_cls = overall.lower()
+            status_cls = overall.lower().replace(" ", "-")
             st.markdown(
                 f'<div class="eh22-hero">'
                 f'<div class="eh22-hero-left"><div class="eh22-eq-icon">⚙</div>'
                 f'<div><div class="eh22-code">{selected_eq}</div>'
                 f'<div class="eh22-name">{eq_name}</div>'
-                f'<div class="eh22-tags"><span>AREA {eq_area}</span><span>{total_params} MONITORED PARAMETERS</span></div></div></div>'
+                f'<div class="eh22-tags"><span>AREA {eq_area}</span><span>{total_params} ANALYZABLE PARAMETERS</span><span>{len(eq_tags)} CONFIGURED TAGS</span></div></div></div>'
                 f'<div class="eh22-hero-right"><div class="eh22-status {status_cls}">{icon} {priority} · {overall}</div>'
-                f'<div class="eh22-last">Latest PLC data · {last_label}</div></div>'
+                f'<div class="eh22-last">{freshness["state"]} · {last_label}</div></div>'
                 f'</div>',
                 unsafe_allow_html=True,
             )
@@ -1991,12 +2099,18 @@ elif page == "Equipment Health":
             # Decision KPI strip
             # -----------------------------------------------------------------
             k1, k2, k3, k4, k5 = st.columns(5, gap="medium")
+            confidence_counts = health["Confidence"].value_counts()
+            confidence_mode = str(confidence_counts.idxmax()) if len(confidence_counts) else "—"
+            confidence_n = int(confidence_counts.max()) if len(confidence_counts) else 0
+            score_value = str(score) if score is not None else "N/A"
+            score_small = "Current evidence screening" if score is not None else "Current-state score withheld"
+            freshness_cls = {"LIVE":"green", "RECENT":"green", "AGING":"orange", "STALE":"orange", "NO RECENT DATA":"critical", "NO DATA":"critical"}.get(freshness["state"], "orange")
             kpis = [
-                (k1, "HEALTH SCORE", f"{score}", "/ 100", "Historical screening index", "blue"),
+                (k1, "CONDITION SCORE", score_value, "/ 100" if score is not None else "", score_small, "blue" if score is not None else "critical"),
                 (k2, "CONDITION", f"{icon} {overall}", "", f"{abnormal} abnormal parameter(s)", status_cls),
-                (k3, "ABNORMAL SIGNALS", f"{abnormal}", f"/ {total_params}", f"{abnormal/max(total_params,1)*100:.0f}% of monitored", "orange" if abnormal else "green"),
-                (k4, "PRIORITY", priority, "", f"{risk} engineering review", priority.lower()),
-                (k5, "DATA CONFIDENCE", str(health["Confidence"].value_counts().idxmax()), "", f"{health['Confidence'].value_counts().max()} of {total_params} parameters", "green"),
+                (k3, "ABNORMAL SIGNALS", f"{abnormal}", f"/ {total_params}", f"{abnormal/max(total_params,1)*100:.0f}% of analyzable", "orange" if abnormal else "green"),
+                (k4, "PRIORITY", priority, "", f"{risk}", priority.lower()),
+                (k5, "DATA FRESHNESS", freshness["state"], "", f"{analyzable}/{max(len(eq_tags),1)} tags analyzable · {coverage_pct:.0f}%", freshness_cls),
             ]
             for col, label, value, suffix, small, cls in kpis:
                 col.markdown(
@@ -2009,7 +2123,29 @@ elif page == "Equipment Health":
             # -----------------------------------------------------------------
             # Decision banner: answer "what do I need to know first?"
             # -----------------------------------------------------------------
-            if not flagged.empty:
+            if quality_gate:
+                decision_text = (
+                    f'<b>Do not make a current maintenance decision from this screen.</b> Latest equipment evidence is '
+                    f'<b>{freshness["state"].lower()}</b> ({freshness["hours"]:.1f} h old). Refresh PLC/historian data first.'
+                    if pd.notna(freshness["hours"]) else
+                    '<b>Current evidence unavailable.</b> Verify PLC/historian connectivity and tag mapping before assessing equipment condition.'
+                )
+                st.markdown(
+                    f'<div class="eh22-decision"><div class="eh22-decision-icon">⚠</div>'
+                    f'<div><div class="eh22-decision-title">DATA FRESHNESS GATE</div>'
+                    f'<div class="eh22-decision-text">{decision_text}</div></div></div>',
+                    unsafe_allow_html=True,
+                )
+            elif parameter_quality_gate:
+                bad = quality_warnings[0][1] if quality_warnings else None
+                qtext = bad["status"] if bad else "Parameter data quality requires review"
+                st.markdown(
+                    f'<div class="eh22-decision"><div class="eh22-decision-icon">⚠</div>'
+                    f'<div><div class="eh22-decision-title">DATA QUALITY REVIEW</div>'
+                    f'<div class="eh22-decision-text"><b>{qtext}.</b> Verify equipment operating state and instrument signal before interpreting the historical envelope.</div></div></div>',
+                    unsafe_allow_html=True,
+                )
+            elif not flagged.empty:
                 p = flagged.iloc[0]
                 if p["Condition"] == "Critical":
                     decision_text = f'<b>Immediate engineering review.</b> {p["Parameter"]} is the leading abnormal signal with {p["Shift %"]:+.1f}% recent shift and {p["Deviation Sigma"]:.2f}σ deviation.'
@@ -2083,7 +2219,13 @@ elif page == "Equipment Health":
                     '<div class="eh22-panel-sub">What the screening suggests</div>',
                     unsafe_allow_html=True,
                 )
-                if flagged.empty:
+                if quality_gate:
+                    read_title = "Current state not verified"
+                    read_text = "Historical behaviour is available, but the latest PLC evidence is too old for a present-state health conclusion."
+                elif parameter_quality_gate:
+                    read_title = "Data quality requires review"
+                    read_text = "One or more configured signals may be flatlined, missing or otherwise unsuitable for a current health conclusion."
+                elif flagged.empty:
                     read_title = "Stable historical behaviour"
                     read_text = "No parameter is currently outside the historical screening state."
                 else:
@@ -2124,7 +2266,7 @@ elif page == "Equipment Health":
             with i2:
                 st.markdown(
                     f'<div class="eh22-evidence-chip"><span>SELECTED SIGNAL</span>'
-                    f'<b>{selected_row["Condition"]}</b><small>{selected_row["Confidence"]} confidence</small></div>',
+                    f'<b>{selected_row["Condition"]}</b><small>{selected_row["Confidence"]} confidence · {(_eh_parameter_quality(df, selected_tag)["status"])}</small></div>',
                     unsafe_allow_html=True,
                 )
 
@@ -2139,7 +2281,7 @@ elif page == "Equipment Health":
                     trend_df = trend_df.dropna().sort_values("ArchiveTime").set_index("ArchiveTime")
                 st.markdown(
                     f'<div class="eh22-panel"><div class="eh22-panel-head">📈 PARAMETER TREND</div>'
-                    f'<div class="eh22-panel-sub">{selected_row["Parameter"]} · historical screening envelope P05–P95</div>',
+                    f'<div class="eh22-panel-sub">{selected_row["Parameter"]} · historical screening envelope P05–P95 · data {(_eh_parameter_quality(df, selected_tag)["status"]).lower()}</div>',
                     unsafe_allow_html=True,
                 )
                 if not trend_df.empty:
@@ -2182,9 +2324,11 @@ elif page == "Equipment Health":
             # -----------------------------------------------------------------
             rec_left, rec_right = st.columns([1.5, 1], gap="medium")
             with rec_left:
+                selected_quality = _eh_parameter_quality(df, selected_tag)
+                selected_reco = _eh_recommendation(selected_row, selected_quality, freshness["state"])
                 st.markdown(
                     f'<div class="eh22-recommendation"><div class="eh22-rec-head">🛠 ENGINEERING RECOMMENDATION</div>'
-                    f'<div class="eh22-rec-title">{selected_row["Action"]}</div>'
+                    f'<div class="eh22-rec-title">{selected_reco}</div>'
                     f'<div class="eh22-rec-note">Use the PLC evidence as a screening input. Confirm process condition, field condition, OEM/design limits and maintenance history before deciding intervention.</div></div>',
                     unsafe_allow_html=True,
                 )
