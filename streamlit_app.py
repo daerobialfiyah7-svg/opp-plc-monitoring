@@ -2030,6 +2030,146 @@ def recent_import_log(limit=10):
     return pd.DataFrame(rows, columns=cols)
 
 
+
+# --- Engineering Mapping Master ---------------------------------------------------
+ENGINEERING_MAPPING_COLUMNS = [
+    "PLC Tag", "Equipment Code", "Equipment", "Area", "Parameter", "Unit",
+    "Mapping Status", "Identification Status", "Confidence", "Evidence",
+    "Verified By", "Verified Date", "Source"
+]
+
+@st.cache_data
+def load_engineering_mapping_master():
+    """Load engineer-confirmed PLC-to-equipment mappings.
+
+    This file is intentionally separate from PLC Historian and raw Tag Master.
+    It is safe to version-control as an engineering configuration artifact.
+    """
+    path = ROOT / "config" / "engineering_mapping_master.csv"
+    if not path.exists():
+        return pd.DataFrame(columns=ENGINEERING_MAPPING_COLUMNS)
+    try:
+        m = pd.read_csv(path, dtype=str).fillna("")
+        for c in ENGINEERING_MAPPING_COLUMNS:
+            if c not in m.columns:
+                m[c] = ""
+        return m[ENGINEERING_MAPPING_COLUMNS].copy()
+    except Exception:
+        return pd.DataFrame(columns=ENGINEERING_MAPPING_COLUMNS)
+
+
+def _mapping_store_init(existing_mapping):
+    """Create session mapping store, preserving committed engineer mappings."""
+    if "engineering_mapping_master" not in st.session_state:
+        store = {}
+        if isinstance(existing_mapping, pd.DataFrame) and not existing_mapping.empty:
+            for _, r in existing_mapping.iterrows():
+                tag = str(r.get("PLC Tag", "")).strip()
+                if tag:
+                    store[tag] = {c: str(r.get(c, "") or "").strip() for c in ENGINEERING_MAPPING_COLUMNS}
+        st.session_state["engineering_mapping_master"] = store
+    return st.session_state["engineering_mapping_master"]
+
+
+def engineering_mapping_dataframe(store):
+    if not store:
+        return pd.DataFrame(columns=ENGINEERING_MAPPING_COLUMNS)
+    rows = []
+    for tag, rec in store.items():
+        row = {c: str(rec.get(c, "") or "").strip() for c in ENGINEERING_MAPPING_COLUMNS}
+        row["PLC Tag"] = row["PLC Tag"] or str(tag)
+        rows.append(row)
+    return pd.DataFrame(rows, columns=ENGINEERING_MAPPING_COLUMNS).sort_values("PLC Tag").reset_index(drop=True)
+
+
+def apply_engineering_mappings(master, mapping_store):
+    """Apply only engineer-saved mappings to the working Tag Master.
+
+    Raw PLC history is never changed. The mapping is an overlay used by
+    Equipment Health / Trend / Priority views.
+    """
+    out = master.copy()
+    if not mapping_store:
+        out["Engineering Mapping Status"] = ""
+        out["Engineering Mapping Source"] = ""
+        out["Engineering Mapping Verified By"] = ""
+        out["Engineering Mapping Verified Date"] = ""
+        return out
+    mm = engineering_mapping_dataframe(mapping_store)
+    if mm.empty:
+        return out
+    mm = mm.drop_duplicates("PLC Tag", keep="last").set_index("PLC Tag")
+    for c in ["Engineering Mapping Status", "Engineering Mapping Source", "Engineering Mapping Verified By", "Engineering Mapping Verified Date"]:
+        out[c] = ""
+    for idx, r in out.iterrows():
+        tag = str(r.get("PLC Tag", "")).strip()
+        if not tag or tag not in mm.index:
+            continue
+        m = mm.loc[tag]
+        status = str(m.get("Mapping Status", "")).strip()
+        if status not in {"CONFIRMED", "VERIFIED"}:
+            continue
+        # Mapping master is authoritative only after engineer confirmation.
+        if str(m.get("Equipment Code", "")).strip(): out.at[idx, "Equipment Code"] = str(m["Equipment Code"]).strip()
+        if str(m.get("Equipment", "")).strip(): out.at[idx, "Equipment"] = str(m["Equipment"]).strip()
+        if str(m.get("Area", "")).strip(): out.at[idx, "Area"] = str(m["Area"]).strip()
+        if str(m.get("Parameter", "")).strip(): out.at[idx, "Suggested Parameter"] = str(m["Parameter"]).strip()
+        if str(m.get("Unit", "")).strip(): out.at[idx, "Suggested Unit"] = str(m["Unit"]).strip()
+        out.at[idx, "Engineering Mapping Status"] = status
+        out.at[idx, "Engineering Mapping Source"] = str(m.get("Source", "Engineer Mapping Master")).strip()
+        out.at[idx, "Engineering Mapping Verified By"] = str(m.get("Verified By", "")).strip()
+        out.at[idx, "Engineering Mapping Verified Date"] = str(m.get("Verified Date", "")).strip()
+    return out
+
+
+def _mapping_candidate_label(code, name):
+    code, name = str(code or "").strip(), str(name or "").strip()
+    return f"{code} — {name}" if code and name else (code or name or "")
+
+
+def _mapping_parse_candidate(label):
+    text = str(label or "").strip()
+    if " — " in text:
+        code, name = text.split(" — ", 1)
+        return code.strip(), name.strip()
+    return text, ""
+
+
+def build_mapping_review_queue(master, identification_report, mapping_store):
+    """Build the engineer review queue without changing historian data."""
+    rows = []
+    report = identification_report.copy() if isinstance(identification_report, pd.DataFrame) else pd.DataFrame()
+    by_tag = report.set_index("PLC Tag").to_dict("index") if not report.empty else {}
+    for _, r in master.iterrows():
+        tag = str(r.get("PLC Tag", "")).strip()
+        if not tag:
+            continue
+        saved = mapping_store.get(tag, {}) if isinstance(mapping_store, dict) else {}
+        saved_status = str(saved.get("Mapping Status", "")).strip()
+        ident = by_tag.get(tag, {})
+        rows.append({
+            "PLC Tag": tag,
+            "Identification Status": str(ident.get("Identification Status", r.get("Instrument Master Match", "NOT FOUND")) or "NOT FOUND"),
+            "Candidate Tag": str(ident.get("Candidate Tag", r.get("Identification Candidate", "")) or ""),
+            "Score": float(ident.get("Score", r.get("Identification Score", 0)) or 0),
+            "Reason": str(ident.get("Reason", r.get("Identification Reason", "")) or ""),
+            "Current Equipment Code": str(r.get("Equipment Code", "") or "").strip(),
+            "Current Equipment": str(r.get("Equipment", "") or "").strip(),
+            "Current Parameter": str(r.get("Suggested Parameter", "") or "").strip(),
+            "Current Unit": str(r.get("Suggested Unit", "") or "").strip(),
+            "Mapping Status": saved_status or "PENDING",
+        })
+    q = pd.DataFrame(rows)
+    if q.empty:
+        return q
+    # Engineer-confirmed mappings are removed from the active queue; skipped items
+    # remain visible so they can be revisited later.
+    q = q[~q["Mapping Status"].isin(["CONFIRMED", "VERIFIED"])].copy()
+    order = {"REVIEW REQUIRED":1, "POSSIBLE MATCH":2, "NOT FOUND":3, "EXACT MATCH":4}
+    q["_order"] = q["Identification Status"].map(order).fillna(9)
+    q = q.sort_values(["_order", "Score", "PLC Tag"], ascending=[True, False, True]).drop(columns="_order")
+    return q.reset_index(drop=True)
+
 def load_master():
     return pd.read_csv(ROOT / "config" / "tag_master.csv").fillna("")
 
@@ -3008,14 +3148,19 @@ def criticality_template(master):
 df = load_history()
 equipment_reference = load_equipment_reference()
 instrument_master = load_instrument_master()
+engineering_mapping = load_engineering_mapping_master()
+_mapping_store_init(engineering_mapping)
 master = canonicalize_equipment_master(load_master(), equipment_reference)
 master = enrich_tag_master_with_instruments(master, instrument_master)
+master = apply_engineering_mappings(master, st.session_state.get("engineering_mapping_master", {}))
 required = ["Area", "Equipment Code", "Equipment", "Instrument Tag", "Suggested Parameter", "Suggested Unit",
             "IO Type", "Instrument Type", "Calibration Range", "Evidence", "Reference Source", "Confidence", "Mapping Status",
             "Instrument Master Match", "Instrument Service", "Instrument Type Master", "Instrument IO Type",
             "Instrument Unit Master", "Instrument Engineering Category", "Instrument Equipment Code",
             "Instrument Master Parameter", "Instrument Master Source", "Identification Score",
-            "Identification Candidate", "Identification Reason", "Metadata Validation", "Metadata Validation Detail"]
+            "Identification Candidate", "Identification Reason", "Metadata Validation", "Metadata Validation Detail",
+            "Engineering Mapping Status", "Engineering Mapping Source", "Engineering Mapping Verified By",
+            "Engineering Mapping Verified Date"]
 for col in required:
     if col not in master.columns:
         master[col] = ""
@@ -5656,7 +5801,161 @@ elif page == "Tag Master":
         unsafe_allow_html=True,
     )
 
-    tab_plc, tab_instrument, tab_gap = st.tabs(["PEMETAAN PLC TAG", "INSTRUMENT MASTER", "GAP IDENTIFIKASI"])
+    tab_review, tab_plc, tab_instrument, tab_gap = st.tabs(["MAPPING REVIEW", "PEMETAAN PLC TAG", "INSTRUMENT MASTER", "GAP IDENTIFIKASI"])
+
+    with tab_review:
+        st.markdown("#### Engineering Mapping Review")
+        st.caption("Engineer mengonfirmasi identitas PLC tag terhadap equipment, parameter, dan unit. Raw PLC Historian tidak diubah; hasil konfirmasi disimpan sebagai Engineering Mapping Master.")
+
+        mapping_store = _mapping_store_init(engineering_mapping)
+        identification_report = build_tag_identification_report(df, instrument_master)
+        queue = build_mapping_review_queue(master, identification_report, mapping_store)
+        mapping_df = engineering_mapping_dataframe(mapping_store)
+
+        exact_all = int((identification_report["Identification Status"] == "EXACT MATCH").sum()) if not identification_report.empty else 0
+        possible_all = int((identification_report["Identification Status"] == "POSSIBLE MATCH").sum()) if not identification_report.empty else 0
+        review_all = int((identification_report["Identification Status"] == "REVIEW REQUIRED").sum()) if not identification_report.empty else 0
+        notfound_all = int((identification_report["Identification Status"] == "NOT FOUND").sum()) if not identification_report.empty else 0
+        confirmed_n = int(mapping_df["Mapping Status"].isin(["CONFIRMED", "VERIFIED"]).sum()) if not mapping_df.empty else 0
+        pending_n = len(queue)
+
+        m1,m2,m3,m4,m5,m6 = st.columns(6, gap="small")
+        m1.metric("PLC TAGS", f"{len(identification_report):,}")
+        m2.metric("EXACT", f"{exact_all:,}")
+        m3.metric("POSSIBLE", f"{possible_all:,}")
+        m4.metric("REVIEW", f"{review_all:,}")
+        m5.metric("NOT FOUND", f"{notfound_all:,}")
+        m6.metric("ENGINEER CONFIRMED", f"{confirmed_n:,}")
+
+        if pending_n:
+            st.info(f"{pending_n:,} PLC tag masih membutuhkan review. Prioritas dimulai dari REVIEW REQUIRED → POSSIBLE MATCH → NOT FOUND.")
+        else:
+            st.success("Tidak ada PLC tag yang tersisa di Engineering Mapping Review.")
+
+        if not queue.empty:
+            qc1,qc2,qc3 = st.columns([1.5, 1, 1])
+            status_filter = qc1.selectbox("Review Queue", ["ALL PENDING", "REVIEW REQUIRED", "POSSIBLE MATCH", "NOT FOUND", "EXACT MATCH"], key="tm_review_status")
+            search_review = qc2.text_input("Cari PLC Tag", key="tm_review_search")
+            show_skipped = qc3.checkbox("Tampilkan SKIPPED", value=False, key="tm_show_skipped")
+
+            qview = queue.copy()
+            if status_filter != "ALL PENDING":
+                qview = qview[qview["Identification Status"] == status_filter]
+            if search_review:
+                qview = qview[qview["PLC Tag"].str.contains(search_review, case=False, na=False, regex=False)]
+
+            skipped = mapping_df[mapping_df["Mapping Status"] == "SKIPPED"] if not mapping_df.empty else pd.DataFrame()
+            if show_skipped and not skipped.empty:
+                st.markdown("##### Previously Skipped")
+                st.dataframe(skipped[[c for c in ["PLC Tag","Equipment Code","Equipment","Parameter","Unit","Identification Status","Verified By","Verified Date"] if c in skipped.columns]], width="stretch", height=180, hide_index=True)
+
+            if not qview.empty:
+                tags = qview["PLC Tag"].tolist()
+                selected_tag = st.selectbox("Pilih PLC Tag untuk direview", tags, key="tm_review_tag")
+                item = qview[qview["PLC Tag"] == selected_tag].iloc[0]
+
+                candidate_tag = str(item.get("Candidate Tag", "")).strip()
+                im_candidate = instrument_master[instrument_master["Tag No"].astype(str).map(_tm_norm_tag) == _tm_norm_tag(candidate_tag)].copy() if candidate_tag and not instrument_master.empty else pd.DataFrame()
+                imr = im_candidate.iloc[0] if not im_candidate.empty else pd.Series(dtype=object)
+
+                st.markdown('<div class="opp-note"><b>SYSTEM RECOMMENDATION</b><br>' +
+                            f'PLC Tag: <b>{selected_tag}</b> &nbsp; | &nbsp; Identification: <b>{item["Identification Status"]}</b> &nbsp; | &nbsp; Score: <b>{float(item["Score"]):.3f}</b><br>' +
+                            f'Candidate Instrument: <b>{candidate_tag or "Tidak ada"}</b><br>' +
+                            f'Evidence: {item["Reason"] or "Belum ada evidence yang cukup."}</div>', unsafe_allow_html=True)
+
+                if not imr.empty:
+                    ec1,ec2,ec3,ec4 = st.columns(4, gap="small")
+                    ec1.metric("Equipment Candidate", str(imr.get("Derived Equipment Code", "") or "—"))
+                    ec2.metric("Parameter", str(imr.get("Suggested Parameter", "") or "—"))
+                    ec3.metric("Unit", str(imr.get("Unit", "") or "—"))
+                    ec4.metric("Instrument", str(imr.get("Instrument Type", "") or "—"))
+                    with st.expander("Lihat evidence Instrument Master", expanded=False):
+                        st.dataframe(im_candidate[[c for c in ["Tag No","Service","Area","Derived Equipment Code","Instrument Type","IO Type","Suggested Parameter","Unit","P&ID"] if c in im_candidate.columns]], width="stretch", hide_index=True)
+
+                eq_ref = master[["Equipment Code","Equipment","Area"]].copy() if not master.empty else pd.DataFrame(columns=["Equipment Code","Equipment","Area"])
+                eq_ref = eq_ref[eq_ref["Equipment Code"].astype(str).str.strip().ne("")].drop_duplicates("Equipment Code")
+                eq_options = ["KEEP / USE CURRENT"] + [_mapping_candidate_label(r["Equipment Code"], r["Equipment"]) for _,r in eq_ref.sort_values("Equipment Code").iterrows()] + ["NEW / NOT IN EQUIPMENT MASTER"]
+
+                def_eq = str(imr.get("Derived Equipment Code", "") or item.get("Current Equipment Code", "")).strip() if not imr.empty else str(item.get("Current Equipment Code", "")).strip()
+                def_label = next((x for x in eq_options if x.startswith(def_eq + " — ")), "KEEP / USE CURRENT") if def_eq else "KEEP / USE CURRENT"
+                default_eq_index = eq_options.index(def_label) if def_label in eq_options else 0
+
+                parameter_vocab = sorted(set([str(x).strip() for x in master["Suggested Parameter"].tolist() if str(x).strip()] + ([str(imr.get("Suggested Parameter", "")).strip()] if not imr.empty else [])))
+                unit_vocab = sorted(set([str(x).strip() for x in master["Suggested Unit"].tolist() if str(x).strip()] + ([str(imr.get("Unit", "")).strip()] if not imr.empty else [])))
+                current_saved = mapping_store.get(selected_tag, {})
+
+                with st.form("engineering_mapping_review_form"):
+                    f1,f2 = st.columns([1.25, 1], gap="medium")
+                    eq_choice = f1.selectbox("Equipment", eq_options, index=default_eq_index, key="tm_map_eq")
+                    parameter_default = str(current_saved.get("Parameter", "") or (imr.get("Suggested Parameter", "") if not imr.empty else "") or item.get("Current Parameter", ""))
+                    p_options = ["— SELECT PARAMETER —"] + [x for x in parameter_vocab if x != parameter_default]
+                    if parameter_default: p_options.insert(1, parameter_default)
+                    parameter_choice = f2.selectbox("Parameter", p_options, index=1 if parameter_default else 0, key="tm_map_param")
+                    f3,f4 = st.columns([1.25, 1], gap="medium")
+                    unit_default = str(current_saved.get("Unit", "") or (imr.get("Unit", "") if not imr.empty else "") or item.get("Current Unit", ""))
+                    unit_choice = f3.selectbox("Unit", ["— SELECT / VERIFY UNIT —"] + [x for x in unit_vocab if x != unit_default], index=1 if unit_default else 0, key="tm_map_unit")
+                    area_default = str(current_saved.get("Area", "") or (imr.get("Area", "") if not imr.empty else "") or item.get("Current Equipment Code", ""))
+                    area_options = sorted(set([str(x).strip() for x in master["Area"].tolist() if str(x).strip()] + ([str(imr.get("Area", "")).strip()] if not imr.empty else [])))
+                    area_choice = f4.selectbox("Area", ["— AUTO / VERIFY —"] + area_options, index=(area_options.index(area_default)+1 if area_default in area_options else 0), key="tm_map_area")
+
+                    new_code = ""
+                    new_name = ""
+                    if eq_choice == "NEW / NOT IN EQUIPMENT MASTER":
+                        n1,n2 = st.columns(2)
+                        new_code = n1.text_input("New Equipment Code", value=str(current_saved.get("Equipment Code", "") or def_eq), key="tm_new_eq_code")
+                        new_name = n2.text_input("Equipment Name", value=str(current_saved.get("Equipment", "") or (imr.get("Service", "") if not imr.empty else "")), key="tm_new_eq_name")
+
+                    verifier = st.text_input("Engineer / Verifier", value=str(current_saved.get("Verified By", "")), key="tm_map_verifier", placeholder="Nama engineer")
+                    evidence = st.text_area("Engineering Evidence / Reason", value=str(current_saved.get("Evidence", "") or item.get("Reason", "")), key="tm_map_evidence", height=80)
+                    b1,b2,b3 = st.columns(3)
+                    confirm = b1.form_submit_button("✓ CONFIRM MAPPING", type="primary", width="stretch")
+                    change = b2.form_submit_button("✎ SAVE AS REVIEW", width="stretch")
+                    skip = b3.form_submit_button("→ SKIP", width="stretch")
+
+                action = "CONFIRMED" if confirm else ("REVIEW REQUIRED" if change else ("SKIPPED" if skip else ""))
+                if action:
+                    eq_code, eq_name = _mapping_parse_candidate(eq_choice)
+                    if eq_choice == "KEEP / USE CURRENT":
+                        eq_code = str(item.get("Current Equipment Code", "")).strip() or def_eq
+                        eq_name = str(item.get("Current Equipment", "")).strip()
+                    elif eq_choice == "NEW / NOT IN EQUIPMENT MASTER":
+                        eq_code, eq_name = new_code.strip(), new_name.strip()
+                    if eq_choice != "NEW / NOT IN EQUIPMENT MASTER" and eq_name == "" and eq_code:
+                        hit = eq_ref[eq_ref["Equipment Code"].astype(str) == eq_code]
+                        if not hit.empty: eq_name = str(hit.iloc[0]["Equipment"] or "")
+                    if action == "CONFIRMED" and not verifier.strip():
+                        st.error("Isi Engineer / Verifier sebelum CONFIRM MAPPING.")
+                    elif action == "CONFIRMED" and (not eq_code or parameter_choice.startswith("—") or unit_choice.startswith("—")):
+                        st.error("Equipment, Parameter, dan Unit harus terisi sebelum mapping dikonfirmasi.")
+                    else:
+                        area_final = area_choice if not area_choice.startswith("—") else (str(imr.get("Area", "") or "").strip() if not imr.empty else "")
+                        mapping_store[selected_tag] = {
+                            "PLC Tag": selected_tag, "Equipment Code": eq_code, "Equipment": eq_name, "Area": area_final,
+                            "Parameter": "" if parameter_choice.startswith("—") else parameter_choice,
+                            "Unit": "" if unit_choice.startswith("—") else unit_choice,
+                            "Mapping Status": action, "Identification Status": str(item.get("Identification Status", "")),
+                            "Confidence": str(item.get("Score", "")), "Evidence": evidence.strip(),
+                            "Verified By": verifier.strip(), "Verified Date": pd.Timestamp.now(tz=EH_SITE_TZ).strftime("%Y-%m-%d %H:%M %Z"),
+                            "Source": "Engineer Mapping Review"
+                        }
+                        st.session_state["engineering_mapping_master"] = mapping_store
+                        st.success(f"{selected_tag}: {action}.")
+                        st.rerun()
+
+            else:
+                st.info("Tidak ada item untuk filter review ini.")
+
+        st.markdown("#### Engineering Mapping Master")
+        if mapping_df.empty:
+            st.caption("Belum ada mapping yang disimpan oleh engineer.")
+        else:
+            st.dataframe(mapping_df, width="stretch", height=320, hide_index=True)
+
+        ex1,ex2 = st.columns(2, gap="medium")
+        export_bytes = mapping_df.to_csv(index=False).encode("utf-8-sig") if not mapping_df.empty else pd.DataFrame(columns=ENGINEERING_MAPPING_COLUMNS).to_csv(index=False).encode("utf-8-sig")
+        ex1.download_button("Download Engineering Mapping Master (.csv)", export_bytes, "engineering_mapping_master.csv", "text/csv", key="tm_download_mapping_master", width="stretch")
+        ex2.download_button("Download Pending Review Queue (.csv)", queue.to_csv(index=False).encode("utf-8-sig") if not queue.empty else b"", "engineering_mapping_review_queue.csv", "text/csv", key="tm_download_mapping_queue", width="stretch")
+        st.caption("Deployment note: untuk persistensi lintas redeploy di Streamlit Community Cloud, file hasil export `engineering_mapping_master.csv` dapat ditempatkan kembali ke folder `config/` repository. Raw PLC data dan file historis tidak disentuh oleh workflow ini.")
 
     with tab_plc:
         st.markdown("#### PLC Tag Mapping")
