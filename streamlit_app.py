@@ -2189,6 +2189,44 @@ def build_mapping_review_queue(master, identification_report, mapping_store, ins
     q = q.sort_values(["_order", "_cand", "Score", "PLC Tag"], ascending=[True, False, False, True])
     return q.drop(columns=["_order", "_cand"]).reset_index(drop=True)
 
+def build_bulk_mapping_groups(queue):
+    """Group only safe, internally consistent candidates for engineer bulk confirmation.
+
+    Bulk confirmation is deliberately conservative: same candidate equipment,
+    parameter, and unit are required, and a reasonably strong candidate score
+    is required. This reduces repetitive work without silently mapping unrelated
+    PLC tags together.
+    """
+    if not isinstance(queue, pd.DataFrame) or queue.empty:
+        return pd.DataFrame()
+    q = queue.copy()
+    for c in ["Mapping Candidate Code", "Mapping Candidate Equipment", "Current Parameter", "Current Unit", "Mapping Candidate Confidence", "Identification Status"]:
+        if c not in q.columns:
+            q[c] = ""
+    q["_code"] = q["Mapping Candidate Code"].astype(str).str.strip()
+    q["_param"] = q["Current Parameter"].astype(str).str.strip()
+    q["_unit"] = q["Current Unit"].astype(str).str.strip()
+    q["_conf"] = pd.to_numeric(q["Mapping Candidate Confidence"], errors="coerce").fillna(0.0)
+    q = q[q["_code"].ne("") & q["_param"].ne("") & q["_unit"].ne("") & (q["_conf"] >= 0.85)].copy()
+    if q.empty:
+        return pd.DataFrame()
+    g = q.groupby(["_code", "_param", "_unit"], dropna=False)
+    rows=[]
+    for (code,param,unit), x in g:
+        if len(x) < 2:
+            continue
+        rows.append({
+            "Equipment Code": code,
+            "Equipment": str(x["Mapping Candidate Equipment"].iloc[0]).strip(),
+            "Parameter": param,
+            "Unit": unit,
+            "Tags": len(x),
+            "Min Confidence": float(x["_conf"].min()),
+            "Max Confidence": float(x["_conf"].max()),
+            "PLC Tags": ", ".join(x["PLC Tag"].astype(str).tolist()),
+        })
+    return pd.DataFrame(rows).sort_values(["Tags","Min Confidence","Equipment Code"], ascending=[False,False,True]).reset_index(drop=True) if rows else pd.DataFrame()
+
 def load_master():
     return pd.read_csv(ROOT / "config" / "tag_master.csv").fillna("")
 
@@ -5956,6 +5994,55 @@ elif page == "Tag Master":
             st.info(f"{pending_n:,} tag masuk review manual. {candidate_n:,} sudah memiliki kandidat equipment dari Tag Master / Equipment Pattern; sisanya perlu identifikasi lebih lanjut.")
         else:
             st.success("Tidak ada PLC tag yang tersisa di Engineering Mapping Review.")
+
+        # Conservative bulk mapping: only groups with the same equipment,
+        # parameter and unit and a strong candidate are offered for one-click
+        # engineer confirmation. This avoids mass-mapping ambiguous tags.
+        bulk_groups = build_bulk_mapping_groups(queue)
+        if not bulk_groups.empty:
+            st.markdown("### ⚡ Bulk Mapping — Safe Group Confirmation")
+            st.caption("Untuk mempercepat pekerjaan, beberapa tag yang memiliki kandidat equipment + parameter + unit yang sama dapat dikonfirmasi sekaligus. Sistem hanya menampilkan grup dengan confidence ≥ 85%; tag ambigu tetap harus direview satu per satu.")
+            bg1,bg2 = st.columns([1.35, 1], gap="medium")
+            group_labels = [f"{r['Equipment Code']} — {r['Equipment']} | {r['Parameter']} | {r['Unit']} | {int(r['Tags'])} tags" for _,r in bulk_groups.iterrows()]
+            selected_group_label = bg1.selectbox("Pilih group mapping", group_labels, key="tm_bulk_group")
+            group_idx = group_labels.index(selected_group_label)
+            group = bulk_groups.iloc[group_idx]
+            bg2.metric("Tags dalam Group", f"{int(group['Tags']):,}")
+            with st.expander("Lihat PLC tag dalam group", expanded=False):
+                group_tags = [x.strip() for x in str(group["PLC Tags"]).split(",") if x.strip()]
+                st.dataframe(qview if False else queue[queue["PLC Tag"].isin(group_tags)][[c for c in ["PLC Tag","Identification Status","Score","Reason","Mapping Candidate Code","Mapping Candidate Equipment","Current Parameter","Current Unit","Mapping Candidate Confidence"] if c in queue.columns]], width="stretch", hide_index=True)
+            bulk_verifier = st.text_input("Engineer / Verifier untuk Bulk Confirmation", key="tm_bulk_verifier", placeholder="Nama engineer")
+            bulk_confirm = st.button("✓ CONFIRM SELURUH GROUP", type="primary", width="stretch", key="tm_bulk_confirm")
+            if bulk_confirm:
+                if not bulk_verifier.strip():
+                    st.error("Isi Engineer / Verifier sebelum bulk confirmation.")
+                else:
+                    eq_code = str(group["Equipment Code"]).strip()
+                    eq_name = str(group["Equipment"]).strip()
+                    param = str(group["Parameter"]).strip()
+                    unit = str(group["Unit"]).strip()
+                    group_tags = [x.strip() for x in str(group["PLC Tags"]).split(",") if x.strip()]
+                    verified_date = pd.Timestamp.now(tz=EH_SITE_TZ).strftime("%Y-%m-%d %H:%M %Z")
+                    changed = 0
+                    for tag in group_tags:
+                        row = queue[queue["PLC Tag"] == tag]
+                        if row.empty:
+                            continue
+                        rr = row.iloc[0]
+                        mapping_store[tag] = {
+                            "PLC Tag": tag, "Equipment Code": eq_code, "Equipment": eq_name,
+                            "Area": str(rr.get("Mapping Candidate Area", "") or "").strip(),
+                            "Parameter": param, "Unit": unit, "Mapping Status": "CONFIRMED",
+                            "Identification Status": str(rr.get("Identification Status", "")),
+                            "Confidence": str(rr.get("Mapping Candidate Confidence", rr.get("Score", ""))),
+                            "Evidence": f"Bulk engineer confirmation: same equipment + parameter + unit; {str(rr.get('Mapping Candidate Evidence', rr.get('Reason',''))).strip()}",
+                            "Verified By": bulk_verifier.strip(), "Verified Date": verified_date,
+                            "Source": "Engineer Mapping Review — Bulk Confirmation"
+                        }
+                        changed += 1
+                    st.session_state["engineering_mapping_master"] = mapping_store
+                    st.success(f"{changed:,} PLC tag berhasil dikonfirmasi untuk {eq_code}.")
+                    st.rerun()
 
         if not queue.empty:
             qc1,qc2,qc3 = st.columns([1.5, 1, 1])
