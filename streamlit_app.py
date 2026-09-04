@@ -2123,94 +2123,254 @@ def load_instrument_master():
         return pd.DataFrame()
 
 
-def enrich_tag_master_with_instruments(master, instrument_master):
-    """Attach authoritative instrument identity to PLC-tag rows by exact normalized Tag No."""
-    out = master.copy()
+
+# --- Stage 6: Intelligent Tag Identification -----------------------------------
+def _tm_norm_tag(value):
+    """Normalize a tag only for comparison; never modify the source tag."""
+    if pd.isna(value):
+        return ""
+    return re.sub(r"[^A-Z0-9]", "", str(value).strip().upper())
+
+def _tm_tag_parts(tag):
+    """Return conservative tag structure: prefix, area and suffix."""
+    t = _tm_norm_tag(tag)
+    m = re.match(r"^([A-Z]+)(\d{3})([A-Z0-9]+)$", t)
+    if not m:
+        return "", "", t
+    return m.group(1), m.group(2), m.group(3)
+
+def _tm_suffix_tokens(suffix):
+    return [int(x) for x in re.findall(r"\d+", str(suffix))]
+
+def _tm_parameter_from_tag(tag):
+    t = _tm_norm_tag(tag)
+    for pattern, _, label, _unit in PARAM_RULES:
+        if re.match(pattern, t):
+            return label
+    return ""
+
+def _tm_unit_norm(value):
+    if pd.isna(value):
+        return ""
+    u = str(value).strip().lower()
+    replacements = {
+        "m³/h": "m3/h", "m³ / h": "m3/h", "m3 / h": "m3/h",
+        "°c": "c", "degc": "c", "℃": "c",
+        "mm/s": "mm/s", "r/min": "rpm", "rev/min": "rpm",
+        "nm³/h": "nm3/h", "nm3 / h": "nm3/h",
+    }
+    return replacements.get(u, re.sub(r"\s+", "", u))
+
+def _tm_metadata_validation(source_parameter, source_unit, instrument_parameter, instrument_unit,
+                            source_type="", instrument_type="", source_io="", instrument_io=""):
+    """Validate source mapping against Instrument Master without silently overwriting it."""
+    sp, su = str(source_parameter or "").strip(), str(source_unit or "").strip()
+    ip, iu = str(instrument_parameter or "").strip(), str(instrument_unit or "").strip()
+    st, it = str(source_type or "").strip(), str(instrument_type or "").strip()
+    sio, iio = str(source_io or "").strip().upper(), str(instrument_io or "").strip().upper()
+    issues = []
+    if ip and sp and sp.lower() != ip.lower():
+        issues.append("PARAMETER")
+    if iu and su and _tm_unit_norm(su) != _tm_unit_norm(iu):
+        issues.append("UNIT")
+    if it and st and st.lower() != it.lower():
+        issues.append("INSTRUMENT TYPE")
+    if iio and sio and sio != iio:
+        issues.append("IO TYPE")
+    if not issues:
+        if ip or iu or it or iio:
+            return "VALID", "Metadata konsisten dengan Instrument Master"
+        return "INCOMPLETE", "Instrument Master belum memiliki metadata yang cukup"
+    return "REVIEW REQUIRED", "Konflik: " + ", ".join(issues)
+
+def _tm_possible_match(plc_tag, instrument_master, min_score=0.90):
+    """Find a conservative candidate for a non-exact PLC tag.
+
+    A candidate is only considered when the Area is the same and the tag
+    structure is sufficiently similar. This intentionally prefers false
+    negatives over unsafe automatic matches.
+    """
+    from difflib import SequenceMatcher
+    ptag = _tm_norm_tag(plc_tag)
+    pprefix, parea, psuffix = _tm_tag_parts(ptag)
+    if not ptag or not parea or instrument_master is None or instrument_master.empty:
+        return None
+    pparam = _tm_parameter_from_tag(ptag)
+    candidates = []
+    for _, r in instrument_master.iterrows():
+        itag = _tm_norm_tag(r.get("Tag No", ""))
+        if not itag or itag == ptag:
+            continue
+        iprefix, iarea, isuffix = _tm_tag_parts(itag)
+        if iarea != parea:
+            continue
+        # Same prefix is the safest fuzzy path. A one-character prefix
+        # difference is allowed only when the engineering parameter agrees.
+        prefix_ok = iprefix == pprefix
+        prefix_near = len(iprefix) == len(pprefix) and sum(a != b for a,b in zip(iprefix, pprefix)) == 1
+        iparam = str(r.get("Suggested Parameter", "") or "").strip()
+        if not prefix_ok and not (prefix_near and pparam and iparam and pparam.lower() == iparam.lower()):
+            continue
+        # Do not confuse adjacent physical instruments such as HP01 vs HP02.
+        pnums, inums = _tm_suffix_tokens(psuffix), _tm_suffix_tokens(isuffix)
+        if pnums and inums and pnums != inums:
+            # Permit conservative naming differences such as zero-padding
+            # (001 vs 01). One extra trailing channel/index of 1 is also
+            # allowed, but adjacent physical instruments (01 vs 02) are not.
+            pnorm, inorm = [int(x) for x in pnums], [int(x) for x in inums]
+            prefix_seq = False
+            if len(pnorm) > len(inorm):
+                prefix_seq = pnorm[:len(inorm)] == inorm and all(x == 1 for x in pnorm[len(inorm):])
+            elif len(inorm) > len(pnorm):
+                prefix_seq = inorm[:len(pnorm)] == pnorm and all(x == 1 for x in inorm[len(pnorm):])
+            if not prefix_seq and pnorm != inorm:
+                continue
+        ratio = SequenceMatcher(None, ptag, itag).ratio()
+        if ratio < min_score:
+            continue
+        score = ratio + (0.015 if prefix_ok else 0.0)
+        candidates.append((score, ratio, r))
+    if not candidates:
+        return None
+    candidates.sort(key=lambda x: x[0], reverse=True)
+    best = candidates[0]
+    second = candidates[1][0] if len(candidates) > 1 else 0.0
+    margin = best[0] - second
+    # A candidate is not accepted as POSSIBLE MATCH when two candidates are
+    # too close; that case becomes REVIEW REQUIRED.
+    status = "POSSIBLE MATCH" if margin >= 0.025 else "REVIEW REQUIRED"
+    r = best[2]
+    reason = "Kemiripan tag + Area" if pprefix == _tm_tag_parts(_tm_norm_tag(r.get("Tag No", "")))[0] else "Kemiripan tag + Area + parameter"
+    return {
+        "status": status, "candidate_tag": str(r.get("Tag No", "")),
+        "score": float(min(1.0, best[0])), "margin": float(margin), "reason": reason,
+        "candidate": r,
+    }
+
+def build_tag_identification_report(plc_history, instrument_master):
+    """Create engineer-reviewable identification status for every PLC historian tag."""
+    if plc_history is None or not hasattr(plc_history, "columns"):
+        return pd.DataFrame(columns=["PLC Tag","Identification Status","Candidate Tag","Score","Reason"])
+    plc_tags = [str(c).strip() for c in plc_history.columns if str(c).strip() and str(c).strip().lower() != "archivetime"]
     if instrument_master is None or instrument_master.empty:
-        for c in [
-            "Instrument Master Match", "Instrument Service", "Instrument Type Master",
-            "Instrument IO Type", "Instrument Unit Master", "Instrument Engineering Category",
-            "Instrument Equipment Code", "Instrument Master Parameter", "Instrument Master Source"
-        ]:
-            out[c] = ""
+        return pd.DataFrame({"PLC Tag": plc_tags, "Identification Status": ["NOT FOUND"]*len(plc_tags), "Candidate Tag":"", "Score":0.0, "Reason":"Instrument Master belum tersedia"})
+    im_keys = {}
+    for _, r in instrument_master.iterrows():
+        k = _tm_norm_tag(r.get("Tag No", ""))
+        if k:
+            im_keys.setdefault(k, []).append(r)
+    rows = []
+    for tag in plc_tags:
+        key = _tm_norm_tag(tag)
+        exact_rows = im_keys.get(key, [])
+        if len(exact_rows) == 1:
+            rows.append({"PLC Tag":tag,"Identification Status":"EXACT MATCH","Candidate Tag":str(exact_rows[0].get("Tag No","")),"Score":1.0,"Reason":"Normalized Tag No sama persis"})
+        elif len(exact_rows) > 1:
+            rows.append({"PLC Tag":tag,"Identification Status":"REVIEW REQUIRED","Candidate Tag":"; ".join(str(x.get("Tag No","")) for x in exact_rows),"Score":1.0,"Reason":"Duplicate Tag No di Instrument Master"})
+        else:
+            cand = _tm_possible_match(tag, instrument_master)
+            if cand:
+                rows.append({"PLC Tag":tag,"Identification Status":cand["status"],"Candidate Tag":cand["candidate_tag"],"Score":cand["score"],"Reason":cand["reason"]})
+            else:
+                rows.append({"PLC Tag":tag,"Identification Status":"NOT FOUND","Candidate Tag":"","Score":0.0,"Reason":"Tidak ada candidate yang cukup kuat untuk disarankan"})
+    return pd.DataFrame(rows)
+
+
+def enrich_tag_master_with_instruments(master, instrument_master):
+    """Attach Instrument Master evidence while preserving source mapping values."""
+    out = master.copy()
+    new_cols = [
+        "Instrument Master Match", "Instrument Service", "Instrument Type Master",
+        "Instrument IO Type", "Instrument Unit Master", "Instrument Engineering Category",
+        "Instrument Equipment Code", "Instrument Master Parameter", "Instrument Master Source",
+        "Identification Score", "Identification Candidate", "Identification Reason",
+        "Metadata Validation", "Metadata Validation Detail"
+    ]
+    if instrument_master is None or instrument_master.empty:
+        for c in new_cols: out[c] = ""
         return out
 
     im = instrument_master.copy()
-    for c in ["Normalized Tag", "Tag No"]:
-        if c not in im.columns:
-            im[c] = ""
-    im["_key"] = im["Normalized Tag"].replace("", np.nan)
-    im.loc[im["_key"].isna(), "_key"] = im.loc[im["_key"].isna(), "Tag No"].map(
-        lambda x: re.sub(r"\s+", "", str(x).strip().upper()) if str(x).strip() else ""
-    )
-    im = im[im["_key"].astype(str).str.strip() != ""].copy()
-    im = im.drop_duplicates("_key", keep="first").set_index("_key")
+    im["_key"] = im.get("Normalized Tag", im.get("Tag No", "")).map(_tm_norm_tag)
+    im = im[im["_key"].ne("")].copy()
+    # Build an identification report from the PLC tags already present in the tag master.
+    plc_tags = [str(x).strip() for x in out.get("PLC Tag", pd.Series(dtype=str)).tolist() if str(x).strip()]
+    fake = pd.DataFrame(columns=plc_tags)
+    report = build_tag_identification_report(fake, instrument_master)
+    rmap = report.set_index("PLC Tag").to_dict("index") if not report.empty else {}
+    im_first = im.drop_duplicates("_key", keep="first").set_index("_key")
 
-    def _lookup(tag):
-        key = re.sub(r"\s+", "", str(tag or "").strip().upper())
-        return im.loc[key] if key in im.index else None
+    for c in new_cols: out[c] = ""
+    for idx, row in out.iterrows():
+        tag = str(row.get("PLC Tag", "")).strip()
+        key = _tm_norm_tag(tag)
+        info = rmap.get(tag, {})
+        status = info.get("Identification Status", "NOT FOUND")
+        out.at[idx, "Instrument Master Match"] = status
+        out.at[idx, "Identification Score"] = info.get("Score", 0.0)
+        out.at[idx, "Identification Candidate"] = info.get("Candidate Tag", "")
+        out.at[idx, "Identification Reason"] = info.get("Reason", "")
+        candidate_key = _tm_norm_tag(info.get("Candidate Tag", "").split(";",1)[0])
+        mr = im_first.loc[candidate_key] if candidate_key and candidate_key in im_first.index else None
+        if mr is not None and status in {"EXACT MATCH", "POSSIBLE MATCH"}:
+            for col, field in [("Instrument Service","Service"),("Instrument Type Master","Instrument Type"),("Instrument IO Type","IO Type"),("Instrument Unit Master","Unit"),("Instrument Engineering Category","Engineering Category"),("Instrument Equipment Code","Derived Equipment Code"),("Instrument Master Parameter","Suggested Parameter")]:
+                out.at[idx,col] = str(mr.get(field, "") or "").strip()
+            out.at[idx,"Instrument Master Source"] = "Instrument Master"
+            mv, md = _tm_metadata_validation(
+                row.get("Suggested Parameter", ""), row.get("Suggested Unit", ""),
+                mr.get("Suggested Parameter", ""), mr.get("Unit", ""),
+                row.get("Instrument Type", ""), mr.get("Instrument Type", ""),
+                row.get("IO Type", ""), mr.get("IO Type", ""),
+            )
+            out.at[idx,"Metadata Validation"] = mv
+            out.at[idx,"Metadata Validation Detail"] = md
+        elif status == "REVIEW REQUIRED" and candidate_key in im_first.index:
+            mr = im_first.loc[candidate_key]
+            out.at[idx,"Instrument Service"] = str(mr.get("Service", "") or "").strip()
+            out.at[idx,"Instrument Type Master"] = str(mr.get("Instrument Type", "") or "").strip()
+            out.at[idx,"Instrument IO Type"] = str(mr.get("IO Type", "") or "").strip()
+            out.at[idx,"Instrument Unit Master"] = str(mr.get("Unit", "") or "").strip()
+            out.at[idx,"Instrument Engineering Category"] = str(mr.get("Engineering Category", "") or "").strip()
+            out.at[idx,"Instrument Equipment Code"] = str(mr.get("Derived Equipment Code", "") or "").strip()
+            out.at[idx,"Instrument Master Parameter"] = str(mr.get("Suggested Parameter", "") or "").strip()
+            out.at[idx,"Metadata Validation"] = "REVIEW REQUIRED"
+            out.at[idx,"Metadata Validation Detail"] = "Candidate belum cukup unik untuk automatic mapping"
+        else:
+            out.at[idx,"Metadata Validation"] = "NOT FOUND"
+            out.at[idx,"Metadata Validation Detail"] = "Tidak ada Instrument Master mapping yang cukup kuat"
 
-    tags = out.get("PLC Tag", pd.Series("", index=out.index)).map(
-        lambda x: re.sub(r"\s+", "", str(x).strip().upper()) if str(x).strip() else ""
-    )
-    matched = tags.map(_lookup)
-
-    def _field(field):
-        return matched.map(lambda r: str(r.get(field, "")).strip() if r is not None and field in r.index else "")
-
-    out["Instrument Master Match"] = matched.map(lambda r: "MATCHED" if r is not None else "NOT FOUND")
-    out["Instrument Service"] = _field("Service")
-    out["Instrument Type Master"] = _field("Instrument Type")
-    out["Instrument IO Type"] = _field("IO Type")
-    out["Instrument Unit Master"] = _field("Unit")
-    out["Instrument Engineering Category"] = _field("Engineering Category")
-    out["Instrument Equipment Code"] = _field("Derived Equipment Code")
-    out["Instrument Master Parameter"] = _field("Suggested Parameter")
-    out["Instrument Master Source"] = matched.map(lambda r: "Instrument Master" if r is not None else "")
-
-    # Master identity is enriched only where the existing tag row is blank.
+    # Only blank source fields may be enriched from an exact match.
+    exact_mask = out["Instrument Master Match"].eq("EXACT MATCH")
     if "Instrument Type" in out.columns:
-        mask = out["Instrument Type"].astype(str).str.strip().eq("")
+        mask = exact_mask & out["Instrument Type"].astype(str).str.strip().eq("")
         out.loc[mask, "Instrument Type"] = out.loc[mask, "Instrument Type Master"]
     if "Suggested Parameter" in out.columns:
-        mask = out["Suggested Parameter"].astype(str).str.strip().eq("")
+        mask = exact_mask & out["Suggested Parameter"].astype(str).str.strip().eq("")
         out.loc[mask, "Suggested Parameter"] = out.loc[mask, "Instrument Master Parameter"]
     if "Suggested Unit" in out.columns:
-        mask = out["Suggested Unit"].astype(str).str.strip().eq("")
+        mask = exact_mask & out["Suggested Unit"].astype(str).str.strip().eq("")
         out.loc[mask, "Suggested Unit"] = out.loc[mask, "Instrument Unit Master"]
     return out
 
 
 def instrument_master_gap_report(plc_history, instrument_master):
-    """Compare PLC historian tag columns against the engineering Instrument Master."""
-    if instrument_master is None or instrument_master.empty:
-        return {
-            "instrument_tags": set(), "plc_tags": set(), "matched": set(),
-            "instrument_only": set(), "plc_only": set(), "duplicate_tags": pd.DataFrame()
-        }
-    im_tags = {
-        re.sub(r"\s+", "", str(x).strip().upper())
-        for x in instrument_master.get("Tag No", pd.Series(dtype=str)).tolist()
-        if str(x).strip()
-    }
-    plc_tags = {
-        re.sub(r"\s+", "", str(x).strip().upper())
-        for x in (plc_history.columns if plc_history is not None and not plc_history.empty else [])
-        if str(x).strip() and str(x).strip().lower() != "archivetime"
-    }
+    """Compare PLC historian tags with Instrument Master and expose review candidates."""
+    report = build_tag_identification_report(plc_history, instrument_master)
+    if report.empty:
+        return {"instrument_tags":set(),"plc_tags":set(),"matched":set(),"instrument_only":set(),"plc_only":set(),"duplicate_tags":pd.DataFrame(),"identification":report}
+    im_tags = {_tm_norm_tag(x) for x in instrument_master.get("Tag No", pd.Series(dtype=str)).tolist() if str(x).strip()}
+    plc_tags = {_tm_norm_tag(x) for x in report["PLC Tag"].tolist() if str(x).strip()}
+    matched = set(report.loc[report["Identification Status"] == "EXACT MATCH", "PLC Tag"].map(_tm_norm_tag))
+    candidate = set(report.loc[report["Identification Status"].isin(["POSSIBLE MATCH","REVIEW REQUIRED"]), "PLC Tag"].map(_tm_norm_tag))
     duplicate_tags = pd.DataFrame()
     if "Tag No" in instrument_master.columns:
-        tmp = instrument_master.copy()
-        tmp["_Normalized"] = tmp["Tag No"].map(lambda x: re.sub(r"\s+", "", str(x).strip().upper()) if str(x).strip() else "")
+        tmp = instrument_master.copy(); tmp["_Normalized"] = tmp["Tag No"].map(_tm_norm_tag)
         dup = tmp[tmp["_Normalized"].duplicated(keep=False) & tmp["_Normalized"].ne("")]
-        if not dup.empty:
-            duplicate_tags = dup.sort_values("_Normalized")
+        if not dup.empty: duplicate_tags = dup.sort_values("_Normalized")
     return {
-        "instrument_tags": im_tags, "plc_tags": plc_tags,
-        "matched": im_tags & plc_tags,
-        "instrument_only": im_tags - plc_tags,
-        "plc_only": plc_tags - im_tags,
-        "duplicate_tags": duplicate_tags,
+        "instrument_tags": im_tags, "plc_tags": plc_tags, "matched": matched,
+        "instrument_only": im_tags - plc_tags, "plc_only": plc_tags - im_tags,
+        "candidate": candidate, "duplicate_tags": duplicate_tags, "identification": report
     }
 
 
@@ -2851,7 +3011,11 @@ instrument_master = load_instrument_master()
 master = canonicalize_equipment_master(load_master(), equipment_reference)
 master = enrich_tag_master_with_instruments(master, instrument_master)
 required = ["Area", "Equipment Code", "Equipment", "Instrument Tag", "Suggested Parameter", "Suggested Unit",
-            "IO Type", "Instrument Type", "Calibration Range", "Evidence", "Reference Source", "Confidence", "Mapping Status"]
+            "IO Type", "Instrument Type", "Calibration Range", "Evidence", "Reference Source", "Confidence", "Mapping Status",
+            "Instrument Master Match", "Instrument Service", "Instrument Type Master", "Instrument IO Type",
+            "Instrument Unit Master", "Instrument Engineering Category", "Instrument Equipment Code",
+            "Instrument Master Parameter", "Instrument Master Source", "Identification Score",
+            "Identification Candidate", "Identification Reason", "Metadata Validation", "Metadata Validation Detail"]
 for col in required:
     if col not in master.columns:
         master[col] = ""
@@ -5488,8 +5652,7 @@ elif page == "Action Center":
 elif page == "Tag Master":
     st.markdown('<div class="opp-page-title">⌑ Tag Master</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="opp-page-sub">Satu tempat untuk melihat identitas PLC tag, Instrument Master, dan gap identifikasi. '
-        'Instrument Master digunakan sebagai referensi identitas; PLC Historian tetap menjadi sumber nilai.</div>',
+        '<div class="opp-page-sub">Satu tempat untuk mengendalikan identitas PLC tag, memvalidasi Instrument Master, dan menemukan gap identifikasi. Instrument Master menjadi referensi identitas; PLC Historian tetap menjadi sumber nilai.</div>',
         unsafe_allow_html=True,
     )
 
@@ -5497,35 +5660,45 @@ elif page == "Tag Master":
 
     with tab_plc:
         st.markdown("#### PLC Tag Mapping")
-        st.caption("Mapping existing PLC tags diperkaya dengan data Instrument Master bila Tag No cocok.")
-        q = st.text_input("Cari tag / service / equipment / parameter", key="tm_search")
-        area = st.selectbox("Area", ["All"] + sorted([x for x in master["Area"].unique() if str(x).strip()]), key="tm_area")
-        conf = st.selectbox("Confidence", ["All", "High", "Medium", "Low"], key="tm_conf")
-        match_filter = st.selectbox("Instrument Master", ["All", "MATCHED", "NOT FOUND"], key="tm_match")
+        st.caption("Identification Engine melakukan exact match terlebih dahulu. Candidate fuzzy hanya ditampilkan sebagai POSSIBLE MATCH / REVIEW REQUIRED dan tidak otomatis dianggap sebagai mapping final.")
+        c1,c2,c3,c4 = st.columns([1.45, .8, .9, 1.0], gap="small")
+        q = c1.text_input("Cari tag / service / equipment / parameter", key="tm_search")
+        area_options = ["All"] + sorted([str(x) for x in master["Area"].unique() if str(x).strip()], key=str)
+        area = c2.selectbox("Area", area_options, key="tm_area")
+        conf = c3.selectbox("Confidence", ["All", "High", "Medium", "Low"], key="tm_conf")
+        match_filter = c4.selectbox(
+            "Status Identifikasi",
+            ["All", "EXACT MATCH", "POSSIBLE MATCH", "REVIEW REQUIRED", "NOT FOUND"],
+            key="tm_match_v36",
+        )
+
         view = master.copy()
         if q:
-            mask = view.astype(str).apply(lambda ss: ss.str.contains(q, case=False, na=False)).any(axis=1)
+            mask = view.astype(str).apply(lambda ss: ss.str.contains(q, case=False, na=False, regex=False)).any(axis=1)
             view = view[mask]
         if area != "All":
-            view = view[view["Area"] == area]
+            view = view[view["Area"].astype(str) == area]
         if conf != "All":
-            view = view[view["Confidence"] == conf]
+            view = view[view["Confidence"].astype(str) == conf]
         if match_filter != "All":
-            view = view[view["Instrument Master Match"] == match_filter]
-        cols = [
+            view = view[view["Instrument Master Match"].astype(str) == match_filter]
+
+        display_cols = [
             "Area","Equipment Code","Equipment","PLC Tag","Suggested Parameter","Suggested Unit",
-            "Instrument Master Match","Instrument Service","Instrument Type Master",
-            "Instrument IO Type","Instrument Engineering Category","Confidence"
+            "Instrument Master Match","Identification Candidate","Identification Score","Identification Reason",
+            "Instrument Service","Instrument Type Master","Instrument IO Type","Instrument Unit Master",
+            "Metadata Validation","Metadata Validation Detail","Confidence"
         ]
-        cols = [c for c in cols if c in view.columns]
-        st.dataframe(view[cols], width="stretch", height=600, hide_index=True)
+        display_cols = [c for c in display_cols if c in view.columns]
+        st.dataframe(view[display_cols], width="stretch", height=600, hide_index=True)
         st.download_button(
             "Download PLC Tag Mapping CSV",
-            view.to_csv(index=False).encode("utf-8-sig"),
-            "OPP_PLC_Tag_Mapping.csv",
+            master.to_csv(index=False).encode("utf-8-sig"),
+            "OPP_PLC_Tag_Mapping_Intelligent.csv",
             "text/csv",
-            key="tm_download_plc",
+            key="tm_download_plc_v36",
         )
+        st.info("Catatan: POSSIBLE MATCH adalah candidate untuk review engineer. REVIEW REQUIRED berarti sistem menemukan indikasi yang belum cukup unik/aman untuk dipilih otomatis. NOT FOUND berarti belum ada candidate yang cukup kuat.")
 
     with tab_instrument:
         st.markdown("#### Instrument Master")
@@ -5535,23 +5708,17 @@ elif page == "Tag Master":
             im_view = instrument_master.copy()
             c1,c2,c3 = st.columns(3)
             search_im = c1.text_input("Cari Tag / Service / Type", key="im_search")
-            category_im = c2.selectbox(
-                "Engineering Category",
-                ["All"] + sorted([x for x in im_view["Engineering Category"].unique() if str(x).strip()]),
-                key="im_category",
-            )
-            area_im = c3.selectbox(
-                "Area",
-                ["All"] + sorted([x for x in im_view["Area"].unique() if str(x).strip()]),
-                key="im_area",
-            )
+            category_values = sorted([str(x) for x in im_view["Engineering Category"].unique() if str(x).strip()], key=str)
+            category_im = c2.selectbox("Engineering Category", ["All"] + category_values, key="im_category")
+            area_values = sorted([str(x) for x in im_view["Area"].unique() if str(x).strip()], key=str)
+            area_im = c3.selectbox("Area", ["All"] + area_values, key="im_area")
             if search_im:
-                mask = im_view.astype(str).apply(lambda ss: ss.str.contains(search_im, case=False, na=False)).any(axis=1)
+                mask = im_view.astype(str).apply(lambda ss: ss.str.contains(search_im, case=False, na=False, regex=False)).any(axis=1)
                 im_view = im_view[mask]
             if category_im != "All":
-                im_view = im_view[im_view["Engineering Category"] == category_im]
+                im_view = im_view[im_view["Engineering Category"].astype(str) == category_im]
             if area_im != "All":
-                im_view = im_view[im_view["Area"] == area_im]
+                im_view = im_view[im_view["Area"].astype(str) == area_im]
             display_cols = [
                 "Tag No","Service","Area","Derived Equipment Code","Instrument Type","IO Type",
                 "Suggested Parameter","Unit","Engineering Category","P&ID","Manufacturer","Model No",
@@ -5564,52 +5731,72 @@ elif page == "Tag Master":
                 instrument_master.to_csv(index=False).encode("utf-8-sig"),
                 "OPP_Instrument_Master.csv",
                 "text/csv",
-                key="tm_download_instrument",
+                key="tm_download_instrument_v36",
             )
 
     with tab_gap:
         st.markdown("#### Identification Gap")
         gap = instrument_master_gap_report(df, instrument_master)
+        report = gap.get("identification", pd.DataFrame())
         total_im = len(gap["instrument_tags"])
         total_plc = len(gap["plc_tags"])
-        matched_n = len(gap["matched"])
-        instrument_only_n = len(gap["instrument_only"])
-        plc_only_n = len(gap["plc_only"])
-        g1,g2,g3,g4,g5 = st.columns(5)
-        g1.metric("Instrument Tags", f"{total_im:,}")
-        g2.metric("PLC Tags", f"{total_plc:,}")
-        g3.metric("Matched", f"{matched_n:,}")
-        g4.metric("Instrument Only", f"{instrument_only_n:,}")
-        g5.metric("PLC Only", f"{plc_only_n:,}")
+        exact_n = int((report["Identification Status"] == "EXACT MATCH").sum()) if not report.empty else 0
+        possible_n = int((report["Identification Status"] == "POSSIBLE MATCH").sum()) if not report.empty else 0
+        review_n = int((report["Identification Status"] == "REVIEW REQUIRED").sum()) if not report.empty else 0
+        not_found_n = int((report["Identification Status"] == "NOT FOUND").sum()) if not report.empty else 0
 
-        coverage = (matched_n / total_plc * 100) if total_plc else 0
-        st.progress(min(1.0, coverage / 100), text=f"Coverage PLC tag terhadap Instrument Master: {coverage:.1f}%")
+        g1,g2,g3,g4,g5 = st.columns(5, gap="small")
+        g1.metric("PLC Tags", f"{total_plc:,}")
+        g2.metric("Exact Match", f"{exact_n:,}")
+        g3.metric("Possible Match", f"{possible_n:,}")
+        g4.metric("Review Required", f"{review_n:,}")
+        g5.metric("Not Found", f"{not_found_n:,}")
+
+        coverage = (exact_n / total_plc * 100) if total_plc else 0
+        st.progress(min(1.0, coverage / 100), text=f"Exact identification coverage terhadap PLC Historian: {coverage:.1f}%")
+
+        st.markdown("##### Prioritas Review")
+        review_view = report[report["Identification Status"].isin(["POSSIBLE MATCH","REVIEW REQUIRED","NOT FOUND"])].copy() if not report.empty else pd.DataFrame()
+        if not review_view.empty:
+            status_order = {"REVIEW REQUIRED":1,"POSSIBLE MATCH":2,"NOT FOUND":3}
+            review_view["_order"] = review_view["Identification Status"].map(status_order).fillna(9)
+            review_view = review_view.sort_values(["_order","Score"], ascending=[True,False]).drop(columns="_order")
+            st.dataframe(review_view, width="stretch", height=360, hide_index=True)
+        else:
+            st.success("Semua PLC tag memiliki exact identification yang aman terhadap Instrument Master.")
 
         left,right = st.columns(2, gap="medium")
         with left:
-            st.markdown("##### PLC Tag belum ada di Instrument Master")
-            if gap["plc_only"]:
-                rows = pd.DataFrame({"PLC Tag": sorted(gap["plc_only"])})
-                st.dataframe(rows, width="stretch", height=360, hide_index=True)
+            st.markdown("##### PLC Tag yang belum memiliki exact match")
+            if not review_view.empty:
+                st.dataframe(review_view[["PLC Tag","Identification Status","Candidate Tag","Score","Reason"]], width="stretch", height=300, hide_index=True)
             else:
-                st.success("Tidak ada PLC tag yang belum ditemukan di Instrument Master.")
+                st.success("Tidak ada PLC tag yang perlu direview.")
         with right:
             st.markdown("##### Instrument belum muncul di PLC Historian")
             if gap["instrument_only"]:
-                rows = instrument_master[
-                    instrument_master["Normalized Tag"].isin(gap["instrument_only"])
-                ][["Tag No","Service","Area","Instrument Type","IO Type","Engineering Category"]].copy()
-                st.dataframe(rows, width="stretch", height=360, hide_index=True)
+                rows = instrument_master[instrument_master["Normalized Tag"].isin(gap["instrument_only"])][
+                    ["Tag No","Service","Area","Instrument Type","IO Type","Engineering Category"]
+                ].copy()
+                st.dataframe(rows, width="stretch", height=300, hide_index=True)
             else:
                 st.success("Semua Instrument Master tag sudah ditemukan di PLC Historian.")
 
         if not gap["duplicate_tags"].empty:
             with st.expander("⚠️ Duplicate Tag No di Instrument Master", expanded=False):
-                st.dataframe(
-                    gap["duplicate_tags"].drop(columns=["_Normalized"], errors="ignore"),
-                    width="stretch",
-                    hide_index=True,
-                )
+                st.dataframe(gap["duplicate_tags"].drop(columns=["_Normalized"], errors="ignore"), width="stretch", hide_index=True)
+
+        st.markdown("##### Validasi Metadata Engineering")
+        metadata_view = master[[
+            "PLC Tag","Instrument Master Match","Suggested Parameter","Suggested Unit",
+            "Instrument Master Parameter","Instrument Unit Master","Metadata Validation","Metadata Validation Detail"
+        ]].copy() if not master.empty else pd.DataFrame()
+        metadata_review = metadata_view[metadata_view["Metadata Validation"].isin(["REVIEW REQUIRED","INCOMPLETE"])].copy() if not metadata_view.empty else pd.DataFrame()
+        if metadata_review.empty:
+            st.success("Tidak ada konflik metadata parameter/unit/type/IO yang terdeteksi pada mapping yang tersedia.")
+        else:
+            st.dataframe(metadata_review, width="stretch", height=300, hide_index=True)
+
 
 elif page == "Engineering Trend":
     st.subheader("Engineering Trend — Equipment View")
