@@ -1818,6 +1818,10 @@ div[data-testid="stHorizontalBlock"]:has(.eh22-kpi) > div[data-testid="column"] 
     }
 }
 
+
+/* v35 — Instrument Master / Tag Mapping */
+.opp-page-title{font-size:1.55rem!important;font-weight:850!important;color:#182b49!important;letter-spacing:-.02em!important}
+.opp-page-sub{font-size:.78rem!important;color:#7b8ba5!important;line-height:1.5!important;margin-bottom:1rem!important}
 </style>""",unsafe_allow_html=True)
 
 DB_PATH = ROOT / "data" / "plc_history.sqlite"
@@ -2028,6 +2032,187 @@ def recent_import_log(limit=10):
 
 def load_master():
     return pd.read_csv(ROOT / "config" / "tag_master.csv").fillna("")
+
+@st.cache_data
+def load_instrument_master():
+    """Load the engineering Instrument Master without mixing it into PLC history."""
+    csv_path = ROOT / "config" / "instrument_master.csv"
+    xlsx_path = ROOT / "config" / "Instrument List All.xlsx"
+    try:
+        if csv_path.exists():
+            im = pd.read_csv(csv_path, dtype=str).fillna("")
+        elif xlsx_path.exists():
+            # Fallback for users who prefer to deploy the original engineering workbook.
+            im = pd.read_excel(xlsx_path, header=2, engine="openpyxl").fillna("")
+            rename = {
+                "ITEM NO.\n序号":"Item No", "TAG NO.\n位号":"Tag No",
+                "SERVICE\n用途":"Service", "LOCATION\n位置":"Location",
+                "LINE NUMBER\n管线号":"Line Number", "P&ID":"P&ID",
+                "INSTRUMENT TYPE\n仪表类型":"Instrument Type",
+                "REFERENCE DRAWING\n参照图纸":"Reference Drawing",
+                "IO\nTYPE":"IO Type", "MANUFACTURER\n制造商":"Manufacturer",
+                "MODEL NO.\n型号":"Model No", "SET\nVALUE\n设定值":"Set Value",
+                "RANGE\n范围":"Range", "CALIBRATION RANGE\n校准范围":"Calibration Range",
+                "UNIT\n单位":"Unit", "REV.\n版本":"Rev",
+                "REMARKS\n备注":"Remarks", "Category":"Source Category", "Area":"Area",
+            }
+            im = im.rename(columns=rename)
+            for c in im.columns:
+                im[c] = im[c].astype(str).replace({"nan": ""}).str.strip()
+        else:
+            return pd.DataFrame()
+
+        def _clean(v):
+            if pd.isna(v):
+                return ""
+            return str(v).strip()
+
+        def _norm_tag(v):
+            return re.sub(r"\s+", "", _clean(v).upper())
+
+        def _extract_eq(text):
+            t = _clean(text).upper()
+            m = re.search(r"(?<!\d)(\d{3})[-\s]?([A-Z]{1,5})[-\s]?(\d{1,3})(?!\d)", t)
+            return f"{m.group(1)}-{m.group(2)}-{int(m.group(3)):02d}" if m else ""
+
+        def _parameter(row):
+            txt = (_clean(row.get("Instrument Type", "")) + " " + _clean(row.get("Service", ""))).lower()
+            if any(k in txt for k in ["vibration", "accelerometer"]): return "Vibration"
+            if any(k in txt for k in ["temperature", "thermocouple", "rtd", "pt100"]): return "Temperature"
+            if "pressure" in txt: return "Pressure"
+            if any(k in txt for k in ["flowmeter", "flow meter", "flow gauge", "flow transmitter", "flow switch"]): return "Flow"
+            if any(k in txt for k in ["current transmitter", "motor current"]): return "Current"
+            if any(k in txt for k in ["power transmitter", "power meter"]): return "Power"
+            if any(k in txt for k in ["speed", "underspeed", "rpm"]): return "Speed"
+            if any(k in txt for k in ["level transmitter", "level sensor", "level meter", "level gauge"]): return "Level"
+            if "density" in txt: return "Density"
+            if re.search(r"\bpH\b", _clean(row.get("Instrument Type", "")) + " " + _clean(row.get("Service", "")), re.I): return "pH"
+            if "position" in txt: return "Position"
+            return ""
+
+        def _category(row):
+            it = _clean(row.get("Instrument Type", "")).lower()
+            io = _clean(row.get("IO Type", "")).upper()
+            if any(k in it for k in ["pullwire","drift switch","underspeed","blocked chute","limit switch","float switch","flow switch","pressure switch","level switch","proximity switch","safety switch","trip","interlock"]):
+                return "Protection / Interlock"
+            if any(k in it for k in ["solenoid","on/off valve","air control valve","control valve","actuator","modulation valve"]):
+                return "Control Element"
+            if any(k in it for k in ["siren","beacon","traffic light","indicator","lamp"]):
+                return "Indication / Alarm"
+            if any(k in it for k in ["transmitter","meter","gauge","sensor","thermocouple","rtd","analyzer","detector"]):
+                return "Condition / Measurement"
+            if io in {"AI","AO"}:
+                return "Condition / Measurement"
+            if io in {"DI","DO"}:
+                return "Protection / Interlock"
+            return "Other"
+
+        if "Tag No" not in im.columns:
+            return pd.DataFrame()
+
+        im["Normalized Tag"] = im["Tag No"].map(_norm_tag)
+        im["Derived Equipment Code"] = im.apply(
+            lambda r: _extract_eq(r.get("Service", "")) or _extract_eq(r.get("Tag No", "")), axis=1
+        )
+        if "Suggested Parameter" not in im.columns:
+            im["Suggested Parameter"] = im.apply(_parameter, axis=1)
+        if "Engineering Category" not in im.columns:
+            im["Engineering Category"] = im.apply(_category, axis=1)
+        return im
+    except Exception:
+        return pd.DataFrame()
+
+
+def enrich_tag_master_with_instruments(master, instrument_master):
+    """Attach authoritative instrument identity to PLC-tag rows by exact normalized Tag No."""
+    out = master.copy()
+    if instrument_master is None or instrument_master.empty:
+        for c in [
+            "Instrument Master Match", "Instrument Service", "Instrument Type Master",
+            "Instrument IO Type", "Instrument Unit Master", "Instrument Engineering Category",
+            "Instrument Equipment Code", "Instrument Master Parameter", "Instrument Master Source"
+        ]:
+            out[c] = ""
+        return out
+
+    im = instrument_master.copy()
+    for c in ["Normalized Tag", "Tag No"]:
+        if c not in im.columns:
+            im[c] = ""
+    im["_key"] = im["Normalized Tag"].replace("", np.nan)
+    im.loc[im["_key"].isna(), "_key"] = im.loc[im["_key"].isna(), "Tag No"].map(
+        lambda x: re.sub(r"\s+", "", str(x).strip().upper()) if str(x).strip() else ""
+    )
+    im = im[im["_key"].astype(str).str.strip() != ""].copy()
+    im = im.drop_duplicates("_key", keep="first").set_index("_key")
+
+    def _lookup(tag):
+        key = re.sub(r"\s+", "", str(tag or "").strip().upper())
+        return im.loc[key] if key in im.index else None
+
+    tags = out.get("PLC Tag", pd.Series("", index=out.index)).map(
+        lambda x: re.sub(r"\s+", "", str(x).strip().upper()) if str(x).strip() else ""
+    )
+    matched = tags.map(_lookup)
+
+    def _field(field):
+        return matched.map(lambda r: str(r.get(field, "")).strip() if r is not None and field in r.index else "")
+
+    out["Instrument Master Match"] = matched.map(lambda r: "MATCHED" if r is not None else "NOT FOUND")
+    out["Instrument Service"] = _field("Service")
+    out["Instrument Type Master"] = _field("Instrument Type")
+    out["Instrument IO Type"] = _field("IO Type")
+    out["Instrument Unit Master"] = _field("Unit")
+    out["Instrument Engineering Category"] = _field("Engineering Category")
+    out["Instrument Equipment Code"] = _field("Derived Equipment Code")
+    out["Instrument Master Parameter"] = _field("Suggested Parameter")
+    out["Instrument Master Source"] = matched.map(lambda r: "Instrument Master" if r is not None else "")
+
+    # Master identity is enriched only where the existing tag row is blank.
+    if "Instrument Type" in out.columns:
+        mask = out["Instrument Type"].astype(str).str.strip().eq("")
+        out.loc[mask, "Instrument Type"] = out.loc[mask, "Instrument Type Master"]
+    if "Suggested Parameter" in out.columns:
+        mask = out["Suggested Parameter"].astype(str).str.strip().eq("")
+        out.loc[mask, "Suggested Parameter"] = out.loc[mask, "Instrument Master Parameter"]
+    if "Suggested Unit" in out.columns:
+        mask = out["Suggested Unit"].astype(str).str.strip().eq("")
+        out.loc[mask, "Suggested Unit"] = out.loc[mask, "Instrument Unit Master"]
+    return out
+
+
+def instrument_master_gap_report(plc_history, instrument_master):
+    """Compare PLC historian tag columns against the engineering Instrument Master."""
+    if instrument_master is None or instrument_master.empty:
+        return {
+            "instrument_tags": set(), "plc_tags": set(), "matched": set(),
+            "instrument_only": set(), "plc_only": set(), "duplicate_tags": pd.DataFrame()
+        }
+    im_tags = {
+        re.sub(r"\s+", "", str(x).strip().upper())
+        for x in instrument_master.get("Tag No", pd.Series(dtype=str)).tolist()
+        if str(x).strip()
+    }
+    plc_tags = {
+        re.sub(r"\s+", "", str(x).strip().upper())
+        for x in (plc_history.columns if plc_history is not None and not plc_history.empty else [])
+        if str(x).strip() and str(x).strip().lower() != "archivetime"
+    }
+    duplicate_tags = pd.DataFrame()
+    if "Tag No" in instrument_master.columns:
+        tmp = instrument_master.copy()
+        tmp["_Normalized"] = tmp["Tag No"].map(lambda x: re.sub(r"\s+", "", str(x).strip().upper()) if str(x).strip() else "")
+        dup = tmp[tmp["_Normalized"].duplicated(keep=False) & tmp["_Normalized"].ne("")]
+        if not dup.empty:
+            duplicate_tags = dup.sort_values("_Normalized")
+    return {
+        "instrument_tags": im_tags, "plc_tags": plc_tags,
+        "matched": im_tags & plc_tags,
+        "instrument_only": im_tags - plc_tags,
+        "plc_only": plc_tags - im_tags,
+        "duplicate_tags": duplicate_tags,
+    }
+
 
 @st.cache_data
 def load_equipment_reference():
@@ -2662,7 +2847,9 @@ def criticality_template(master):
 # --- Data -------------------------------------------------------------------------
 df = load_history()
 equipment_reference = load_equipment_reference()
+instrument_master = load_instrument_master()
 master = canonicalize_equipment_master(load_master(), equipment_reference)
+master = enrich_tag_master_with_instruments(master, instrument_master)
 required = ["Area", "Equipment Code", "Equipment", "Instrument Tag", "Suggested Parameter", "Suggested Unit",
             "IO Type", "Instrument Type", "Calibration Range", "Evidence", "Reference Source", "Confidence", "Mapping Status"]
 for col in required:
@@ -5299,21 +5486,130 @@ elif page == "Action Center":
                     st.session_state["engineering_actions"]=store; st.success(f"Restored {len(restored):,} engineering action record(s).")
 
 elif page == "Tag Master":
-    st.subheader("PLC Tag Master")
-    st.caption("Source engineering mapping is preserved. Derived parameter/unit labels are used only for display when the source mapping is blank.")
-    q = st.text_input("Search tag / equipment / parameter")
-    area = st.selectbox("Area", ["All"] + sorted([x for x in master["Area"].unique() if str(x).strip()]))
-    conf = st.selectbox("Confidence", ["All", "High", "Medium", "Low"])
-    view = master.copy()
-    if q:
-        mask = view.astype(str).apply(lambda s: s.str.contains(q, case=False, na=False)).any(axis=1)
-        view = view[mask]
-    if area != "All":
-        view = view[view["Area"] == area]
-    if conf != "All":
-        view = view[view["Confidence"] == conf]
-    st.dataframe(view, width='stretch', height=620)
-    st.download_button("Download Tag Master CSV", master.to_csv(index=False).encode("utf-8"), "OPP_Tag_Master_Phase4_1.csv", "text/csv")
+    st.markdown('<div class="opp-page-title">⌑ Tag Master</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="opp-page-sub">Satu tempat untuk melihat identitas PLC tag, Instrument Master, dan gap identifikasi. '
+        'Instrument Master digunakan sebagai referensi identitas; PLC Historian tetap menjadi sumber nilai.</div>',
+        unsafe_allow_html=True,
+    )
+
+    tab_plc, tab_instrument, tab_gap = st.tabs(["PEMETAAN PLC TAG", "INSTRUMENT MASTER", "GAP IDENTIFIKASI"])
+
+    with tab_plc:
+        st.markdown("#### PLC Tag Mapping")
+        st.caption("Mapping existing PLC tags diperkaya dengan data Instrument Master bila Tag No cocok.")
+        q = st.text_input("Cari tag / service / equipment / parameter", key="tm_search")
+        area = st.selectbox("Area", ["All"] + sorted([x for x in master["Area"].unique() if str(x).strip()]), key="tm_area")
+        conf = st.selectbox("Confidence", ["All", "High", "Medium", "Low"], key="tm_conf")
+        match_filter = st.selectbox("Instrument Master", ["All", "MATCHED", "NOT FOUND"], key="tm_match")
+        view = master.copy()
+        if q:
+            mask = view.astype(str).apply(lambda ss: ss.str.contains(q, case=False, na=False)).any(axis=1)
+            view = view[mask]
+        if area != "All":
+            view = view[view["Area"] == area]
+        if conf != "All":
+            view = view[view["Confidence"] == conf]
+        if match_filter != "All":
+            view = view[view["Instrument Master Match"] == match_filter]
+        cols = [
+            "Area","Equipment Code","Equipment","PLC Tag","Suggested Parameter","Suggested Unit",
+            "Instrument Master Match","Instrument Service","Instrument Type Master",
+            "Instrument IO Type","Instrument Engineering Category","Confidence"
+        ]
+        cols = [c for c in cols if c in view.columns]
+        st.dataframe(view[cols], width="stretch", height=600, hide_index=True)
+        st.download_button(
+            "Download PLC Tag Mapping CSV",
+            view.to_csv(index=False).encode("utf-8-sig"),
+            "OPP_PLC_Tag_Mapping.csv",
+            "text/csv",
+            key="tm_download_plc",
+        )
+
+    with tab_instrument:
+        st.markdown("#### Instrument Master")
+        if instrument_master.empty:
+            st.warning("Instrument Master belum tersedia. Tambahkan `config/instrument_master.csv` ke repository.")
+        else:
+            im_view = instrument_master.copy()
+            c1,c2,c3 = st.columns(3)
+            search_im = c1.text_input("Cari Tag / Service / Type", key="im_search")
+            category_im = c2.selectbox(
+                "Engineering Category",
+                ["All"] + sorted([x for x in im_view["Engineering Category"].unique() if str(x).strip()]),
+                key="im_category",
+            )
+            area_im = c3.selectbox(
+                "Area",
+                ["All"] + sorted([x for x in im_view["Area"].unique() if str(x).strip()]),
+                key="im_area",
+            )
+            if search_im:
+                mask = im_view.astype(str).apply(lambda ss: ss.str.contains(search_im, case=False, na=False)).any(axis=1)
+                im_view = im_view[mask]
+            if category_im != "All":
+                im_view = im_view[im_view["Engineering Category"] == category_im]
+            if area_im != "All":
+                im_view = im_view[im_view["Area"] == area_im]
+            display_cols = [
+                "Tag No","Service","Area","Derived Equipment Code","Instrument Type","IO Type",
+                "Suggested Parameter","Unit","Engineering Category","P&ID","Manufacturer","Model No",
+                "Range","Calibration Range","Remarks"
+            ]
+            display_cols = [c for c in display_cols if c in im_view.columns]
+            st.dataframe(im_view[display_cols], width="stretch", height=600, hide_index=True)
+            st.download_button(
+                "Download Instrument Master CSV",
+                instrument_master.to_csv(index=False).encode("utf-8-sig"),
+                "OPP_Instrument_Master.csv",
+                "text/csv",
+                key="tm_download_instrument",
+            )
+
+    with tab_gap:
+        st.markdown("#### Identification Gap")
+        gap = instrument_master_gap_report(df, instrument_master)
+        total_im = len(gap["instrument_tags"])
+        total_plc = len(gap["plc_tags"])
+        matched_n = len(gap["matched"])
+        instrument_only_n = len(gap["instrument_only"])
+        plc_only_n = len(gap["plc_only"])
+        g1,g2,g3,g4,g5 = st.columns(5)
+        g1.metric("Instrument Tags", f"{total_im:,}")
+        g2.metric("PLC Tags", f"{total_plc:,}")
+        g3.metric("Matched", f"{matched_n:,}")
+        g4.metric("Instrument Only", f"{instrument_only_n:,}")
+        g5.metric("PLC Only", f"{plc_only_n:,}")
+
+        coverage = (matched_n / total_plc * 100) if total_plc else 0
+        st.progress(min(1.0, coverage / 100), text=f"Coverage PLC tag terhadap Instrument Master: {coverage:.1f}%")
+
+        left,right = st.columns(2, gap="medium")
+        with left:
+            st.markdown("##### PLC Tag belum ada di Instrument Master")
+            if gap["plc_only"]:
+                rows = pd.DataFrame({"PLC Tag": sorted(gap["plc_only"])})
+                st.dataframe(rows, width="stretch", height=360, hide_index=True)
+            else:
+                st.success("Tidak ada PLC tag yang belum ditemukan di Instrument Master.")
+        with right:
+            st.markdown("##### Instrument belum muncul di PLC Historian")
+            if gap["instrument_only"]:
+                rows = instrument_master[
+                    instrument_master["Normalized Tag"].isin(gap["instrument_only"])
+                ][["Tag No","Service","Area","Instrument Type","IO Type","Engineering Category"]].copy()
+                st.dataframe(rows, width="stretch", height=360, hide_index=True)
+            else:
+                st.success("Semua Instrument Master tag sudah ditemukan di PLC Historian.")
+
+        if not gap["duplicate_tags"].empty:
+            with st.expander("⚠️ Duplicate Tag No di Instrument Master", expanded=False):
+                st.dataframe(
+                    gap["duplicate_tags"].drop(columns=["_Normalized"], errors="ignore"),
+                    width="stretch",
+                    hide_index=True,
+                )
 
 elif page == "Engineering Trend":
     st.subheader("Engineering Trend — Equipment View")
