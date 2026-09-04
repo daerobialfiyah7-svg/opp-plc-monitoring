@@ -2135,8 +2135,14 @@ def _mapping_parse_candidate(label):
     return text, ""
 
 
-def build_mapping_review_queue(master, identification_report, mapping_store):
-    """Build the engineer review queue without changing historian data."""
+def build_mapping_review_queue(master, identification_report, mapping_store, instrument_master=None):
+    """Build the engineer review queue without changing historian data.
+
+    EXACT MATCH is considered auto-identified from the Instrument Master and is
+    therefore not placed in the manual queue. Manual effort is reserved for
+    POSSIBLE / REVIEW / NOT FOUND items, with additional equipment candidates
+    generated from the existing Tag Master and equipment-code pattern.
+    """
     rows = []
     report = identification_report.copy() if isinstance(identification_report, pd.DataFrame) else pd.DataFrame()
     by_tag = report.set_index("PLC Tag").to_dict("index") if not report.empty else {}
@@ -2147,9 +2153,15 @@ def build_mapping_review_queue(master, identification_report, mapping_store):
         saved = mapping_store.get(tag, {}) if isinstance(mapping_store, dict) else {}
         saved_status = str(saved.get("Mapping Status", "")).strip()
         ident = by_tag.get(tag, {})
+        ident_status = str(ident.get("Identification Status", r.get("Instrument Master Match", "NOT FOUND")) or "NOT FOUND")
+        # Exact Instrument Master matches are automatically identified and do
+        # not burden the daily/manual review queue.
+        if ident_status == "EXACT MATCH" and saved_status not in {"SKIPPED"}:
+            continue
+        cand = _tm_mapping_candidate(tag, master, instrument_master, ident)
         rows.append({
             "PLC Tag": tag,
-            "Identification Status": str(ident.get("Identification Status", r.get("Instrument Master Match", "NOT FOUND")) or "NOT FOUND"),
+            "Identification Status": ident_status,
             "Candidate Tag": str(ident.get("Candidate Tag", r.get("Identification Candidate", "")) or ""),
             "Score": float(ident.get("Score", r.get("Identification Score", 0)) or 0),
             "Reason": str(ident.get("Reason", r.get("Identification Reason", "")) or ""),
@@ -2158,17 +2170,24 @@ def build_mapping_review_queue(master, identification_report, mapping_store):
             "Current Parameter": str(r.get("Suggested Parameter", "") or "").strip(),
             "Current Unit": str(r.get("Suggested Unit", "") or "").strip(),
             "Mapping Status": saved_status or "PENDING",
+            "Mapping Candidate Code": str(cand.get("code", "") if cand else ""),
+            "Mapping Candidate Equipment": str(cand.get("name", "") if cand else ""),
+            "Mapping Candidate Area": str(cand.get("area", "") if cand else ""),
+            "Mapping Candidate Source": str(cand.get("source", "") if cand else ""),
+            "Mapping Candidate Confidence": float(cand.get("confidence", 0) if cand else 0),
+            "Mapping Candidate Evidence": str(cand.get("evidence", "") if cand else ""),
         })
     q = pd.DataFrame(rows)
     if q.empty:
         return q
-    # Engineer-confirmed mappings are removed from the active queue; skipped items
-    # remain visible so they can be revisited later.
     q = q[~q["Mapping Status"].isin(["CONFIRMED", "VERIFIED"])].copy()
-    order = {"REVIEW REQUIRED":1, "POSSIBLE MATCH":2, "NOT FOUND":3, "EXACT MATCH":4}
+    order = {"REVIEW REQUIRED":1, "POSSIBLE MATCH":2, "NOT FOUND":3}
     q["_order"] = q["Identification Status"].map(order).fillna(9)
-    q = q.sort_values(["_order", "Score", "PLC Tag"], ascending=[True, False, True]).drop(columns="_order")
-    return q.reset_index(drop=True)
+    # Within NOT FOUND, candidates backed by an existing equipment identity are
+    # more actionable than a completely unresolved tag.
+    q["_cand"] = q["Mapping Candidate Code"].astype(str).str.strip().ne("").astype(int)
+    q = q.sort_values(["_order", "_cand", "Score", "PLC Tag"], ascending=[True, False, False, True])
+    return q.drop(columns=["_order", "_cand"]).reset_index(drop=True)
 
 def load_master():
     return pd.read_csv(ROOT / "config" / "tag_master.csv").fillna("")
@@ -2386,6 +2405,102 @@ def _tm_possible_match(plc_tag, instrument_master, min_score=0.90):
         "score": float(min(1.0, best[0])), "margin": float(margin), "reason": reason,
         "candidate": r,
     }
+
+
+def _tm_equipment_candidates_from_master(plc_tag, master):
+    """Suggest equipment from existing engineering Tag Master / equipment codes.
+
+    This is a suggestion layer only. It never auto-confirms a mapping. The
+    objective is to rescue PLC tags that are absent from Instrument Master but
+    already carry a useful equipment identity in the engineering master.
+    """
+    if master is None or not hasattr(master, "columns") or master.empty:
+        return []
+    t = _tm_norm_tag(plc_tag)
+    _, area, suffix = _tm_tag_parts(t)
+    if not area:
+        return []
+    # Extract an equipment family + numeric sequence from the tag suffix.
+    # Examples: TK024 -> TK + 24, ML02A -> ML + 2 (A is channel suffix).
+    m = re.match(r"^([A-Z]{1,5})(\d+)", suffix)
+    if not m:
+        return []
+    family = m.group(1)
+    number = int(m.group(2))
+    candidates = []
+    for _, r in master.iterrows():
+        code = str(r.get("Equipment Code", "") or "").strip()
+        name = str(r.get("Equipment", "") or "").strip()
+        if not code:
+            continue
+        c = _tm_norm_tag(code)
+        cm = re.match(r"^(\d{3})([A-Z]{1,5})(\d+)$", c)
+        if not cm:
+            continue
+        carea, cfam, cnum = cm.group(1), cm.group(2), int(cm.group(3))
+        if carea != area or cfam != family or cnum != number:
+            continue
+        candidates.append((code, name, str(r.get("Area", area) or area).strip()))
+    # unique equipment candidates
+    seen, out = set(), []
+    for x in candidates:
+        if x[0] not in seen:
+            seen.add(x[0]); out.append(x)
+    return out
+
+
+def _tm_current_master_candidate(plc_tag, master):
+    """Return the existing Tag Master equipment assignment when available."""
+    if master is None or not hasattr(master, "columns") or master.empty or "PLC Tag" not in master.columns:
+        return None
+    key = _tm_norm_tag(plc_tag)
+    hits = master[master["PLC Tag"].astype(str).map(_tm_norm_tag) == key].copy()
+    if hits.empty:
+        return None
+    for _, r in hits.iterrows():
+        code = str(r.get("Equipment Code", "") or "").strip()
+        name = str(r.get("Equipment", "") or "").strip()
+        if code:
+            return {"code": code, "name": name, "area": str(r.get("Area", "") or "").strip()}
+    return None
+
+
+def _tm_mapping_candidate(plc_tag, master, instrument_master, identification_item):
+    """Build a practical equipment candidate for Mapping Review.
+
+    Priority: Instrument Master candidate -> current Tag Master assignment ->
+    Equipment Code pattern. All are suggestions until an engineer confirms.
+    """
+    item = identification_item or {}
+    candidate_tag = str(item.get("Candidate Tag", "") or "").strip()
+    if candidate_tag and instrument_master is not None and not instrument_master.empty:
+        hits = instrument_master[instrument_master["Tag No"].astype(str).map(_tm_norm_tag) == _tm_norm_tag(candidate_tag)].copy()
+        if not hits.empty:
+            r = hits.iloc[0]
+            return {
+                "code": str(r.get("Derived Equipment Code", "") or "").strip(),
+                "name": str(r.get("Service", "") or "").strip(),
+                "area": str(r.get("Area", "") or "").strip(),
+                "source": "Instrument Master",
+                "confidence": float(item.get("Score", 0) or 0),
+                "evidence": str(item.get("Reason", "") or "Instrument Master candidate"),
+            }
+    current = _tm_current_master_candidate(plc_tag, master)
+    if current:
+        return {**current, "source": "Tag Master", "confidence": 0.88,
+                "evidence": "Equipment sudah tercatat di Tag Master"}
+    pattern = _tm_equipment_candidates_from_master(plc_tag, master)
+    if len(pattern) == 1:
+        code, name, area = pattern[0]
+        return {"code": code, "name": name, "area": area, "source": "Equipment Master + Tag Pattern",
+                "confidence": 0.86, "evidence": "Area + equipment family + equipment number konsisten"}
+    return None
+
+
+def _tm_equipment_candidate_options(plc_tag, master):
+    """Return candidate equipment list for manual selection, ranked by tag pattern."""
+    rows = _tm_equipment_candidates_from_master(plc_tag, master)
+    return rows
 
 def build_tag_identification_report(plc_history, instrument_master):
     """Create engineer-reviewable identification status for every PLC historian tag."""
@@ -5817,7 +5932,7 @@ elif page == "Tag Master":
 
         mapping_store = _mapping_store_init(engineering_mapping)
         identification_report = build_tag_identification_report(df, instrument_master)
-        queue = build_mapping_review_queue(master, identification_report, mapping_store)
+        queue = build_mapping_review_queue(master, identification_report, mapping_store, instrument_master)
         mapping_df = engineering_mapping_dataframe(mapping_store)
 
         exact_all = int((identification_report["Identification Status"] == "EXACT MATCH").sum()) if not identification_report.empty else 0
@@ -5825,18 +5940,20 @@ elif page == "Tag Master":
         review_all = int((identification_report["Identification Status"] == "REVIEW REQUIRED").sum()) if not identification_report.empty else 0
         notfound_all = int((identification_report["Identification Status"] == "NOT FOUND").sum()) if not identification_report.empty else 0
         confirmed_n = int(mapping_df["Mapping Status"].isin(["CONFIRMED", "VERIFIED"]).sum()) if not mapping_df.empty else 0
+        candidate_n = int(queue["Mapping Candidate Code"].astype(str).str.strip().ne("").sum()) if not queue.empty and "Mapping Candidate Code" in queue.columns else 0
         pending_n = len(queue)
+        manual_n = possible_all + review_all + notfound_all - exact_all*0
 
         m1,m2,m3,m4,m5,m6 = st.columns(6, gap="small")
         m1.metric("PLC TAGS", f"{len(identification_report):,}")
-        m2.metric("EXACT", f"{exact_all:,}")
+        m2.metric("AUTO IDENTIFIED", f"{exact_all:,}")
         m3.metric("POSSIBLE", f"{possible_all:,}")
         m4.metric("REVIEW", f"{review_all:,}")
         m5.metric("NOT FOUND", f"{notfound_all:,}")
         m6.metric("ENGINEER CONFIRMED", f"{confirmed_n:,}")
 
         if pending_n:
-            st.info(f"{pending_n:,} PLC tag masih membutuhkan review. Prioritas dimulai dari REVIEW REQUIRED → POSSIBLE MATCH → NOT FOUND.")
+            st.info(f"{pending_n:,} tag masuk review manual. {candidate_n:,} sudah memiliki kandidat equipment dari Tag Master / Equipment Pattern; sisanya perlu identifikasi lebih lanjut.")
         else:
             st.success("Tidak ada PLC tag yang tersisa di Engineering Mapping Review.")
 
@@ -5871,6 +5988,17 @@ elif page == "Tag Master":
                             f'Candidate Instrument: <b>{candidate_tag or "Tidak ada"}</b><br>' +
                             f'Evidence: {item["Reason"] or "Belum ada evidence yang cukup."}</div>', unsafe_allow_html=True)
 
+                mapping_candidate_code = str(item.get("Mapping Candidate Code", "") or "").strip()
+                mapping_candidate_name = str(item.get("Mapping Candidate Equipment", "") or "").strip()
+                mapping_candidate_source = str(item.get("Mapping Candidate Source", "") or "").strip()
+                mapping_candidate_evidence = str(item.get("Mapping Candidate Evidence", "") or "").strip()
+                if mapping_candidate_code:
+                    st.markdown(
+                        f'<div class="opp-note"><b>ENGINEERING EQUIPMENT CANDIDATE</b><br>'
+                        f'<b>{mapping_candidate_code}</b>' + (f' — {mapping_candidate_name}' if mapping_candidate_name else '') +
+                        f'<br>Source: <b>{mapping_candidate_source}</b> · Evidence: {mapping_candidate_evidence}</div>',
+                        unsafe_allow_html=True)
+
                 if not imr.empty:
                     ec1,ec2,ec3,ec4 = st.columns(4, gap="small")
                     ec1.metric("Equipment Candidate", str(imr.get("Derived Equipment Code", "") or "—"))
@@ -5884,7 +6012,7 @@ elif page == "Tag Master":
                 eq_ref = eq_ref[eq_ref["Equipment Code"].astype(str).str.strip().ne("")].drop_duplicates("Equipment Code")
                 eq_options = ["KEEP / USE CURRENT"] + [_mapping_candidate_label(r["Equipment Code"], r["Equipment"]) for _,r in eq_ref.sort_values("Equipment Code").iterrows()] + ["NEW / NOT IN EQUIPMENT MASTER"]
 
-                def_eq = str(imr.get("Derived Equipment Code", "") or item.get("Current Equipment Code", "")).strip() if not imr.empty else str(item.get("Current Equipment Code", "")).strip()
+                def_eq = (str(imr.get("Derived Equipment Code", "") or "").strip() if not imr.empty else "") or str(item.get("Mapping Candidate Code", "") or item.get("Current Equipment Code", "") or "").strip()
                 def_label = next((x for x in eq_options if x.startswith(def_eq + " — ")), "KEEP / USE CURRENT") if def_eq else "KEEP / USE CURRENT"
                 default_eq_index = eq_options.index(def_label) if def_label in eq_options else 0
 
